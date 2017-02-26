@@ -24,7 +24,8 @@ public class Explore extends Move {
 
     Order headHome = alternateOrder(OrderType.HEAD_HOME, null, null);
 
-    ArrayList<Location> list = owner.getFrontier(_unit);
+    ArrayList<Location> frontierLocations = owner.getFrontier(_unit);
+    ArrayList<Location> blockedLocations = new ArrayList<>();
 
     ResponseCode resp;
     do {
@@ -33,7 +34,7 @@ public class Explore extends Move {
         _lastPath = null;
         return headHome.execute(turnState);
       }
-      if (list.isEmpty()) {
+      if (frontierLocations.isEmpty()) {
         Log.debug(_unit, "no reachable frontier to explore!");
         if (_unit.getTravel() == Travel.AIR) {
           if (!_unit.hasLanded()) {
@@ -52,7 +53,7 @@ public class Explore extends Move {
         break;
       }
       Location ul = _unit.getLocation();
-      Location loc = ul.closest(list);
+      Location loc = ul.closest(frontierLocations);
 
       if (loc == null) {
         Log.debug(_unit, "no close frontier to explore!");
@@ -65,7 +66,8 @@ public class Explore extends Move {
         if (path != null && !path.isEmpty()) {
           dest = path.next(_unit.getLocation());
         } else {
-          list.remove(loc);
+          frontierLocations.remove(loc);
+          blockedLocations.add(loc);
           Log.debug(_unit, "Blocked from exploring choosen location! " + loc);
           resp = ResponseCode.BLOCKED;
           continue;
@@ -75,8 +77,18 @@ public class Explore extends Move {
       }
 
       resp = _game.resolveMove(_unit, dest);
-      if (resp == ResponseCode.CANCEL_ORDER) {
-        list.remove(dest);
+      if (resp == ResponseCode.YIELD_PASS && blockedLocations.contains(dest)) {
+        return new OrderResponse(resp, this, null);
+      }
+      else if (resp == ResponseCode.YIELD_PASS) {
+        blockedLocations.add(dest);
+      }
+      
+      if (resp == ResponseCode.CANCEL_ORDER  && blockedLocations.contains(dest)) {
+        return new OrderResponse(ResponseCode.TURN_COMPLETE, this, null);
+      } else if (resp == ResponseCode.CANCEL_ORDER) {
+        frontierLocations.remove(dest);
+        blockedLocations.add(dest);
       }
  
     } while (_unit.movesLeft() > 0);

@@ -56,7 +56,7 @@ public class Unit {
   }
 
   public String toString() {
-    return toUIString() + ": TS=" + turn() + ": O=" + _owner + " L=(" + _loc + ") M=" + _moved
+    return toUIString() + ": T=" + turn() + ": O=" + _owner + " L=(" + _loc + ") M=" + _moved
         + " D=" + _dist;
   }
 
@@ -326,6 +326,7 @@ public class Unit {
 
     for(Unit u : _carries) {
       u.clearOrders();
+      u.turn().setWaitingOrders();
       _owner.pushPendingOrders(u);
     }
   }

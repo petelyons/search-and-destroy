@@ -2,8 +2,10 @@ package com.developingstorm.games.hexboard;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.developingstorm.games.astar.AStarPosition;
 import com.developingstorm.games.sad.SaDException;
@@ -55,7 +57,16 @@ public class Location implements AStarPosition {
     return loc;
   }
   
-  private Location internalRelative(Direction dir) {
+  private static class LocStruct {
+    public int x;
+    public int y;
+    public LocStruct(int x1, int y1) {
+      x = x1;
+      y = y1;
+    }
+  };
+  
+  private LocStruct internalRelative(Direction dir) {
 
     if (dir == null) {
       throw new IllegalArgumentException();
@@ -87,9 +98,17 @@ public class Location implements AStarPosition {
       yy = y;
     }
 
-    return get(xx, yy);
+    return new LocStruct(xx, yy);
   }
   
+  
+  private LocStruct internalRelative(Direction dir, int count) {
+    LocStruct val = null;
+    for (int x = 0; x < count; x++) {
+       val = internalRelative(dir);
+    }
+    return val;
+  }
   
   
   public static void test() {
@@ -118,10 +137,13 @@ public class Location implements AStarPosition {
  
 
 
-  private static void loadRow(int startX, int endX, int y, List<Location> list, Location exclude) {
+  private static void loadRow(int startX, int endX, int y, Set<Location> list, Location exclude) {
     for (int xx = startX; xx <= endX; xx++) {
-      Location loc = get(xx, y);
       if (xx < 0 || y < 0) {
+        continue;
+      }
+      Location loc = get(xx, y);
+      if (loc == null) {
         continue;
       }
       if (exclude == null || !exclude.equals(loc)) {
@@ -135,15 +157,13 @@ public class Location implements AStarPosition {
       return _neighbors;
     }
     
-    Log.warn("Reliance on unverified function");
-    
-    ArrayList<Location> list = new ArrayList<Location>();
-    Location nw = relative(Direction.NORTH_WEST, dist);
-    Location ne = relative(Direction.NORTH_EAST, dist);
-    Location e = relative(Direction.EAST, dist);
-    Location se = relative(Direction.SOUTH_EAST, dist);
-    Location sw = relative(Direction.SOUTH_WEST, dist);
-    Location w = relative(Direction.WEST, dist);
+    Set<Location> set = new HashSet<Location>();
+    LocStruct nw = internalRelative(Direction.NORTH_WEST, dist);
+    LocStruct ne = internalRelative(Direction.NORTH_EAST, dist);
+    LocStruct e = internalRelative(Direction.EAST, dist);
+    LocStruct se = internalRelative(Direction.SOUTH_EAST, dist);
+    LocStruct sw = internalRelative(Direction.SOUTH_WEST, dist);
+    LocStruct w = internalRelative(Direction.WEST, dist);
    
     /*
     Log.debug("--- Ring for: " + this + " -----");
@@ -156,22 +176,24 @@ public class Location implements AStarPosition {
     */
 
 
-    Location startX = nw;
-    Location endX = ne;
-    for (int yy = startX.y; yy < y; yy++) {
-      loadRow(startX.x, endX.x, startX.y, list, null);
-      startX = startX.relative(Direction.SOUTH_WEST);
-      endX = endX.relative(Direction.SOUTH_EAST);
+    int startX = nw.x;
+    int endX = ne.x;
+    int startY = ne.y;
+    for (int yn = startX; yn < y; yn++) {
+      loadRow(startX, endX, startY, set, null);
+      startX--;
+      endX++;
     }
-    loadRow(w.x, e.x, y, list, this);
-    startX = sw;
-    endX = se;
-    for (int yy = startX.y; yy > y; yy--) {
-      loadRow(startX.x, endX.x, startX.y, list, null);
-      startX = startX.relative(Direction.NORTH_WEST);
-      endX = endX.relative(Direction.NORTH_EAST);
+    loadRow(w.x, e.x, y, set, this);
+    startX = sw.x;
+    endX = se.x;
+    startY = se.y;
+    for (int yn = startY; yn > y; yn--) {
+      loadRow(startX, endX, startY, set, null);
+      startX--;
+      endX++;
     }
-    return list;
+    return new ArrayList<Location>(set);
   }
 
   @Override
@@ -304,27 +326,31 @@ public class Location implements AStarPosition {
 
   void initNeighbors() {
     ArrayList<Location> list = new ArrayList<Location>();
-    Location nw = internalRelative(Direction.NORTH_WEST);
-    Location ne = internalRelative(Direction.NORTH_EAST);
-    Location e = internalRelative(Direction.EAST);
-    Location se = internalRelative(Direction.SOUTH_EAST);
-    Location sw = internalRelative(Direction.SOUTH_WEST);
-    Location w = internalRelative(Direction.WEST);
+    LocStruct nw = internalRelative(Direction.NORTH_WEST);
+    LocStruct ne = internalRelative(Direction.NORTH_EAST);
+    LocStruct e = internalRelative(Direction.EAST);
+    LocStruct se = internalRelative(Direction.SOUTH_EAST);
+    LocStruct sw = internalRelative(Direction.SOUTH_WEST);
+    LocStruct w = internalRelative(Direction.WEST);
     _neighbors = new ArrayList<Location>();
-    addNeighbor(nw);
-    addNeighbor(ne);
-    addNeighbor(e);
-    addNeighbor(se);
-    addNeighbor(sw);
-    addNeighbor(w);
+    addNeighbor(get(nw));
+    addNeighbor(get(ne));
+    addNeighbor(get(e));
+    addNeighbor(get(se));
+    addNeighbor(get(sw));
+    addNeighbor(get(w));
     _directionMap = new HashMap<Direction, Location>();
     
-    addDir(Direction.NORTH_WEST, nw);
-    addDir(Direction.NORTH_EAST, ne);
-    addDir(Direction.EAST, e);
-    addDir(Direction.SOUTH_EAST, se);
-    addDir(Direction.SOUTH_WEST, sw);
-    addDir(Direction.WEST, w);
+    addDir(Direction.NORTH_WEST, get(nw));
+    addDir(Direction.NORTH_EAST, get(ne));
+    addDir(Direction.EAST, get(e));
+    addDir(Direction.SOUTH_EAST, get(se));
+    addDir(Direction.SOUTH_WEST, get(sw));
+    addDir(Direction.WEST, get(w));
+  }
+
+  private static Location get(LocStruct val) {
+    return get(val.x, val.y);
   }
 
 }

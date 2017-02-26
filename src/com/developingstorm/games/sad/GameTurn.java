@@ -76,7 +76,7 @@ class GameTurn {
 
   public void play() {
    
-    int pass = 0;
+   // int pass = 0;
     int previousPassYields = 0;
     do {
       _player.startTurnPass(_turn, _turnState);
@@ -122,7 +122,7 @@ class GameTurn {
         _turnState = TurnState.LOOP;
       }
       previousPassYields = orderStats.yielding;
-      pass++;
+    // pass++;
       
     } while (true);
   }

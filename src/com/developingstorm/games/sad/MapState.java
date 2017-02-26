@@ -129,12 +129,16 @@ public class MapState implements AStarState {
       if (isPlayersCity(loc)) {
         return false;
       }
-      List<Unit> list = _game.unitsAtLocation(loc);
-      if (!(list == null || list.isEmpty()))
+      if (_travel != Travel.LAND && isNonPlayersCity(loc)) {
         return true;
-    }
-    if (_travel != Travel.LAND && isNonPlayersCity(loc)) {
-      return true;
+      }
+//      List<Unit> list = _game.unitsAtLocation(loc);
+//      if (!(list == null || list.isEmpty())) {
+//        Unit u = list.get(0);
+//        if (u != null && _player.equals(u.getOwner())) {
+//          return true;
+//        }
+//      }
     }
     return false;
   }

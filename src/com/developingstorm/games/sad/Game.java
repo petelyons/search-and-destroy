@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 import com.developingstorm.games.astar.AStar;
@@ -492,7 +491,12 @@ public class Game implements BoardLens {
     Unit blocking = unitAtLocation(dest);
     if (blocking == null || blocking.equals(u)) {
       u.move(dest);
-      return ResponseCode.STEP_COMPLETE;
+      if (u.movesLeft() > 0) {
+        return ResponseCode.STEP_COMPLETE;
+      }
+      else {
+        return ResponseCode.TURN_COMPLETE;
+      }
     }
 
 
@@ -504,7 +508,14 @@ public class Game implements BoardLens {
 
     Player blocker = blocking.getOwner();
     if (blocker.equals(u.getOwner())) {
-      return ResponseCode.YIELD_PASS;
+      if (blocking.turn().isDone()) {
+        Log.debug(u, "Destination blocked by unit that has already moved. Cancelling:" + blocking);
+        return ResponseCode.CANCEL_ORDER;
+      } else {
+        blocker.pushPendingPlay(blocking);
+        Log.debug(u, "Destination blocked by unit that has yet to move. Yielding:" + blocking);
+        return ResponseCode.YIELD_PASS;
+      }
     }
     while (true) {
       Log.debug(u, "Attacking " + blocking);

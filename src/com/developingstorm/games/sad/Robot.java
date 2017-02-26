@@ -120,7 +120,7 @@ public class Robot extends Player {
             closestEnemy = enemy;
         }
       }
-      Log.debug(this, "Moving to attack:" + closestEnemy);
+      Log.debug(u, "Moving to attack:" + closestEnemy);
       return Order.factory(_game, u, OrderType.MOVE,
           closestEnemy.getLocation(), null);
     }
