@@ -1,4 +1,4 @@
-package com.developingstorm.games.gridmap;
+package com.developingstorm.exceptions;
 
 /**
 

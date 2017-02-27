@@ -24,10 +24,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JViewport;
 import javax.swing.UIManager;
 
-import com.developingstorm.games.gridmap.GridMap;
 import com.developingstorm.games.hexboard.BoardHex;
 import com.developingstorm.games.hexboard.HexBoard;
 import com.developingstorm.games.hexboard.HexBoardContext;
+import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.HexCanvas;
 import com.developingstorm.games.hexboard.Location;
 
@@ -138,7 +138,7 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
   private int _terrainType = iLAND;
 
   private int[][] _terrainTypes;
-  private GridMap _map;
+  private HexBoardMap _map;
 
   private JMenuItem ARID = new JRadioButtonMenuItem();
   private JMenuItem FOREST = new JRadioButtonMenuItem();
@@ -187,7 +187,7 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
 
     setTitle("Search And Destroy - Map Builder");
 
-    _map = new GridMap(50, 50);
+    _map = new HexBoardMap(50, 50);
     _terrainTypes = _map.getData();
 
     addWindowListener(new WindowAdapter() {
@@ -417,7 +417,7 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
         return;
       }
 
-      _map = GridMap.loadMap(_fileName);
+      _map = HexBoardMap.loadMap(_fileName);
       _terrainTypes = _map.getData();
 
       resetBoardAndCanvas();

@@ -7,14 +7,10 @@ import java.awt.Dimension;
 import java.awt.FileDialog;
 import java.awt.Image;
 import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.List;
 
 import javax.swing.JFrame;
@@ -24,9 +20,9 @@ import javax.swing.JViewport;
 import javax.swing.UIManager;
 
 import com.developingstorm.games.astar.AStarWatcher;
-import com.developingstorm.games.gridmap.GridMap;
 import com.developingstorm.games.hexboard.BoardHex;
 import com.developingstorm.games.hexboard.Hex;
+import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.Board;
 import com.developingstorm.games.sad.City;
@@ -37,15 +33,13 @@ import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Robot;
 import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Unit;
-import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.NoKeyScrollPane;
-import com.developingstorm.util.ResourceUtil;
 
 /**
  * Class information
  */
-public class SaDFrame extends JFrame implements ItemListener, ActionListener,
-    GameListener, Presenter {
+public class SaDFrame extends JFrame implements ItemListener,
+    GameListener, Presenter, MenuBarHandler {
 
   private static final Color MYRED = new Color(250, 100, 100);
 
@@ -161,7 +155,7 @@ public class SaDFrame extends JFrame implements ItemListener, ActionListener,
 
   private final static String MAP_EXT = ".sdm";
 
-  private GridMap _map;
+  private HexBoardMap _map;
 
   private Board _board;
 
@@ -171,17 +165,7 @@ public class SaDFrame extends JFrame implements ItemListener, ActionListener,
 
   private String _fileName = "MedMap" + MAP_EXT;
 
-  private BoardHex _focus;
-
-  private BoardHex _oldFocus;
-
-  private int _range = 0;
-
-  private List _rangeList;
-
-  private UserAction _currentAction;
-
-  private JScrollPane _scroll;
+   private JScrollPane _scroll;
 
   private int _terrainType = iLAND;
 
@@ -208,6 +192,11 @@ public class SaDFrame extends JFrame implements ItemListener, ActionListener,
   private Location _playLocation;
 
   private UserCommands _commander;
+  
+  
+  public static boolean DEBUG_ASTAR = false;
+  public static boolean DEBUG_EXPLORE = false;
+  public static boolean DEBUG_GOD_LENS = false;
 
   static void exit() {
 
@@ -237,16 +226,7 @@ public class SaDFrame extends JFrame implements ItemListener, ActionListener,
 
     setTitle("Search And Destroy");
 
-    try {
-      InputStream is = ResourceUtil.openResourceStream(getClass()
-          .getClassLoader(), "MedMap.sdm");
-      InputStreamReader sr = new InputStreamReader(is);
-      _map = GridMap.loadMap(sr);
-    } catch (Exception e) {
-      e.printStackTrace();
-      throw new SaDException("Bad Map:" + e);
-    }
-
+    _map = HexBoardMap.loadMapAsResource(this, "MixedTerrain.sdm");
     _terrainTypes = _map.getData();
 
     addWindowListener(new WindowAdapter() {
@@ -255,10 +235,6 @@ public class SaDFrame extends JFrame implements ItemListener, ActionListener,
         System.exit(0);
       }
     });
-
-    _focus = null;
-    _oldFocus = null;
-    _currentAction = null;
 
     GameIcons icons = GameIcons.get();
 
@@ -269,7 +245,8 @@ public class SaDFrame extends JFrame implements ItemListener, ActionListener,
     Player[] players = new Player[2];
     players[0] = new Player("Pete", 1);
     players[1] = new Robot("Robby", 2);
-
+    
+       
     _game = new Game(players, _map, _ctx);
     _game.setGameListener(this);
 
@@ -321,26 +298,10 @@ public class SaDFrame extends JFrame implements ItemListener, ActionListener,
   }
 
   public void initMenus() {
-    setJMenuBar(Menus.getMainMenuBar(this));
+    MenuBarBuilder menus = new MenuBarBuilder(this);
+    
+    setJMenuBar(menus.build());
 
-  }
-
-  public void actionPerformed(ActionEvent event) {
-
-    Object object = event.getSource();
-    if (object == Menus.EXIT) {
-      exit();
-    } else if (object == Menus.SAVE) {
-      onSave();
-    } else if (object == Menus.SAVEAS) {
-      onSaveAs();
-    } else if (object == Menus.OPEN) {
-      onOpen();
-    } else if (object == Menus.ABOUT) {
-      onAbout();
-    } else if (object == Menus.VIEW_CENTER) {
-      center(_game.selectedUnit().getLocation());
-    }
   }
 
   /**
@@ -348,7 +309,7 @@ public class SaDFrame extends JFrame implements ItemListener, ActionListener,
 	 */
 
   public AStarWatcher getWatcher() {
-    if (Menus.DEBUG_ASTAR_SEL.getState())
+    if (DEBUG_ASTAR)
       return _canvas;
     else
       return null;
@@ -362,7 +323,7 @@ public class SaDFrame extends JFrame implements ItemListener, ActionListener,
   }
 
   public void selectPlayer(Player p) {
-    if (Menus.DEBUG_LENS_SEL.getState())
+    if (DEBUG_GOD_LENS)
       _canvas.setLens(_game);
     else
       _canvas.setLens(p);
@@ -379,9 +340,9 @@ public class SaDFrame extends JFrame implements ItemListener, ActionListener,
     _unitChanged = u;
     _ubar.setUnit(u);
     _board.clearSelected();
-    Debug.setDebugExplore(Menus.DEBUG_EXPLORE.getState());
+   
     if (Debug.getDebugExplore()) {
-      List list = Debug.getDebugLocations();
+      List<Location> list = Debug.getDebugLocations();
       if (list != null) {
         _board.setLocationsSelected(list, true);
       }
@@ -589,7 +550,7 @@ public class SaDFrame extends JFrame implements ItemListener, ActionListener,
     }
   }
 
-  void onOpen() {
+  public void onOpen() {
     try {
       FileDialog openFileDialog = new FileDialog(this, "Open", FileDialog.LOAD);
       openFileDialog.setDirectory(".");
@@ -604,7 +565,7 @@ public class SaDFrame extends JFrame implements ItemListener, ActionListener,
     }
   }
 
-  void onSave() {
+  public void onSave() {
     if (_fileName == null) {
       onSaveAs();
       return;
@@ -617,7 +578,7 @@ public class SaDFrame extends JFrame implements ItemListener, ActionListener,
     }
   }
 
-  void onSaveAs() {
+  public void onSaveAs() {
     try {
       FileDialog openFileDialog = new FileDialog(this, "Save", FileDialog.SAVE);
       openFileDialog.setDirectory(".");
@@ -633,7 +594,7 @@ public class SaDFrame extends JFrame implements ItemListener, ActionListener,
 
   }
 
-  void onAbout() {
+  public void onAbout() {
     try {
       (new AboutDialog(this, true)).setVisible(true);
     } catch (java.lang.Exception e) {
@@ -642,5 +603,43 @@ public class SaDFrame extends JFrame implements ItemListener, ActionListener,
 
   public void abort() {
     System.exit(1);
+  }
+
+  @Override
+  public void onExit() {
+    System.exit(0);
+  }
+
+  @Override
+  public void onCenter() {
+    Unit u = _game.selectedUnit();
+    if (u != null) {
+      Location loc = u.getLocation();
+      center(loc);
+    }
+  }
+
+  @Override
+  public void onNew() {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void onDebugAstar(boolean v) {
+    DEBUG_ASTAR = v;
+    
+  }
+
+  @Override
+  public void onDebugExplore(boolean v) {
+    DEBUG_EXPLORE = v;
+    Debug.setDebugExplore(v);
+    
+  }
+
+  @Override
+  public void onDebugGodLens(boolean v) {
+    DEBUG_GOD_LENS = v;   
   }
 }

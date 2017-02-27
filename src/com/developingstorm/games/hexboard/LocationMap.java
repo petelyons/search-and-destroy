@@ -1,9 +1,5 @@
 package com.developingstorm.games.hexboard;
 
-import java.util.List;
-
-import com.developingstorm.games.sad.SaDException;
-
 public class LocationMap {
   public static LocationMap INSTANCE = null;
   int _width;

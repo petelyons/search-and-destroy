@@ -13,8 +13,8 @@ import java.util.List;
 import com.developingstorm.games.astar.AStar;
 import com.developingstorm.games.astar.AStarNode;
 import com.developingstorm.games.astar.AStarState;
-import com.developingstorm.games.gridmap.GridMap;
 import com.developingstorm.games.hexboard.HexBoardContext;
+import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.hexboard.LocationMap;
 import com.developingstorm.games.sad.util.Log;
@@ -26,7 +26,7 @@ import com.developingstorm.util.Tracer;
  */
 public class Game implements BoardLens {
 
-  private volatile GridMap _gridMap;
+  private volatile HexBoardMap _gridMap;
 
   private volatile Player[] _players;
 
@@ -57,7 +57,7 @@ public class Game implements BoardLens {
 
 
   @SuppressWarnings("unchecked")
-  public Game(Player[] players, GridMap grid, HexBoardContext ctx) {
+  public Game(Player[] players, HexBoardMap grid, HexBoardContext ctx) {
     _ctx = ctx;
     _gameListener = null;
     _players = players;
@@ -69,7 +69,7 @@ public class Game implements BoardLens {
     
     
     _gridMap = grid;
-    LocationMap.init(_gridMap.getWidth(), _gridMap.getWidth());
+    
     
     initGameTrace();
     

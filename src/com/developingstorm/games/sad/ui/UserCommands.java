@@ -227,16 +227,19 @@ public class UserCommands {
       ulist.add(u);
 
       UserCommands spc = specialContext(ulist);
-      pm = OrderMenu.get(_game, ulist, spc);
+      OrderMenuBuilder om = new OrderMenuBuilder(_game, ulist, spc);
+      pm = om.build();
     } else {
       City c = _game.cityAtLocation(hex.getLocation());
 
       if (c != null) {
-        pm = CityMenu.get(_game, c, this);
+        CityMenuBuilder cmb = new CityMenuBuilder(_game, c, this);
+        pm = cmb.build();
       } else {
         List<Unit> ul = _game.unitsAtLocation(loc);
         UserCommands spc = specialContext(ul);
-        pm = OrderMenu.get(_game, ul, spc);
+        OrderMenuBuilder omb = new OrderMenuBuilder(_game, ul, spc);
+        pm = omb.build();
       }
     }
 

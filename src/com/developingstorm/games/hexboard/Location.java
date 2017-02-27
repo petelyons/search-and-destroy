@@ -9,7 +9,6 @@ import java.util.Set;
 
 import com.developingstorm.games.astar.AStarPosition;
 import com.developingstorm.games.sad.SaDException;
-import com.developingstorm.games.sad.util.Log;
 
 /**
  * 

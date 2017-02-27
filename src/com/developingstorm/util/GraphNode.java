@@ -4,8 +4,6 @@ import java.util.HashSet;
 
 import java.util.Set;
 
-import com.developingstorm.games.sad.City;
-
 public class GraphNode<T, S> {
   
   GraphNode(Graph<T, S> g, T start) {

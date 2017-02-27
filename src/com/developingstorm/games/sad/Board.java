@@ -5,15 +5,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import com.developingstorm.games.gridmap.GridMap;
 import com.developingstorm.games.hexboard.BoardHex;
 import com.developingstorm.games.hexboard.HexBoard;
 import com.developingstorm.games.hexboard.HexBoardContext;
+import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.Location;
 
 public class Board extends HexBoard {
 
-  private GridMap _map;
+  private HexBoardMap _map;
   private int[][] _mapData;
   private int[][] _contData;
   private HashMap<Location, City> _ctoks;
@@ -24,7 +24,7 @@ public class Board extends HexBoard {
   private ArrayList<Continent> _continents;
   private ArrayList<City> _cities;
 
-  public Board(Game game, GridMap grid, HexBoardContext ctx) {
+  public Board(Game game, HexBoardMap grid, HexBoardContext ctx) {
     super(ctx);
     _map = grid;
     _mapData = _map.getData();
