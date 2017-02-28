@@ -1,6 +1,5 @@
 package com.developingstorm.games.sad;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.developingstorm.games.hexboard.Location;
@@ -13,7 +12,6 @@ public class City {
   private volatile Type _produces;
   private volatile Location _location;
   private volatile long _round;
-  private volatile ArrayList<Unit> _units;
   private volatile long _productionStart;
   private volatile Board _board;
   private volatile Game _game;
@@ -32,7 +30,6 @@ public class City {
     _productionStart = -1;
     _game = game;
     _board = _game.getBoard();
-    _units = new ArrayList<Unit>();
     _productionCompletedThisTurn = false;
     _seaPath = null;
     _airPath = null;
@@ -144,6 +141,7 @@ public class City {
   public List<Unit> getUnits() {
     return _game.unitsAtLocation(_location);
   }
+  
 
   public void bombCity() {
     long d = _round - _productionStart;
@@ -163,7 +161,6 @@ public class City {
         Unit u = _game.createUnit(_produces, _owner, _location);
         Log.debug(u, "Created");
         _owner.addUnit(u);
-        _units.add(u);
         _productionStart = _round;
         _productionCompletedThisTurn = true;
       }

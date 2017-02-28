@@ -25,7 +25,7 @@ import javax.swing.ListSelectionModel;
 public class GenericListDialog extends JDialog {
   private static GenericListDialog dialog;
   private static String value = "";
-  private JList list;
+  private JList<Object> _list;
 
   /**
    * Set up the dialog. The first argument can be null, but it really should be
@@ -56,11 +56,11 @@ public class GenericListDialog extends JDialog {
 
   private void setValue(String newValue) {
     value = newValue;
-    list.setSelectedValue(value, true);
+    _list.setSelectedValue(value, true);
   }
 
   private Object[] getValues() {
-    return list.getSelectedValues();
+    return _list.getSelectedValuesList().toArray();
   }
 
   private GenericListDialog(Frame frame, Object[] data, String title,
@@ -77,23 +77,23 @@ public class GenericListDialog extends JDialog {
     });
     setButton.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-        GenericListDialog.value = (String) (list.getSelectedValue());
+        GenericListDialog.value = (String) (_list.getSelectedValue());
         GenericListDialog.dialog.setVisible(false);
       }
     });
     getRootPane().setDefaultButton(setButton);
 
     // main part of the dialog
-    list = new JList(data);
-    list.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
-    list.addMouseListener(new MouseAdapter() {
+    _list = new JList<Object>(data);
+    _list.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+    _list.addMouseListener(new MouseAdapter() {
       public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() == 2) {
           setButton.doClick();
         }
       }
     });
-    JScrollPane listScroller = new JScrollPane(list);
+    JScrollPane listScroller = new JScrollPane(_list);
     listScroller.setPreferredSize(new Dimension(250, 80));
     // XXX: Must do the following, too, or else the scroller thinks
     // XXX: it's taller than it is:
@@ -107,7 +107,7 @@ public class GenericListDialog extends JDialog {
     JPanel listPane = new JPanel();
     listPane.setLayout(new BoxLayout(listPane, BoxLayout.Y_AXIS));
     JLabel label = new JLabel(labelText);
-    label.setLabelFor(list);
+    label.setLabelFor(_list);
     listPane.add(label);
     listPane.add(Box.createRigidArea(new Dimension(0, 5)));
     listPane.add(listScroller);

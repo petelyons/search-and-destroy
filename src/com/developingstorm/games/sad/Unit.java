@@ -31,6 +31,8 @@ public class Unit {
   private volatile long _id;
   private volatile TurnFlow _turnFlow;
 
+  private boolean _isDead = false;  //Used to prevent endless looping during kill processing u->game->u->game->u->game...
+
   public Unit(Type t, Player owner, Location loc, Game game) {
     _type = t;
     _loc = loc;
@@ -56,13 +58,36 @@ public class Unit {
   }
 
   public String toString() {
-    return toUIString() + ": T=" + turn() + ": O=" + _owner + " L=(" + _loc + ") M=" + _moved
-        + " D=" + _dist;
+    StringBuffer sb = new StringBuffer();
+    sb.append('[');
+    sb.append(toUIString());
+    sb.append(": TS=");
+    sb.append(turn());
+    sb.append(": Own=");
+    sb.append(_owner);
+    sb.append(": Loc=(");
+    sb.append(_loc);
+    sb.append(": Mv=");
+    sb.append(_moved);
+    sb.append(": Dist=");
+    sb.append(_dist);
+    if (_onboard != null) {
+      sb.append(": On=");
+      sb.append(_onboard.toUIString());
+    }
+    sb.append(']');
+    return sb.toString();
   }
 
   public String toUIString() {
-    return _type + " " + _id + " : "
-        + ((_order != null) ? _order.getType().toString() : "No Orders");
+    StringBuffer sb = new StringBuffer();
+    
+    sb.append(_type);
+    sb.append(' ');
+    sb.append(_id);
+    sb.append(':');
+    sb.append((_order != null) ? _order.getType().toString() : "No Orders");
+    return sb.toString();
   }
 
   public boolean hasOrders() {
@@ -211,7 +236,7 @@ public class Unit {
   }
 
   public boolean isDead() {
-    return _hits <= 0;
+    return _hits <= 0 || _isDead;
   }
 
   @Override
@@ -256,9 +281,14 @@ public class Unit {
     return (isDead());
   }
 
-  public void kill() {
+  // Should only be called by (Game).killUnit
+  void kill() {
+    if (_isDead) {
+      return;
+    }
+    _isDead  = true;
     _hits = 0;
-    _owner.killUnit(this);
+    _game.killUnit(this);
     if (_onboard != null) {
       _onboard.removeCarried(this);
     }

@@ -42,8 +42,8 @@ public class Robot extends Player {
     super.addUnit(u);
   }
 
-  public void killUnit(Unit u) {
-    super.killUnit(u);
+  public void removeUnit(Unit u) {
+    super.removeUnit(u);
   }
 
   private List<City> getOwnedCities() {

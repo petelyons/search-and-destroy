@@ -127,7 +127,6 @@ public class AStar {
 
       // Successful exit if n proves to be the goal node
       if (_workingNode.equals(_goalnode)) {
-        Log.info("Found path!");
         // _endTime = System.currentTimeMillis();
         // printStatistics(n);
         notifyWatchers(null);

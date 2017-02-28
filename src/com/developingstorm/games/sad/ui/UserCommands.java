@@ -20,23 +20,22 @@ import com.developingstorm.games.sad.util.Log;
  * 
  */
 public class UserCommands {
-
+  private SaDFrame _frame;
   private boolean _paused;
-  private Presenter _presenter;
   private BoardCanvas _canvas;
   private Game _game;
   private List<Unit> _spcCtx;
 
-  public UserCommands(Presenter presenter, BoardCanvas canvas, Game game) {
+  public UserCommands(SaDFrame frame, BoardCanvas canvas, Game game) {
+    _frame = frame;
     _paused = false;
-    _presenter = presenter;
     _canvas = canvas;
     _game = game;
     _spcCtx = null;
   }
 
   public UserCommands specialContext(List<Unit> units) {
-    UserCommands uc = new UserCommands(_presenter, _canvas, _game);
+    UserCommands uc = new UserCommands(_frame, _canvas, _game);
     uc._paused = _paused;
     uc._spcCtx = units;
     return uc;
@@ -58,7 +57,7 @@ public class UserCommands {
   }
 
   public void showLocation(Location loc) {
-    _presenter.showLocation(loc);
+    _frame.showLocation(loc);
   }
 
   public boolean isWaiting() {
@@ -159,7 +158,7 @@ public class UserCommands {
 
   public void center() {
     if (_game.selectedUnit() != null) {
-      _presenter.center(_game.selectedUnit().getLocation());
+      _frame.center(_game.selectedUnit().getLocation());
     }
   }
 
@@ -227,18 +226,18 @@ public class UserCommands {
       ulist.add(u);
 
       UserCommands spc = specialContext(ulist);
-      OrderMenuBuilder om = new OrderMenuBuilder(_game, ulist, spc);
+      OrderMenuBuilder om = new OrderMenuBuilder(_frame, _game, ulist, spc);
       pm = om.build();
     } else {
       City c = _game.cityAtLocation(hex.getLocation());
 
       if (c != null) {
-        CityMenuBuilder cmb = new CityMenuBuilder(_game, c, this);
+        CityMenuBuilder cmb = new CityMenuBuilder(_frame, _game, c, this);
         pm = cmb.build();
       } else {
         List<Unit> ul = _game.unitsAtLocation(loc);
         UserCommands spc = specialContext(ul);
-        OrderMenuBuilder omb = new OrderMenuBuilder(_game, ul, spc);
+        OrderMenuBuilder omb = new OrderMenuBuilder(_frame, _game, ul, spc);
         pm = omb.build();
       }
     }

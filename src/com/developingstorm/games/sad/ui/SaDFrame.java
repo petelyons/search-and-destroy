@@ -2,6 +2,7 @@ package com.developingstorm.games.sad.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FileDialog;
@@ -38,8 +39,7 @@ import com.developingstorm.util.NoKeyScrollPane;
 /**
  * Class information
  */
-public class SaDFrame extends JFrame implements ItemListener,
-    GameListener, Presenter, MenuBarHandler {
+public class SaDFrame extends JFrame {
 
   private static final Color MYRED = new Color(250, 100, 100);
 
@@ -137,8 +137,6 @@ public class SaDFrame extends JFrame implements ItemListener,
     }
   }
 
-  static SaDFrame INSTANCE;
-
   private final static int iARID = 3;
 
   private final static int iFOREST = 4;
@@ -222,11 +220,9 @@ public class SaDFrame extends JFrame implements ItemListener,
 
   public SaDFrame() {
 
-    INSTANCE = this;
-
     setTitle("Search And Destroy");
 
-    _map = HexBoardMap.loadMapAsResource(this, "MixedTerrain.sdm");
+    _map = HexBoardMap.loadMapAsResource(this, "MedMap.sdm");
     _terrainTypes = _map.getData();
 
     addWindowListener(new WindowAdapter() {
@@ -248,9 +244,117 @@ public class SaDFrame extends JFrame implements ItemListener,
     
        
     _game = new Game(players, _map, _ctx);
-    _game.setGameListener(this);
+    _game.setGameListener(new GameListener() {
 
-    _tbar = new GameToolbar(null, this);
+      @Override
+      public void abort() {
+        System.exit(1);
+      }
+
+      @Override
+      public void newTurn(int t) { 
+      }
+
+      @Override
+      public void trackUnit(Unit u) {
+        _unitTracked = u;
+        _ubar.setUnit(u);
+      }
+      @Override
+      public void selectUnit(Unit u) {
+        _unitChanged = u;
+        _ubar.setUnit(u);
+        _board.clearSelected();
+       
+        if (Debug.getDebugExplore()) {
+          List<Location> list = Debug.getDebugLocations();
+          if (list != null) {
+            _board.setLocationsSelected(list, true);
+          }
+        }
+      }
+      
+      @Override
+      public void killUnit(Unit u, boolean showDeath) {
+        if (showDeath) {
+          _canvas.addExplosion(u.getLocation());
+        }
+      }
+      @Override
+      public void hitLocation(Location loc) {
+        _canvas.addExplosion(loc);
+      }
+
+    
+      @Override
+      public AStarWatcher getWatcher() {
+        if (DEBUG_ASTAR)
+          return _canvas;
+        else
+          return null;
+      }
+
+      @Override
+      public void selectPlayer(Player p) {
+        if (DEBUG_GOD_LENS)
+          _canvas.setLens(_game);
+        else
+          _canvas.setLens(p);
+        _canvas.resetPaths(p, true, true, true);
+        _canvas.repaint();
+      }
+
+      @Override
+      public void notifyWait() {
+
+        if (_unitChanged != null) {
+          centerIfOff(_unitChanged.getLocation());
+          _canvas.setCursor(_unitChanged.getLocation());
+          _unitChanged = null;
+          _unitTracked = null;
+        } else if (_unitTracked != null) {
+          showLocation(_unitTracked.getLocation());
+          _canvas.setCursor(_unitTracked.getLocation());
+          _unitTracked = null;
+        }
+        else {
+          throw new SaDException("No UNIT");
+        }
+
+      }
+
+
+    });
+
+    _tbar = new GameToolbar(null, new ItemListener() {
+
+      @Override
+      public void itemStateChanged(ItemEvent event) {
+        Object source = event.getSource();
+        if (source instanceof JToggleButton) {
+          JToggleButton jt = (JToggleButton) source;
+
+          String cmd = jt.getActionCommand();
+          if (cmd.equals("PLAY") && event.getStateChange() == ItemEvent.SELECTED) {
+            _paused = false;
+            _pauseControls.disable();
+            _playControls.enable();
+            if (_playLocation != null)
+              select(_playLocation);
+            _canvas.requestFocus();
+            _game.continuePlay();
+            _commander.setPlayMode();
+          } else if (cmd.equals("PAUSE")
+              && event.getStateChange() == ItemEvent.SELECTED) {
+            _paused = true;
+            _playControls.disable();
+            _pauseControls.enable();
+            _canvas.requestFocus();
+            _game.pausePlay();
+            _commander.setPauseMode();
+          }
+
+        }}});
     _ubar = new UnitStatusBar();
     _board = _game.getBoard();
     _ubar.setGame(_game);
@@ -281,84 +385,124 @@ public class SaDFrame extends JFrame implements ItemListener,
 
     setSize(600, 500);
 
-    initMenus();
+    initMenuBar();
 
     setVisible(true);
 
     initGame();
   }
 
-  public JFrame getFrame() {
-    return this;
-  }
+  
 
   public void initGame() {
     _canvas.startAmination();
     play();
   }
 
-  public void initMenus() {
-    MenuBarBuilder menus = new MenuBarBuilder(this);
+  public void initMenuBar() {
+    MenuBarBuilder menus = new MenuBarBuilder(new MenuBarHandler() {
+      @Override
+      public void onExit() {
+        System.exit(0);
+      }
+
+      @Override
+      public void onCenter() {
+        Unit u = _game.selectedUnit();
+        if (u != null) {
+          Location loc = u.getLocation();
+          center(loc);
+        }
+      }
+
+      @Override
+      public void onNew() {
+        // TODO Auto-generated method stub
+        
+      }
+
+      @Override
+      public void onDebugAstar(boolean v) {
+        DEBUG_ASTAR = v;
+        
+      }
+
+      @Override
+      public void onDebugExplore(boolean v) {
+        DEBUG_EXPLORE = v;
+        Debug.setDebugExplore(v);
+        
+      }
+
+      @Override
+      public void onDebugGodLens(boolean v) {
+        DEBUG_GOD_LENS = v;   
+      }
+
+      @Override
+      public void onDebugDump() {
+        _game.dump();
+      }
+
+      public void onOpen() {
+        try {
+          FileDialog openFileDialog = new FileDialog(SaDFrame.this, "Open", FileDialog.LOAD);
+          openFileDialog.setDirectory(".");
+          openFileDialog.setVisible(true);
+          _fileName = openFileDialog.getFile();
+          if (!_fileName.endsWith(MAP_EXT)) {
+            return;
+          }
+          repaint();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
+
+      public void onSave() {
+        if (_fileName == null) {
+          onSaveAs();
+          return;
+        }
+
+        try {
+          _map.saveMap(_fileName);
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
+
+      public void onSaveAs() {
+        try {
+          FileDialog openFileDialog = new FileDialog(SaDFrame.this, "Save", FileDialog.SAVE);
+          openFileDialog.setDirectory(".");
+          openFileDialog.setVisible(true);
+          _fileName = openFileDialog.getFile();
+          if (!_fileName.endsWith(MAP_EXT))
+            _fileName = _fileName + MAP_EXT;
+          _map.saveMap(_fileName);
+        } catch (Exception e) {
+          e.printStackTrace();
+          return;
+        }
+
+      }
+
+      public void onAbout() {
+        try {
+          (new AboutDialog(SaDFrame.this, true)).setVisible(true);
+        } catch (java.lang.Exception e) {
+        }
+      }
+
+    });
     
     setJMenuBar(menus.build());
 
   }
 
-  /**
-	 *  
-	 */
+ 
 
-  public AStarWatcher getWatcher() {
-    if (DEBUG_ASTAR)
-      return _canvas;
-    else
-      return null;
-  }
-
-  /**
-	 *  
-	 */
-  public void newTurn(int t) {
-
-  }
-
-  public void selectPlayer(Player p) {
-    if (DEBUG_GOD_LENS)
-      _canvas.setLens(_game);
-    else
-      _canvas.setLens(p);
-    _canvas.resetPaths(p, true, true, true);
-    _canvas.repaint();
-  }
-
-  public void trackUnit(Unit u) {
-    _unitTracked = u;
-    _ubar.setUnit(u);
-  }
-
-  public void selectUnit(Unit u) {
-    _unitChanged = u;
-    _ubar.setUnit(u);
-    _board.clearSelected();
-   
-    if (Debug.getDebugExplore()) {
-      List<Location> list = Debug.getDebugLocations();
-      if (list != null) {
-        _board.setLocationsSelected(list, true);
-      }
-    }
-
-  }
-
-  public void killUnit(Unit u, boolean showDeath) {
-    if (showDeath) {
-      _canvas.addExplosion(u.getLocation());
-    }
-  }
-
-  public void hitLocation(Location loc) {
-    _canvas.addExplosion(loc);
-  }
 
   public void select(Location loc) {
     // showLocation(loc);
@@ -395,23 +539,6 @@ public class SaDFrame extends JFrame implements ItemListener,
     return (isOnScreen(p.x, p.y));
   }
 
-  public void notifyWait() {
-
-    if (_unitChanged != null) {
-      centerIfOff(_unitChanged.getLocation());
-      _canvas.setCursor(_unitChanged.getLocation());
-      _unitChanged = null;
-      _unitTracked = null;
-    } else if (_unitTracked != null) {
-      showLocation(_unitTracked.getLocation());
-      _canvas.setCursor(_unitTracked.getLocation());
-      _unitTracked = null;
-    }
-    else {
-      throw new SaDException("No UNIT");
-    }
-
-  }
 
   public boolean isOnScreen(Location loc) {
     BoardHex hex = _board.get(loc);
@@ -466,6 +593,8 @@ public class SaDFrame extends JFrame implements ItemListener,
     }
   }
 
+  
+  
   public void showLocation(Location loc) {
 
     JViewport viewport = _scroll.getViewport();
@@ -519,127 +648,9 @@ public class SaDFrame extends JFrame implements ItemListener,
 
   public BoardCanvas getCanvas() {
     return _canvas;
-
   }
+  
 
-  public void itemStateChanged(ItemEvent event) {
-    Object source = event.getSource();
-    if (source instanceof JToggleButton) {
-      JToggleButton jt = (JToggleButton) source;
 
-      String cmd = jt.getActionCommand();
-      if (cmd.equals("PLAY") && event.getStateChange() == ItemEvent.SELECTED) {
-        _paused = false;
-        _pauseControls.disable();
-        _playControls.enable();
-        if (_playLocation != null)
-          select(_playLocation);
-        _canvas.requestFocus();
-        _game.continuePlay();
-        _commander.setPlayMode();
-      } else if (cmd.equals("PAUSE")
-          && event.getStateChange() == ItemEvent.SELECTED) {
-        _paused = true;
-        _playControls.disable();
-        _pauseControls.enable();
-        _canvas.requestFocus();
-        _game.pausePlay();
-        _commander.setPauseMode();
-      }
 
-    }
-  }
-
-  public void onOpen() {
-    try {
-      FileDialog openFileDialog = new FileDialog(this, "Open", FileDialog.LOAD);
-      openFileDialog.setDirectory(".");
-      openFileDialog.setVisible(true);
-      _fileName = openFileDialog.getFile();
-      if (!_fileName.endsWith(MAP_EXT)) {
-        return;
-      }
-      repaint();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
-
-  public void onSave() {
-    if (_fileName == null) {
-      onSaveAs();
-      return;
-    }
-
-    try {
-      _map.saveMap(_fileName);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
-
-  public void onSaveAs() {
-    try {
-      FileDialog openFileDialog = new FileDialog(this, "Save", FileDialog.SAVE);
-      openFileDialog.setDirectory(".");
-      openFileDialog.setVisible(true);
-      _fileName = openFileDialog.getFile();
-      if (!_fileName.endsWith(MAP_EXT))
-        _fileName = _fileName + MAP_EXT;
-      _map.saveMap(_fileName);
-    } catch (Exception e) {
-      e.printStackTrace();
-      return;
-    }
-
-  }
-
-  public void onAbout() {
-    try {
-      (new AboutDialog(this, true)).setVisible(true);
-    } catch (java.lang.Exception e) {
-    }
-  }
-
-  public void abort() {
-    System.exit(1);
-  }
-
-  @Override
-  public void onExit() {
-    System.exit(0);
-  }
-
-  @Override
-  public void onCenter() {
-    Unit u = _game.selectedUnit();
-    if (u != null) {
-      Location loc = u.getLocation();
-      center(loc);
-    }
-  }
-
-  @Override
-  public void onNew() {
-    // TODO Auto-generated method stub
-    
-  }
-
-  @Override
-  public void onDebugAstar(boolean v) {
-    DEBUG_ASTAR = v;
-    
-  }
-
-  @Override
-  public void onDebugExplore(boolean v) {
-    DEBUG_EXPLORE = v;
-    Debug.setDebugExplore(v);
-    
-  }
-
-  @Override
-  public void onDebugGodLens(boolean v) {
-    DEBUG_GOD_LENS = v;   
-  }
 }

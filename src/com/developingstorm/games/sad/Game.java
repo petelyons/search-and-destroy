@@ -16,7 +16,6 @@ import com.developingstorm.games.astar.AStarState;
 import com.developingstorm.games.hexboard.HexBoardContext;
 import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.Location;
-import com.developingstorm.games.hexboard.LocationMap;
 import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.RandomUtil;
 import com.developingstorm.util.Tracer;
@@ -227,6 +226,8 @@ public class Game implements BoardLens {
   public void killUnit(Unit u, boolean showDeath) {
     Log.debug(this, "Killing Unit: " + u);
     u.kill();
+    Player p = u.getOwner();
+    p.removeUnit(u);
     _allUnits.remove(u);
     _gameListener.killUnit(u, showDeath);
     List<Unit> list = modifiableUnitsAtLocation(u.getLocation());
@@ -627,7 +628,6 @@ public class Game implements BoardLens {
 
   void unitChange(Unit u) {
     if (u != null)
-      Log.debug(u, "SELECTED");
       _selectedUnit = u;
       _gameListener.selectUnit(u);
   }
@@ -696,6 +696,18 @@ public class Game implements BoardLens {
       completeList.addAll(list);
     }
     return completeList;
+  }
+
+  public void dump() {
+    Log.info("=======================================================================================================");
+    Log.info("GAME DUMP: " + toString());
+    
+    for (Player player : _players) {
+      Log.info("-------------------------------------------------------------------------------------------------------");
+      Log.info("PLAYER: " + player);
+      Log.info("--------------------------------------------------");
+      player.forEachUnit((Unit u)->{Log.info(u.toString());});
+    }
   }
 
 

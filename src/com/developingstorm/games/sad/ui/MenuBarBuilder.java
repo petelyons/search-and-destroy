@@ -30,6 +30,8 @@ public class MenuBarBuilder {
   private final JCheckBoxMenuItem DEBUG_ASTAR_SEL = new JCheckBoxMenuItem("Track A*");
   private final JCheckBoxMenuItem DEBUG_EXPLORE = new JCheckBoxMenuItem("Explore");
   private final JCheckBoxMenuItem DEBUG_LENS_SEL = new JCheckBoxMenuItem("God Lens");
+  
+  private final JMenuItem DEBUG_DUMP = new JMenuItem("Dump State");
 
   private final JMenuItem VIEW_CENTER = new JMenuItem("Center");
   private final JCheckBoxMenuItem VIEW_SEA_PATHS = new JCheckBoxMenuItem("Sea Paths");
@@ -57,6 +59,8 @@ public class MenuBarBuilder {
     DEBUG.add(DEBUG_ASTAR_SEL);
     DEBUG.add(DEBUG_LENS_SEL);
     DEBUG.add(DEBUG_EXPLORE);
+    DEBUG.addSeparator();
+    DEBUG.add(DEBUG_DUMP);
 
     HELP.add(ABOUT);
 
@@ -109,7 +113,11 @@ public class MenuBarBuilder {
       public void actionPerformed(ActionEvent e) {
         _handler.onDebugExplore(DEBUG_EXPLORE.isSelected());
       }});
-
+    DEBUG_DUMP.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _handler.onDebugDump();
+      }});
 
 
     ABOUT.addActionListener(new ActionListener() {

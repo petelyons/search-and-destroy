@@ -1,7 +1,6 @@
 package com.developingstorm.games.sad;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.omg.PortableServer.POAManagerPackage.State;
@@ -9,7 +8,6 @@ import org.omg.PortableServer.POAManagerPackage.State;
 import com.developingstorm.games.astar.AStarPosition;
 import com.developingstorm.games.astar.AStarState;
 import com.developingstorm.games.hexboard.BoardHex;
-import com.developingstorm.games.hexboard.Direction;
 import com.developingstorm.games.hexboard.Location;
 
 public class MapState implements AStarState {
@@ -132,13 +130,13 @@ public class MapState implements AStarState {
       if (_travel != Travel.LAND && isNonPlayersCity(loc)) {
         return true;
       }
-//      List<Unit> list = _game.unitsAtLocation(loc);
-//      if (!(list == null || list.isEmpty())) {
-//        Unit u = list.get(0);
-//        if (u != null && _player.equals(u.getOwner())) {
-//          return true;
-//        }
-//      }
+      List<Unit> list = _game.unitsAtLocation(loc);
+      if (!(list == null || list.isEmpty())) {
+        Unit u = list.get(0);
+        if (u != null && _player.equals(u.getOwner())) {
+          return true;
+        }
+      }
     }
     return false;
   }

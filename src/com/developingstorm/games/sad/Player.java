@@ -1,8 +1,6 @@
 package com.developingstorm.games.sad;
 
 import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -173,8 +171,7 @@ public class Player implements BoardLens {
     _units.add(u);
   }
 
-  public void killUnit(Unit u) {
-
+  public void removeUnit(Unit u) {
     _units.remove(u);
   }
   

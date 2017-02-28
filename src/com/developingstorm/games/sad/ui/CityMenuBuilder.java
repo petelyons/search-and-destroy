@@ -1,0 +1,257 @@
+package com.developingstorm.games.sad.ui;
+
+import java.awt.Container;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.List;
+
+import javax.swing.ButtonGroup;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JRadioButtonMenuItem;
+
+import com.developingstorm.games.hexboard.BoardHex;
+import com.developingstorm.games.hexboard.Location;
+import com.developingstorm.games.sad.City;
+import com.developingstorm.games.sad.Game;
+import com.developingstorm.games.sad.Type;
+import com.developingstorm.games.sad.Unit;
+
+/**
+
+ * 
+ */
+public class CityMenuBuilder {
+  
+  private City _c;
+  private Game _game;
+  private UserCommands _commander;
+
+  private final JMenuItem INFANTRY_SEL = new JRadioButtonMenuItem(
+      "Infantry");
+  private final JMenuItem ARMOR_SEL = new JRadioButtonMenuItem("Armor");
+  private final JMenuItem FIGHTER_SEL = new JRadioButtonMenuItem(
+      "Fighter");
+  private final JMenuItem BOMBER_SEL = new JRadioButtonMenuItem("Bomber");
+  private final JMenuItem CARGO_SEL = new JRadioButtonMenuItem(
+      "Air Transport");
+  private final JMenuItem TRANSPORT_SEL = new JRadioButtonMenuItem(
+      "Sea Transport");
+  private final JMenuItem DESTROYER_SEL = new JRadioButtonMenuItem(
+      "Destroyer");
+  private final JMenuItem SUBMARINE_SEL = new JRadioButtonMenuItem(
+      "Submarine");
+  private final JMenuItem CRUISER_SEL = new JRadioButtonMenuItem(
+      "Cruiser");
+  private final JMenuItem BATTLESHIP_SEL = new JRadioButtonMenuItem(
+      "Battleship");
+  private final JMenuItem AIRCRAFT_CARRIER_SEL = new JRadioButtonMenuItem(
+      "Aircraft Carrier");
+
+  private final JMenuItem UNITS_SEL = new JMenuItem("Units...");
+  private final JMenuItem ORDERS_SEL = new JMenuItem("City Orders...");
+ 
+
+  CityMenuBuilder(SaDFrame frame, Game g, City c, UserCommands commander) {
+    
+    _game = g;
+    _c = c;
+    _commander = commander;
+    
+    selectProduction(c.getProduction());
+    INFANTRY_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _c.produce(Type.INFANTRY);
+      }});
+    
+    ARMOR_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _c.produce(Type.ARMOR);
+      }});
+    BOMBER_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _c.produce(Type.BOMBER);
+      }});
+    CARGO_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _c.produce(Type.CARGO);
+      }});
+    FIGHTER_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _c.produce(Type.FIGHTER);
+      }});
+    TRANSPORT_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _c.produce(Type.TRANSPORT);
+      }});
+    DESTROYER_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _c.produce(Type.DESTROYER);
+      }});
+    SUBMARINE_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _c.produce(Type.SUBMARINE);
+      }});
+    CRUISER_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _c.produce(Type.CRUISER);
+      }});
+    BATTLESHIP_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _c.produce(Type.BATTLESHIP);
+      }});
+    AIRCRAFT_CARRIER_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _c.produce(Type.CARRIER);
+      }});
+    UNITS_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+
+        CityDialog cd = new CityDialog(frame, _game, _c);
+        List<Unit> list = cd.show();
+
+        if (!list.isEmpty()) {
+          UserCommands specialCtx = _commander.specialContext(list);
+          
+          OrderMenuBuilder orderMenu = new OrderMenuBuilder(frame, _game, list, specialCtx);
+          
+          JPopupMenu om = orderMenu.build();
+
+          Location loc = _c.getLocation();
+          BoardHex hex = _game.getBoard().get(loc);
+          Point p = hex.center();
+
+          om.show(frame.getCanvas(), p.x, p.y);
+        }
+      }});
+  }
+
+  
+  public JPopupMenu build() {
+    JPopupMenu cityPopup = new JPopupMenu("City");
+
+    fillMenu(_game, cityPopup, _c);
+    return cityPopup;
+  }
+  
+  public JMenu getSubmenu() {
+    JMenu cityMenu = new JMenu("City");
+
+    fillMenu(_game, cityMenu, _c);
+    return cityMenu;
+  }
+
+  
+  private void fillMenu(Game g, Container menu, City c) {
+
+    ButtonGroup group = new ButtonGroup();
+
+    JMenuItem menuItem = INFANTRY_SEL;
+    group.add(menuItem);
+    menu.add(menuItem);
+
+    menuItem = ARMOR_SEL;
+    group.add(menuItem);
+    menu.add(menuItem);
+
+    menuItem = FIGHTER_SEL;
+    group.add(menuItem);
+    menu.add(menuItem);
+
+    menuItem = BOMBER_SEL;
+    group.add(menuItem);
+    menu.add(menuItem);
+
+    menuItem = CARGO_SEL;
+    group.add(menuItem);
+    menu.add(menuItem);
+
+    if (c.isCoastal()) {
+      menuItem = TRANSPORT_SEL;
+      group.add(menuItem);
+      menu.add(menuItem);
+
+      menuItem = DESTROYER_SEL;
+      group.add(menuItem);
+      menu.add(menuItem);
+
+      menuItem = SUBMARINE_SEL;
+      group.add(menuItem);
+      menu.add(menuItem);
+
+      menuItem = CRUISER_SEL;
+      group.add(menuItem);
+      menu.add(menuItem);
+
+      menuItem = BATTLESHIP_SEL;
+      group.add(menuItem);
+      menu.add(menuItem);
+
+      menuItem = AIRCRAFT_CARRIER_SEL;
+      group.add(menuItem);
+      menu.add(menuItem);
+    }
+
+    if (menu instanceof JPopupMenu) {
+      JPopupMenu pm = (JPopupMenu) menu;
+      pm.addSeparator();
+    }
+    if (menu instanceof JMenu) {
+      JMenu mm = (JMenu) menu;
+      mm.addSeparator();
+    }
+ 
+    menuItem = UNITS_SEL;
+    menu.add(menuItem);
+  }
+  
+  private void selectProduction(Type t) {
+    if (t == Type.INFANTRY) {
+      INFANTRY_SEL.setSelected(true);
+    }
+    if (t == Type.ARMOR) {
+      ARMOR_SEL.setSelected(true);
+    }
+    if (t == Type.FIGHTER) {
+      FIGHTER_SEL.setSelected(true);
+    }
+    if (t == Type.BOMBER) {
+      BOMBER_SEL.setSelected(true);
+    }
+    if (t == Type.CARGO) {
+      CARGO_SEL.setSelected(true);
+    }
+    if (t == Type.TRANSPORT) {
+      TRANSPORT_SEL.setSelected(true);
+    }
+    if (t == Type.DESTROYER) {
+      DESTROYER_SEL.setSelected(true);
+    }
+    if (t == Type.SUBMARINE) {
+      SUBMARINE_SEL.setSelected(true);
+    }
+    if (t == Type.CRUISER) {
+      CRUISER_SEL.setSelected(true);
+    }
+    if (t == Type.BATTLESHIP) {
+      BATTLESHIP_SEL.setSelected(true);
+    }
+    if (t == Type.CARRIER) {
+      AIRCRAFT_CARRIER_SEL.setSelected(true);
+    }
+  }
+}
