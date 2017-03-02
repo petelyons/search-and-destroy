@@ -2,21 +2,17 @@ package com.developingstorm.games.sad.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FileDialog;
 import java.awt.Image;
 import java.awt.Point;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
-import javax.swing.JToggleButton;
 import javax.swing.JViewport;
 import javax.swing.UIManager;
 
@@ -34,13 +30,15 @@ import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Robot;
 import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.ui.controls.UIController;
+import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.NoKeyScrollPane;
 
 /**
  * Class information
  */
 public class SaDFrame extends JFrame {
-
+ 
   private static final Color MYRED = new Color(250, 100, 100);
 
   private static final Color MYBLUE = new Color(150, 150, 250);
@@ -48,6 +46,20 @@ public class SaDFrame extends JFrame {
   private static final Color MYGREEN = new Color(250, 0, 200);
 
   private static final Color MYPURPLE = new Color(240, 220, 240);
+  
+  private static class GameRunner extends Thread {
+    
+    private Game _g;
+    
+    GameRunner(Game game) {
+      _g = game;
+      setDaemon(true);
+    }
+
+    public void run() {
+      _g.play();
+    }
+  }
 
   class MapContext implements SaDBoardContext {
 
@@ -173,13 +185,9 @@ public class SaDFrame extends JFrame {
 
   private MapContext _ctx;
 
-  private GameToolbar _tbar;
+ // private GameToolbar _tbar;
 
   private UnitStatusBar _ubar;
-
-  private UIListeners _playControls;
-
-  private UIListeners _pauseControls;
 
   private boolean _paused;
 
@@ -189,9 +197,11 @@ public class SaDFrame extends JFrame {
 
   private Location _playLocation;
 
-  private UserCommands _commander;
+  private GameRunner _runner;
+
+  private UIController _controller;
   
-  
+
   public static boolean DEBUG_ASTAR = false;
   public static boolean DEBUG_EXPLORE = false;
   public static boolean DEBUG_GOD_LENS = false;
@@ -306,7 +316,7 @@ public class SaDFrame extends JFrame {
 
       @Override
       public void notifyWait() {
-
+        
         if (_unitChanged != null) {
           centerIfOff(_unitChanged.getLocation());
           _canvas.setCursor(_unitChanged.getLocation());
@@ -320,13 +330,14 @@ public class SaDFrame extends JFrame {
         else {
           throw new SaDException("No UNIT");
         }
+        
 
       }
 
 
     });
 
-    _tbar = new GameToolbar(null, new ItemListener() {
+/*    _tbar = new GameToolbar(null, new ItemListener() {
 
       @Override
       public void itemStateChanged(ItemEvent event) {
@@ -355,22 +366,16 @@ public class SaDFrame extends JFrame {
           }
 
         }}});
+*/
     _ubar = new UnitStatusBar();
     _board = _game.getBoard();
     _ubar.setGame(_game);
 
     _canvas = new BoardCanvas(_game, icons, _ctx);
 
-    _commander = new UserCommands(this, _canvas, _game);
-
-    _playControls = new UIListeners(_canvas, new PlayMouseControls(_commander),
-        new PlayKeyboardControls(_commander));
-    _pauseControls = new UIListeners(_canvas,
-        new PauseMouseControls(_commander), new PauseKeyboardControls(
-            _commander));
+ 
     _paused = false;
-    _playControls.enable();
-
+ 
     _scroll = new NoKeyScrollPane();
 
     JViewport vp = _scroll.getViewport();
@@ -381,7 +386,7 @@ public class SaDFrame extends JFrame {
     pane.setLayout(new BorderLayout(0, 0));
     pane.add(BorderLayout.CENTER, _scroll);
     pane.add(BorderLayout.SOUTH, _ubar);
-    pane.add(BorderLayout.NORTH, _tbar);
+   // pane.add(BorderLayout.NORTH, _tbar);
 
     setSize(600, 500);
 
@@ -396,11 +401,17 @@ public class SaDFrame extends JFrame {
 
   public void initGame() {
     _canvas.startAmination();
-    play();
+    _canvas.requestFocus();
+    _runner = new GameRunner(_game);
+    _runner.start();
+    
+    _controller = new UIController(this, _game);
+    _controller.switchMode(UIMode.GAME);
+
   }
 
   public void initMenuBar() {
-    MenuBarBuilder menus = new MenuBarBuilder(new MenuBarHandler() {
+    MenuBarBuilder menus = new MenuBarBuilder(this, new MenuBarHandler() {
       @Override
       public void onExit() {
         System.exit(0);
@@ -460,6 +471,7 @@ public class SaDFrame extends JFrame {
       }
 
       public void onSave() {
+        Log.info("Saving game...");
         if (_fileName == null) {
           onSaveAs();
           return;
@@ -495,14 +507,20 @@ public class SaDFrame extends JFrame {
         }
       }
 
+      @Override
+      public void onGameMode() {
+        _controller.switchMode(UIMode.GAME);
+      }
+
+      @Override
+      public void onPathsMode() {
+        _controller.switchMode(UIMode.PATHS);
+      }
+      
     });
     
     setJMenuBar(menus.build());
-
   }
-
- 
-
 
   public void select(Location loc) {
     // showLocation(loc);
@@ -510,22 +528,6 @@ public class SaDFrame extends JFrame {
     _canvas.setCursor(loc);
   }
 
-  private class GameRunner extends Thread {
-    GameRunner() {
-      setDaemon(true);
-    }
-
-    public void run() {
-      
-      _game.play();
-    }
-  }
-
-  public void play() {
-    _canvas.requestFocus();
-    GameRunner runner = new GameRunner();
-    runner.start();
-  }
 
   public boolean isOnScreen(int x, int y) {
     JViewport viewport = _scroll.getViewport();
@@ -538,7 +540,6 @@ public class SaDFrame extends JFrame {
   public boolean isOnScreen(Point p) {
     return (isOnScreen(p.x, p.y));
   }
-
 
   public boolean isOnScreen(Location loc) {
     BoardHex hex = _board.get(loc);
@@ -648,6 +649,16 @@ public class SaDFrame extends JFrame {
 
   public BoardCanvas getCanvas() {
     return _canvas;
+  }
+
+  public boolean isGameMode() {
+   
+    return _canvas.getUIMode() == UIMode.GAME;
+  }
+
+  public boolean isPathsMode() {
+   
+    return _canvas.getUIMode() == UIMode.PATHS;
   }
   
 

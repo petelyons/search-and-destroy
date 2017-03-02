@@ -5,6 +5,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
 import com.developingstorm.games.hexboard.BoardHex;
+import com.developingstorm.games.sad.ui.controls.GameCommander;
 
 /**
  *
@@ -13,9 +14,9 @@ import com.developingstorm.games.hexboard.BoardHex;
 public class UserAction implements UserActionListener {
 
   protected UserActionOwner _owner;
-  protected UserCommands _commander;
+  protected GameCommander _commander;
 
-  public UserAction(UserCommands commander, UserActionOwner owner) {
+  public UserAction(GameCommander commander, UserActionOwner owner) {
     _owner = owner;
     _commander = commander;
   }

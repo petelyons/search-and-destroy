@@ -32,7 +32,6 @@ public class Move extends Order {
     }
 
     if (_unit.getLocation().distance(_loc) > 1) {
-      Path path;
       if (_lastPath == null) {
         _lastPath = _unit.getPath(_loc);
         if (_lastPath == null || _lastPath.isEmpty()) {
@@ -52,13 +51,21 @@ public class Move extends Order {
       while (_unit.movesLeft() > 0){
         dest = _lastPath.next(_unit.getLocation());
         if (dest == null) {
-          return new OrderResponse(ResponseCode.CANCEL_ORDER, this, null);
+          int finalMove = _unit.getLocation().distance(_loc);
+          if (finalMove == 1) {
+            dest = _loc;
+          } else {
+            Log.error(_unit, "Cannot find next move");
+            return new OrderResponse(ResponseCode.CANCEL_ORDER, this, null);
+          }
         }
         Log.info(this, " Attempting move from " + _unit.getLocation() + " to " + dest + " along path " + _lastPath + " to " + _loc);
         resp = _game.resolveMove(_unit, dest);
         if (resp == ResponseCode.STEP_COMPLETE) {
           continue;
         } else if (resp == ResponseCode.TURN_COMPLETE) {
+          return new OrderResponse(resp, this, null);
+        } else if (resp == ResponseCode.YIELD_PASS) {
           return new OrderResponse(resp, this, null);
         } else {
           Log.debug("Converting response to CANCEL_ORDER:" + resp);
@@ -80,7 +87,9 @@ public class Move extends Order {
 
       Log.info(_unit, "Attempting move from " + _unit.getLocation() + " to " + dest);
       resp = _game.resolveMove(_unit, dest);
-      if (resp != ResponseCode.STEP_COMPLETE) {
+      if (resp == ResponseCode.TURN_COMPLETE) {
+        Log.info(_unit, "Unit reports turn complete");
+      } else if (resp != ResponseCode.STEP_COMPLETE) {
         Log.info(_unit, "Bad move:" + resp);
       }
       if (_unit.movesLeft() > 0) {

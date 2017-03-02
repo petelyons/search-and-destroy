@@ -1,29 +1,31 @@
-package com.developingstorm.games.sad.ui;
+package com.developingstorm.games.sad.ui.controls;
 
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 
 import com.developingstorm.games.hexboard.BoardHex;
 import com.developingstorm.games.hexboard.Location;
-import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.ui.SaDFrame;
 
 /**
 
  * 
  */
-public class PlayMouseControls extends BaseMouseControls {
+public class GameModeMouseControls extends BaseMouseControls {
 
-  private boolean _controlSet = false;
-  private UserAction _currentAction;
   private BoardHex _mouseDown;
-  private Unit _actionUnit;
-
-  public PlayMouseControls(UserCommands commander) {
+  private SaDFrame _frame;
+  private GameCommander _commander;
+  
+  public GameModeMouseControls(SaDFrame frame, GameCommander commander) {
     super(commander);
-    _currentAction = null;
+    _frame = frame;
     _mouseDown = null;
-    _actionUnit = null;
+    _commander = commander;
   }
 
+  @Override
   public void extMouseDragged(MouseEvent e, BoardHex hex) {
     if (_commander.isWaiting() == false) {
       return;
@@ -35,12 +37,12 @@ public class PlayMouseControls extends BaseMouseControls {
     }
   }
 
+  @Override
   public void extMousePressed(MouseEvent e, BoardHex hex) {
     if (_commander.isWaiting() == false) {
       return;
     }
     int button = e.getButton();
-    Location loc = hex.getLocation();
     if (button == MouseEvent.BUTTON1) {
       if (_commander.isDraggable(hex)) {
         _mouseDown = hex;
@@ -48,6 +50,7 @@ public class PlayMouseControls extends BaseMouseControls {
     }
   }
 
+  @Override
   public void extMouseReleased(MouseEvent e, BoardHex hex) {
     if (_commander.isWaiting() == false) {
       return;
@@ -72,4 +75,27 @@ public class PlayMouseControls extends BaseMouseControls {
     _mouseDown = null;
   }
 
+  @Override
+  public void extMouseClicked(MouseEvent e, BoardHex hex) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void extMouseEntered(MouseEvent e, BoardHex hex) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void extMouseMoved(MouseEvent e, BoardHex hex) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void extMouseExited(MouseEvent e, BoardHex hex) {
+    // TODO Auto-generated method stub
+    
+  }
 }

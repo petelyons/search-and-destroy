@@ -165,7 +165,6 @@ public class MapState implements AStarState {
     List<BoardHex> list = _b.getRing(_loc, 1);
 
     ArrayList<AStarState> v = new ArrayList<AStarState>();
-    int x;
 
     for (BoardHex bh : list) {
       Location loc = bh.getLocation();

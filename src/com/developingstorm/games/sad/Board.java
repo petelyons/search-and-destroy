@@ -17,10 +17,7 @@ public class Board extends HexBoard {
   private int[][] _mapData;
   private int[][] _contData;
   private HashMap<Location, City> _ctoks;
-  private byte[][] _utoks;
-  private Player[] _players;
   private Game _game;
-  private long _round = 0;
   private ArrayList<Continent> _continents;
   private ArrayList<City> _cities;
 
@@ -116,14 +113,15 @@ public class Board extends HexBoard {
     }
   }
 
-  static int wrap(int x, int max) {
-    if (x < 0) {
-      x += max;
+  static int wrap(int val, int max) {
+    int val2 = val;
+    if (val2 < 0) {
+      val2 += max;
     }
-    if (x >= max) {
-      x -= max;
+    if (val2 >= max) {
+      val2 -= max;
     }
-    return x;
+    return val2;
   }
 
   public boolean isSame(int x, int y, Board other) {

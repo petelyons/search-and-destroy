@@ -1,23 +1,31 @@
-package com.developingstorm.games.sad.ui;
+package com.developingstorm.games.sad.ui.controls;
 
 import java.awt.event.KeyEvent;
 
+import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.OrderType;
-import com.developingstorm.util.Tracer;
+import com.developingstorm.games.sad.ui.KeyboardControls;
+import com.developingstorm.games.sad.ui.MoveAction;
+import com.developingstorm.games.sad.ui.SaDFrame;
+import com.developingstorm.games.sad.ui.UserAction;
 
 /**
 
  * 
  */
-public class PlayKeyboardControls implements KeyboardControls {
+public class GameModeKeyboardControls implements KeyboardControls {
 
   private boolean _controlSet = false;
   private UserAction _currentAction;
-  private UserCommands _commander;
+  private GameCommander _commander;
+  private int _boardMiddle;
+  private SaDFrame _frame;
 
-  public PlayKeyboardControls(UserCommands commander) {
+  public GameModeKeyboardControls(SaDFrame frame, GameCommander commander) {
+    _frame = frame;
     _currentAction = null;
     _commander = commander;
+    _boardMiddle = (_commander.boardWidth() / 2);
   }
 
   /**
@@ -39,7 +47,24 @@ public class PlayKeyboardControls implements KeyboardControls {
       _controlSet = true;
     }
 
+    Location loc = _commander.getCurrentLocation();
+
+    
     switch (ke.getKeyCode()) {
+    case KeyEvent.VK_UP:
+      if (loc.x >= _boardMiddle) {
+        _commander.moveNorthWest();
+      } else {
+        _commander.moveNorthEast();
+      }
+      break;
+    case KeyEvent.VK_DOWN:
+      if (loc.x >= _boardMiddle) {
+        _commander.moveSouthWest();
+      } else { 
+        _commander.moveSouthWest();
+      }
+      break;
     case KeyEvent.VK_LEFT:
       if (_controlSet) {
       } else {

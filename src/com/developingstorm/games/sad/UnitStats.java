@@ -67,7 +67,10 @@ public class UnitStats {
     }
 
     infantry = 0;
+    armor = 0;
     fighters = 0;
+    bombers = 0;
+    cargos = 0;
     destroyers = 0;
     submarines = 0;
     cruisers = 0;
@@ -75,11 +78,9 @@ public class UnitStats {
     battleships = 0;
     transports = 0;
 
-    double total = 0.0;
 
     for (Unit u : units) {
       Type t = u.getType();
-      total++;
       if (t == Type.INFANTRY)
         infantry++;
       else if (t == Type.ARMOR)
@@ -104,28 +105,29 @@ public class UnitStats {
         transports++;
     }
 
+    double total = totalUnits;
     double d = infantry;
-    percent_infantry = d / total;
+    percent_infantry = (d / total) * 100;
     d = armor;
-    percent_armor = d / total;
+    percent_armor =(d / total) * 100;
     d = fighters;
-    percent_fighters = d / total;
+    percent_fighters = (d / total) * 100;
     d = bombers;
-    percent_bombers = d / total;
+    percent_bombers = (d / total) * 100;
     d = cargos;
-    percent_cargos = d / total;
+    percent_cargos = (d / total) * 100;
     d = destroyers;
-    percent_destroyers = d / total;
+    percent_destroyers = (d / total) * 100;
     d = submarines;
-    percent_submarines = d / total;
+    percent_submarines = (d / total) * 100;
     d = cruisers;
-    percent_cruisers = d / total;
+    percent_cruisers =(d / total) * 100;
     d = carriers;
-    percent_carriers = d / total;
+    percent_carriers = (d / total) * 100;
     d = battleships;
-    percent_battleships = d / total;
+    percent_battleships = (d / total) * 100;
     d = transports;
-    percent_transports = d / total;
+    percent_transports = (d / total) * 100;
 
     prod_infantry = 0;
     prod_armor = 0;

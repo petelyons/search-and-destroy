@@ -10,6 +10,7 @@ import javax.swing.JPopupMenu;
 import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.ui.controls.GameCommander;
 
 /**
 
@@ -24,12 +25,12 @@ public class OrderMenuBuilder {
   private final JMenuItem UNLOAD_SEL = new JMenuItem("Unload");
   private final JMenuItem HEAD_HOME_SEL = new JMenuItem("Head Home");
 
-  List _units;
-  Game _game;
-  UserCommands _commander;
-  SaDFrame _frame;
+  private List<Unit> _units;
+  private Game _game;
+  private GameCommander _commander;
+  private SaDFrame _frame;
 
-  OrderMenuBuilder(SaDFrame frame, Game g, List units, UserCommands commander) {
+  public OrderMenuBuilder(SaDFrame frame, Game g, List<Unit> units, GameCommander commander) {
     
     _frame = frame;
     _units = units;

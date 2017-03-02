@@ -15,4 +15,7 @@ public interface MenuBarHandler {
   void onDebugGodLens(boolean v);
   
   void onDebugDump();
+  
+  void onGameMode();
+  void onPathsMode();
 }

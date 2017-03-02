@@ -35,7 +35,7 @@ public class HexCanvas extends JComponent implements HexBoardView {
   private ArrowSprite _arrow;
   private Image _background;
   private boolean _cacheLevel0;
-  protected HexBoardLens _lens;
+  protected LocationLens _lens;
 
   public HexCanvas(HexBoardContext ctx, HexBoard board) {
 
@@ -64,7 +64,7 @@ public class HexCanvas extends JComponent implements HexBoardView {
     _lens = null;
   }
 
-  public void setLens(HexBoardLens lens) {
+  public void setLens(LocationLens lens) {
     _lens = lens;
   }
 

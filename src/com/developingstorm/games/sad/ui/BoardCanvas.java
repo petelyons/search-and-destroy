@@ -1,7 +1,6 @@
 package com.developingstorm.games.sad.ui;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -27,55 +26,46 @@ import com.developingstorm.games.sad.Board;
 import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Player;
+import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.ui.sprites.ExplosionSprite;
-import com.developingstorm.games.sad.util.Log;
 
+
+
+/**
+ * A BoardCanvas draws a games state atop a HexCanvas.  It derives from the HexCanvas class.
+ * 
+ */
 public class BoardCanvas extends HexCanvas implements AStarWatcher {
-
+  
+  
   static final boolean USE_BACKING_BUFFER = false;
 
-  Board _board;
-  int _width;
-  int _height;
-  Game _game;
-  Image _unknown;
-
-  Image[] _mapImages;
-  Image _buf;
-  Graphics2D _outGraphics;
-  Board _lastDrawn = null;
-
-  int _cursorVal = 0;
-  float _space = 3.0f;
-
-  GameIcons _icons;
-  Graphics _graphics;
-
-  int _rowStart;
-  int _rowEnd;
-
-  boolean _initialized;
+  private Board _board;
+  private int _width;
+  private int _height;
+  private Game _game;
+  private Image[] _mapImages;  
+  private GameIcons _icons;
+  private UIMode _uiMode = UIMode.GAME;
+  private volatile Location _gameCursor;
 
 
-  Dimension _size;
-  List<?> _marked;
-  SaDBoardContext _ctx;
+  private SaDBoardContext _ctx;
 
-  List<Sprite> _seaPaths;
-  List<Sprite> _airPaths;
-  List<Sprite> _groundPaths;
+  private List<Sprite> _seaPaths;
+  private List<Sprite> _airPaths;
+  private List<Sprite> _groundPaths;
 
-  List<?> _astarStates;
+  private List<?> _astarStates;
 
   public BoardCanvas(Game game, GameIcons icons, SaDBoardContext ctx) {
 
     super(ctx, game.getBoard());
     _ctx = ctx;
 
-    _initialized = false;
     _icons = icons;
     _game = game;
     _board = game.getBoard();
@@ -93,9 +83,33 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
   }
 
   public void setCursor(Location loc) {
-    BoardHex hex = _board.get(loc);
-    _board.setFocus(hex);
+    switch (_uiMode) {
+    case GAME: {
+      _gameCursor = loc;
+      showGameCursor();
+      break;
+    }
+    case PATHS:
+      break;
+    }
+    
   }
+  
+  void showGameCursor() {
+    if (_uiMode != UIMode.GAME) {
+      throw new SaDException("Not in GAME mode");
+    }
+    if (_gameCursor == null) {
+      return;
+    }
+    BoardHex hex = _board.get(_gameCursor);
+   _board.setFocus(hex);
+  }
+  
+  void clearCursor() {
+   _board.setFocus(null);
+  }
+
 
   public void setSelection(Location start, Location end) {
     /*
@@ -137,51 +151,6 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
     return -1;
   }
 
-  /**
-    *
-    */
-
-  public Dimension getPreferredScrollableViewportSize() {
-
-    return null;
-  }
-
-  /**
-    *
-    */
-
-  public int getScrollableBlockIncrement(Rectangle arg0, int arg1, int arg2) {
-    return 24;
-  }
-
-  /**
-    *
-    */
-
-  public boolean getScrollableTracksViewportHeight() {
-
-    return false;
-  }
-
-  /**
-    *
-    */
-
-  public boolean getScrollableTracksViewportWidth() {
-
-    return false;
-  }
-
-  /**
-    *
-    */
-
-  public int getScrollableUnitIncrement(Rectangle arg0, int arg1, int arg2) {
-    return 24;
-  }
-
-  private void initPaintSys(Graphics g) {
-  }
 
   private void drawCity(City city, boolean fortified, Graphics2D g,
       BoardHex bh, Location loc, Point center) {
@@ -222,7 +191,7 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
 
   }
 
-  private void drawRect(Graphics g, boolean highlight, Point p, Color c,
+  private static void drawRect(Graphics g, boolean highlight, Point p, Color c,
       int size) {
     g.setColor(c);
 
@@ -332,47 +301,69 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
   protected void drawBoard(int z, Graphics2D g) {
 
     super.drawBoard(z, g);
-    if (z == 1) {
-      for (int y = 0; y < _height; y++) {
-        for (int x = 0; x < _width; x++) {
-          BoardHex hex = _board.get(x, y);
-          Location loc = hex.getLocation();
-          Hex h = hex.getHex();
-          Point center = h.getCenter();
-
-          if (_lens != null && _lens.isExplored(loc)) {
-
-            City city = _board.getCity(loc);
-            if (city != null) {
-              drawCity(city, false, g, hex, loc, center);
-            }
-
-            Unit u = _game.unitAtLocation(loc);
-            if (u != null) {
-              if (city != null) {
-                List<Unit> list = _game.unitsAtLocation(loc);
-                if (!list.isEmpty()) {
-                  Unit nonSentry = null;
-                  for (Unit u2 : list) {
-                    if (!u2.inSentryMode()) {
-                      nonSentry = u2;
-                    }
-                  }
-
-                  if (nonSentry == null) {
-                    drawCity(city, true, g, hex, loc, center);
-                  } else {
-                    drawUnit(nonSentry, g, hex, loc, center);
-                  }
-                }
-              } else {
-                drawUnit(u, g, hex, loc, center);
-              }
-            }
-          }
+    switch(_uiMode) {
+    case GAME:
+      drawGameBoard(z, g);
+      break;
+    case PATHS:
+      drawPathsBoard(z, g);
+      break;
+    }  
+  }
+  
+  
+  private void drawCities(Graphics2D g) {
+    for (City c : _board.getCities()) {
+      Location loc = c.getLocation();
+      BoardHex hex = _board.get(loc.x, loc.y);
+      Hex h = hex.getHex();
+      Point center = h.getCenter();
+      if (_lens != null && _lens.isExplored(loc)) {
+        List<Unit> list =_game.unitsAtLocation(loc);
+        if (list == null || list.isEmpty()) {
+          drawCity(c, false, g, hex, loc, center);
+        }
+        else {
+          drawCity(c, true, g, hex, loc, center);
         }
       }
-      
+    }
+  }
+  
+  private void drawUnits(Graphics2D g) {
+    for (Unit u : _game.units()) {
+      Location loc = u.getLocation();
+      BoardHex hex = _board.get(loc.x, loc.y);
+      Hex h = hex.getHex();
+      Point center = h.getCenter();
+      if (_lens != null && _lens.isExplored(loc)) {
+        
+        if (!u.isCarried() && !_board.isCity(loc)) {
+          drawUnit(u, g, hex, loc, center);
+        }
+      }
+    }
+  }
+  
+  protected void drawPathsBoard(int z, Graphics2D g) {
+    super.drawBoard(z, g);
+    
+    
+    drawCities(g);
+
+  }
+
+  
+  protected void drawGameBoard(int z, Graphics2D g) {
+
+    super.drawBoard(z, g);
+    
+   
+   
+    if (z == 1) {
+      drawCities(g);
+      drawUnits(g);
+              
       // draw selected unit on-top
       if (_game != null) {
         Player p = _game.currentPlayer();
@@ -424,4 +415,22 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
     } catch (Exception e) {
     }
   }
+  
+  
+  public void setUIMode(UIMode mode) {
+    _uiMode = mode;
+    switch (mode) {
+    case GAME:
+      showGameCursor();
+      break;
+    case PATHS:
+      clearCursor();
+      break;
+    }
+  }
+  
+  public UIMode getUIMode() {
+    return _uiMode;
+  }
+  
 }

@@ -1,8 +1,8 @@
 package com.developingstorm.games.hexboard;
 
 /**
- * Class information
+ * 
  */
-public interface HexBoardLens {
+public interface LocationLens {
   boolean isExplored(Location loc);
 }

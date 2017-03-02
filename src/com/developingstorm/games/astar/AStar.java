@@ -46,7 +46,7 @@ public class AStar {
   // _watchers = null;
   // }
 
-  private ArrayList<AStarState> buildStateList(AStarNode n) {
+  private static ArrayList<AStarState> buildStateList(AStarNode n) {
     AStarNode node = n;
     ArrayList<AStarState> list = new ArrayList<AStarState>();
     while (node != null) {

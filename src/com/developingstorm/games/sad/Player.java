@@ -11,13 +11,14 @@ import java.util.function.Consumer;
 
 import com.developingstorm.games.hexboard.BoardHex;
 import com.developingstorm.games.hexboard.Location;
+import com.developingstorm.games.hexboard.LocationLens;
 import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.Graph;
 import com.developingstorm.util.GraphNode;
 
 
 
-public class Player implements BoardLens {
+public class Player implements UnitLens, LocationLens {
 
   protected int _id;
   protected Board _board;
@@ -179,9 +180,7 @@ public class Player implements BoardLens {
 
     ArrayList<Unit> list = new ArrayList<Unit>();
     ArrayList<Location> reachable = getReachable(u);
-    Iterator<Location> itr = reachable.iterator();
-    while (itr.hasNext()) {
-      Location loc = (Location) itr.next();
+    for (Location loc : reachable) {
       if (isExplored(loc)) {
         Unit u2 = visibleUnit(loc);
         if (u2 != null && u2.getOwner() != this)
@@ -209,9 +208,7 @@ public class Player implements BoardLens {
 
     ArrayList<City> list = new ArrayList<City>();
     ArrayList<Location> reachable = getReachable(u);
-    Iterator<Location> itr = reachable.iterator();
-    while (itr.hasNext()) {
-      Location loc = (Location) itr.next();
+    for (Location loc : reachable) {
       if (isExplored(loc)) {
         City c = _board.getCity(loc);
         list.add(c);
@@ -224,9 +221,7 @@ public class Player implements BoardLens {
 
     ArrayList<City> list = new ArrayList<City>();
     ArrayList<Location> reachable = getReachable(origin, t, dist);
-    Iterator<Location> itr = reachable.iterator();
-    while (itr.hasNext()) {
-      Location loc = (Location) itr.next();
+    for (Location loc : reachable) {
       if (isExplored(loc)) {
         City c = _board.getCity(loc);
         list.add(c);
@@ -308,9 +303,7 @@ public class Player implements BoardLens {
   private HashSet<City> getCitiesBuildingArmies() {
 
     HashSet<City> set = new HashSet<City>();
-    Iterator<City> itr = _cities.iterator();
-    while (itr.hasNext()) {
-      City c = (City) itr.next();
+    for (City c : _cities) {
       if (c.getProduction() == Type.INFANTRY) {
         set.add(c);
       }
@@ -365,16 +358,16 @@ public class Player implements BoardLens {
     // ArrayList _board.getCoast(
   }
 
-  private void calcTargetContinents() {
+ // private void calcTargetContinents() {
 
-    int[] ucont = getContinentsContainingCities(_unownedCities.iterator());
-    int[] ocont = getContinentsContainingCities(_cities.iterator());
+   // int[] ucont = getContinentsContainingCities(_unownedCities.iterator());
+   // int[] ocont = getContinentsContainingCities(_cities.iterator());
 
     // for (int x = 0; x < continents.length; x++) {
     // chooseLoadingPosition(continents[x]);
     // }
     // ArrayList _board.getCoast(
-  }
+//  }
 
   protected void startTurnPass(long turn, TurnState state) {
     Log.debug(this, "Starting new turn pass");
@@ -656,13 +649,13 @@ public class Player implements BoardLens {
   }
 
   private void markVisible(Location loc, Vision v) {
-
+    Vision newVis = v;
     Vision ov = _visible[loc.x][loc.y];
     if ((ov == Vision.SURFACE && v == Vision.WATER)
         || (ov == Vision.WATER && v == Vision.SURFACE) || ov == Vision.COMPLETE) {
-      v = Vision.COMPLETE;
+      newVis = Vision.COMPLETE;
     }
-    _visible[loc.x][loc.y] = v;
+    _visible[loc.x][loc.y] = newVis;
   }
 
   private void markExplored(Location loc) {
@@ -788,6 +781,7 @@ public class Player implements BoardLens {
   
 
 
+  @SuppressWarnings("static-method")
   public boolean isRobot() {
     return false;
   }
@@ -834,12 +828,7 @@ public class Player implements BoardLens {
     return list;
   }
   
-  
-  
-  
- 
-  
-  private List<City> findReachable(City start, List<City> options, int dist) {
+  private static List<City> findReachable(City start, List<City> options, int dist) {
     List<City> near = new ArrayList<City>();
     for (City c : options) {
       if (c.isNear(start, dist)) {
@@ -852,10 +841,6 @@ public class Player implements BoardLens {
   public class HopState {
     
   }
-  
-  
-  
- 
   
   public int findRoute(Graph<City, HopState> graph, Queue<GraphNode<City, HopState>> queue, GraphNode<City, HopState> dest) {
     

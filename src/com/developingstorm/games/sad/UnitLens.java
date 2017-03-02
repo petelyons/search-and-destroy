@@ -1,12 +1,11 @@
 package com.developingstorm.games.sad;
 
-import com.developingstorm.games.hexboard.HexBoardLens;
 import com.developingstorm.games.hexboard.Location;
 
 /**
- * Class information
+ * Is their a visible unit at the location
  */
-public interface BoardLens extends HexBoardLens {
+public interface UnitLens  {
 
   public Unit visibleUnit(Location loc);
 

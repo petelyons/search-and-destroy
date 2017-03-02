@@ -26,7 +26,6 @@ public class Unit {
   private volatile Order _order;
   private volatile int _moved;
   private volatile int _totalMoved;
-  private volatile Path _path;
   private volatile String _name;
   private volatile long _id;
   private volatile TurnFlow _turnFlow;
@@ -386,11 +385,7 @@ public class Unit {
   }
 
   public ArrayList<Location> getAreaOfInfluence() {
-    int travDist = _type.getDist();
-    int visDist = _type.getVisionDistance();
 
-    int infDist = travDist + visDist;
-    List<Location> ring = _loc.getRing(infDist);
     ArrayList<Location> list = new ArrayList<Location>();
     for (Location loc : list) {
       if (canTravel(loc)) {
@@ -420,7 +415,7 @@ public class Unit {
     // CALLED FOR EVERY PASS OF THE TURN.  IF YOU WANT TO ONLY DO SOMETHING AT THE START OF THE TURN
     ///  YOU HAVE TO CHECK THE STATE!
     
-    if (state == state.START) {
+    if (state == TurnState.START) {
       _moved = 0;
       if (_order != null && _order.getType() == OrderType.SKIPTURN) {
         clearOrders();

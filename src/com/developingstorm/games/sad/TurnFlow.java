@@ -2,7 +2,6 @@ package com.developingstorm.games.sad;
 
 public class TurnFlow {
   private OrderState _orderState;
-  private int _yields;
   private Unit _unit;
   private TurnState _turnState;
   
@@ -19,7 +18,6 @@ public class TurnFlow {
     _unit = u;
     if (state == TurnState.START) {
       updateOrderState();
-      _yields = 0;
     }
     else if (state == TurnState.LOOP ) {
       if (_orderState == OrderState.DONE) {
@@ -58,7 +56,6 @@ public class TurnFlow {
       throw new SaDException("A unit may not yield during END state");
     }
     _orderState = OrderState.YIELDING;
-    _yields++;
   }
 
   public boolean isDone() {

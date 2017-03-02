@@ -115,9 +115,13 @@ public class Robot extends Player {
         } else {
           Location knownClosestEnemyLocation = closestEnemy.getLocation();
           Location enemyLocation = enemy.getLocation();
-          if (unitLocation.distance(enemyLocation) < unitLocation
-              .distance(knownClosestEnemyLocation))
-            closestEnemy = enemy;
+          Path pathToEnemy = u.getPath(enemyLocation);
+          if (pathToEnemy != null && !pathToEnemy.isEmpty()) {
+            if (unitLocation.distance(enemyLocation) < unitLocation
+              .distance(knownClosestEnemyLocation)) {
+              closestEnemy = enemy;
+            }
+          }
         }
       }
       Log.debug(u, "Moving to attack:" + closestEnemy);
@@ -129,8 +133,7 @@ public class Robot extends Player {
     return Order.factory(_game, u, OrderType.EXPLORE);
   }
 
-  private boolean isUnitNextToTargetLand(Unit u) {
-    // TODO Auto-generated method stub
+  private static boolean isUnitNextToTargetLand(Unit u) {
     return false;
   }
 

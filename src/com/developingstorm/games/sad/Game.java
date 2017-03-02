@@ -16,6 +16,7 @@ import com.developingstorm.games.astar.AStarState;
 import com.developingstorm.games.hexboard.HexBoardContext;
 import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.Location;
+import com.developingstorm.games.hexboard.LocationLens;
 import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.RandomUtil;
 import com.developingstorm.util.Tracer;
@@ -23,15 +24,13 @@ import com.developingstorm.util.Tracer;
 /**
  * Class information
  */
-public class Game implements BoardLens {
+public class Game implements UnitLens, LocationLens {
 
   private volatile HexBoardMap _gridMap;
 
   private volatile Player[] _players;
 
   private volatile Player _currentPlayer;
-
-  private volatile int _numPlayers;
 
   private volatile Board _board;
 
@@ -41,11 +40,7 @@ public class Game implements BoardLens {
 
   private volatile int _turn;
 
-  private volatile Order _currentOrder;
-
   private volatile boolean _waiting;
-
-  private volatile boolean _pause;
 
   private volatile List<Unit>[][] _locations;
 
@@ -60,13 +55,10 @@ public class Game implements BoardLens {
     _ctx = ctx;
     _gameListener = null;
     _players = players;
-    _numPlayers = players.length;
     _allUnits = new ArrayList<Unit>();
     
     _turn = 0;
     _selectedUnit = null;
-    
-    
     _gridMap = grid;
     
     
@@ -74,7 +66,7 @@ public class Game implements BoardLens {
     
     Location.test();
 
-    _pause = _waiting = false;
+    _waiting = false;
 
     
     _board = new Board(this, _gridMap, _ctx);
@@ -100,7 +92,7 @@ public class Game implements BoardLens {
 
   }
 
-  private void initGameTrace() {
+  private static void initGameTrace() {
     Date today = new Date();
     //formatting date in Java using SimpleDateFormat
     SimpleDateFormat dateFormater = new SimpleDateFormat("yyyy-MM-dd-kk-mm-ss");
@@ -197,19 +189,25 @@ public class Game implements BoardLens {
     _board.init();
     assignCities();
   }
+  
+
+  private City findUnownedCoastalCity() {
+    for (City c : _board.getCities()) {
+      if (_board.isCoast(c.getLocation()) && c.getOwner() == null) {
+        return c;
+      }
+    }
+    return null;
+  }
+  
 
   private void assignCities() {
-    int assigned = 0;
-
-    for (City c : _board.getCities()) {
-      if (assigned == _numPlayers)
-        break;
-
-      Location loc = c.getLocation();
-      if (_board.isCoast(loc)) {
-        c.setOwner(_players[assigned]);
-        assigned++;
+    for (Player p : _players) {
+      City c = findUnownedCoastalCity();
+      if (c == null) {
+        throw new SaDException("Not enough coastal cities!");
       }
+      c.setOwner(p);
     }
   }
 
@@ -234,6 +232,10 @@ public class Game implements BoardLens {
     list.remove(u);
 
   }
+  
+  public List<Unit> units() {
+    return _allUnits;
+  }
 
   public void killUnit(Unit u) {
     killUnit(u, true);
@@ -249,7 +251,7 @@ public class Game implements BoardLens {
   private boolean resolveUnitAttack(Unit atk, Unit def) {
 
     Type at = atk.getType();
-    Type dt = def.getType();
+   // Type dt = def.getType();
 
     // trade blows until someone dies
     while (true) {
@@ -332,12 +334,16 @@ public class Game implements BoardLens {
     for (Unit u : list) {
       if (!u.isCarried()) {
         //Log.debug(u, "Selected non carried");
-
         return u;
       }
     }
-    throw new SaDException("Unit must not be carried!");
 
+    Log.error("ALL THE UNITS AT THE LOCATION CLAIM TO BE CARRIED!");
+    for (Unit u : list) {
+      Log.error(u, " claims to be carried");
+    }
+
+    throw new SaDException("Unit must not be carried!");
   }
 
   public City cityAtLocation(Location loc) {
@@ -379,7 +385,7 @@ public class Game implements BoardLens {
     l.add(u);
   }
 
-  private ResponseCode resolveLoad(Unit u, Unit t) {
+  private static ResponseCode resolveLoad(Unit u, Unit t) {
     if (t.getOwner() == u.getOwner()) {
       if (t.canCarry(u)) {
         t.addCarried(u);
@@ -511,7 +517,7 @@ public class Game implements BoardLens {
     if (blocker.equals(u.getOwner())) {
       if (blocking.turn().isDone()) {
         Log.debug(u, "Destination blocked by unit that has already moved. Cancelling:" + blocking);
-        return ResponseCode.CANCEL_ORDER;
+        return ResponseCode.TURN_COMPLETE;
       } else {
         blocker.pushPendingPlay(blocking);
         Log.debug(u, "Destination blocked by unit that has yet to move. Yielding:" + blocking);
@@ -593,13 +599,15 @@ public class Game implements BoardLens {
   }
 
   public void continuePlay() {
-    _pause = false;
+  
     signalGameThread();
   }
 
   public void pausePlay() {
-    _pause = false;
   }
+  
+  
+  
 
   public void waitUser() {
 
@@ -610,7 +618,12 @@ public class Game implements BoardLens {
         synchronized (this) {
           Log.debug(u, "Waiting for order...");
           _waiting = true;
-          _gameListener.notifyWait();
+          Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+              _gameListener.notifyWait();
+            }});
+          t.start();
           wait();
           return;
         }
@@ -649,9 +662,7 @@ public class Game implements BoardLens {
         p = _currentPlayer;
         uc = p.unitCount();
         cc = p.cityCount();
-        if (uc == 0 && cc == 0) {
-          ;
-        } else {
+        if (!(uc == 0 && cc == 0)) {
           GameTurn turn = new GameTurn(this, p, _turn);
           turn.play();
         }
@@ -707,6 +718,13 @@ public class Game implements BoardLens {
       Log.info("PLAYER: " + player);
       Log.info("--------------------------------------------------");
       player.forEachUnit((Unit u)->{Log.info(u.toString());});
+    }
+    
+    Log.info("------------------------------------------------------------------------------------------------------");
+    Log.info(" CITIES");
+    Log.info("------------------------------------------------------------------------------------------------------");
+    for (City city :  _board.getCities()) {
+      Log.info(city.toString());
     }
   }
 

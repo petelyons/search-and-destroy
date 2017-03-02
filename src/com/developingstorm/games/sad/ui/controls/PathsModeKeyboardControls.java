@@ -1,20 +1,23 @@
-package com.developingstorm.games.sad.ui;
+package com.developingstorm.games.sad.ui.controls;
 
 import java.awt.event.KeyEvent;
 
 import com.developingstorm.games.sad.OrderType;
+import com.developingstorm.games.sad.ui.KeyboardControls;
+import com.developingstorm.games.sad.ui.SaDFrame;
+import com.developingstorm.games.sad.ui.UserAction;
 
 /**
 
  * 
  */
-public class PauseKeyboardControls implements KeyboardControls {
+public class PathsModeKeyboardControls implements KeyboardControls {
 
   private boolean _controlSet = false;
   private UserAction _currentAction;
-  private UserCommands _commander;
+  private PathsCommander _commander;
 
-  public PauseKeyboardControls(UserCommands commander) {
+  public PathsModeKeyboardControls(SaDFrame frame, PathsCommander commander) {
     _currentAction = null;
     _commander = commander;
   }
@@ -23,10 +26,7 @@ public class PauseKeyboardControls implements KeyboardControls {
      *  
      */
   public void keyPressed(KeyEvent ke) {
-    if (_commander.isWaiting() == false) {
-      return;
-    }
-
+ 
     if (_currentAction != null) {
       _currentAction.keyPressed(ke);
       return;
@@ -58,10 +58,7 @@ public class PauseKeyboardControls implements KeyboardControls {
      *  
      */
   public void keyReleased(KeyEvent ke) {
-    if (_commander.isWaiting() == false) {
-      return;
-    }
-
+ 
     if (ke.getKeyCode() == KeyEvent.VK_CONTROL) {
       _controlSet = false;
     }
@@ -77,9 +74,6 @@ public class PauseKeyboardControls implements KeyboardControls {
      *  
      */
   public void keyTyped(KeyEvent ke) {
-    if (_commander.isWaiting() == false) {
-      return;
-    }
 
     if (_currentAction != null) {
       _currentAction.keyTyped(ke);

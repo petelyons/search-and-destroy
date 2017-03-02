@@ -32,7 +32,10 @@ public class Explore extends Move {
       if (_unit.mustLand() &&  !_unit.hasLanded()) {
         Log.debug(_unit, "requires landing!");
         _lastPath = null;
-        return headHome.execute(turnState);
+        OrderResponse response = headHome.execute(turnState);
+        if (response.getCode() == ResponseCode.ORDER_COMPLETE) {
+          return new OrderResponse(ResponseCode.TURN_COMPLETE, this, null);
+        }
       }
       if (frontierLocations.isEmpty()) {
         Log.debug(_unit, "no reachable frontier to explore!");

@@ -18,6 +18,7 @@ import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.ui.controls.GameCommander;
 
 /**
 
@@ -27,7 +28,7 @@ public class CityMenuBuilder {
   
   private City _c;
   private Game _game;
-  private UserCommands _commander;
+  private GameCommander _commander;
 
   private final JMenuItem INFANTRY_SEL = new JRadioButtonMenuItem(
       "Infantry");
@@ -54,7 +55,7 @@ public class CityMenuBuilder {
   private final JMenuItem ORDERS_SEL = new JMenuItem("City Orders...");
  
 
-  CityMenuBuilder(SaDFrame frame, Game g, City c, UserCommands commander) {
+  public CityMenuBuilder(SaDFrame frame, Game g, City c, GameCommander commander) {
     
     _game = g;
     _c = c;
@@ -125,7 +126,7 @@ public class CityMenuBuilder {
         List<Unit> list = cd.show();
 
         if (!list.isEmpty()) {
-          UserCommands specialCtx = _commander.specialContext(list);
+          GameCommander specialCtx = _commander.commanderForSpecifiedUnits(list);
           
           OrderMenuBuilder orderMenu = new OrderMenuBuilder(frame, _game, list, specialCtx);
           

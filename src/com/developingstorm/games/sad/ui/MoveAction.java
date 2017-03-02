@@ -4,6 +4,7 @@ import java.awt.event.KeyEvent;
 
 import com.developingstorm.games.hexboard.Direction;
 import com.developingstorm.games.hexboard.Location;
+import com.developingstorm.games.sad.ui.controls.GameCommander;
 
 /**
  *
@@ -13,23 +14,31 @@ public class MoveAction extends UserAction {
 
   private Location _start;
   private Location _end;
+  private int _boardMiddle;
 
-  public MoveAction(UserCommands commander, UserActionOwner owner) {
+  public MoveAction(GameCommander commander, UserActionOwner owner) {
     super(commander, owner);
     _start = _end = commander.getCurrentLocation();
+    _boardMiddle = (commander.boardWidth() / 2);
   }
-
+  
   public void keyPressed(KeyEvent ke) {
-    Location l2;
+    
     Location oldEnd = _end;
     switch (ke.getKeyCode()) {
     case KeyEvent.VK_UP:
-      _end = _end.relative(Direction.NORTH_WEST);
-      _end = _end.relative(Direction.NORTH_EAST);
+      if (_end.x >= _boardMiddle) {
+        _end = _end.relative(Direction.NORTH_WEST);
+      } else {
+        _end = _end.relative(Direction.NORTH_EAST);
+      }
       break;
     case KeyEvent.VK_DOWN:
-      _end = _end.relative(Direction.SOUTH_WEST);
-      _end = _end.relative(Direction.SOUTH_EAST);
+      if (_end.x >= _boardMiddle) {
+        _end = _end.relative(Direction.SOUTH_WEST);
+      } else { 
+        _end = _end.relative(Direction.SOUTH_EAST);
+      }
       break;
     case KeyEvent.VK_LEFT:
       _end = _end.relative(Direction.WEST);

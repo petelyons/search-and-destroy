@@ -1,4 +1,4 @@
-package com.developingstorm.games.sad.ui;
+package com.developingstorm.games.sad.ui.controls;
 
 import java.awt.Point;
 import java.util.ArrayList;
@@ -13,67 +13,60 @@ import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.OrderType;
 import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.ui.BoardCanvas;
+import com.developingstorm.games.sad.ui.CityMenuBuilder;
+import com.developingstorm.games.sad.ui.OrderMenuBuilder;
+import com.developingstorm.games.sad.ui.SaDFrame;
 import com.developingstorm.games.sad.util.Log;
 
 /**
-
+ *  The GameCommander acts as a bridge between the UI and the game model. It models the actions a can perform on units in the game. 
  * 
  */
-public class UserCommands {
-  private SaDFrame _frame;
-  private boolean _paused;
-  private BoardCanvas _canvas;
-  private Game _game;
-  private List<Unit> _spcCtx;
-
-  public UserCommands(SaDFrame frame, BoardCanvas canvas, Game game) {
+public class GameCommander extends BaseCommander {
+ 
+  private List<Unit> _commandedUnits;
+  
+  
+  
+  private GameCommander(SaDFrame frame, BoardCanvas canvas, Game game, List<Unit> commandedUnits) {
+    super(frame, canvas, game);
     _frame = frame;
-    _paused = false;
     _canvas = canvas;
     _game = game;
-    _spcCtx = null;
+    _commandedUnits = commandedUnits;
+  }
+  
+  public GameCommander(SaDFrame frame, BoardCanvas canvas, Game game) {
+    this(frame, canvas, game, null);
+  }
+  
+  /**
+   * The main GameCommander issues orders to the games selected unit. If you want to issue orders to a unit
+   * but not change the selected unit, you can derive a new commander
+   * @param units
+   * @return
+   */
+  public GameCommander commanderForSpecifiedUnits(List<Unit> units) {
+    GameCommander commander = new GameCommander(_frame, _canvas, _game);
+    commander._commandedUnits = units;
+    return commander;
   }
 
-  public UserCommands specialContext(List<Unit> units) {
-    UserCommands uc = new UserCommands(_frame, _canvas, _game);
-    uc._paused = _paused;
-    uc._spcCtx = units;
-    return uc;
-  }
-
-  public UserCommands specialContext(Unit u) {
+  /**
+   * The main GameCommander issues orders to the games selected unit. If you want to issue orders to a unit
+   * but not change the selected unit, you can derive a new commander
+   * @param units
+   * @return
+   */
+  public GameCommander commanderForSpecificUnit(Unit u) {
     List<Unit> list = new ArrayList<Unit>();
     list.add(u);
-    return specialContext(list);
-  }
-
-
-  public boolean onBoard(Location loc) {
-    return _game.getBoard().onBoard(loc);
-  }
-
-  public void showLine(Location start, Location end) {
-    _canvas.setLine(start, end);
-  }
-
-  public void showLocation(Location loc) {
-    _frame.showLocation(loc);
+    return commanderForSpecifiedUnits(list);
   }
 
   public boolean isWaiting() {
     return _game.isWaiting();
-  }
-
-  public BoardHex trans(Point p) {
-    return _game.getBoard().get(p);
-  }
-
-  public Location getCurrentLocation() {
-    if (_game.selectedUnit() != null) {
-      return _game.selectedUnit().getLocation();
-    } else {
-      return null;
-    }
   }
 
   public void move(Location loc) {
@@ -86,8 +79,8 @@ public class UserCommands {
     if (unit == null) {
       throw new SaDException("Unit expected at from location of move order");
     }
-    UserCommands uc = specialContext(unit);
-    uc.move(loc);
+    GameCommander commander = commanderForSpecificUnit(unit);
+    commander.move(loc);
   }
 
   public void moveBegin() {
@@ -101,8 +94,8 @@ public class UserCommands {
   private void issueOrders(OrderType order, Location moveTo) {
     
 
-    if (_spcCtx != null) {
-      for(Unit u : _spcCtx) {
+    if (_commandedUnits != null) {
+      for(Unit u : _commandedUnits) {
         Log.debug("UI", "Issuing Order:" + order + " to special context:" + u);
         _game.issueOrders(u, order, moveTo, null);
       }
@@ -115,7 +108,7 @@ public class UserCommands {
     }
 
     Unit active = _game.selectedUnit();
-    if (active != null && active.hasOrders() && _paused == false) {
+    if (active != null && active.hasOrders()) {
       _game.endWait(active);
     }
   }
@@ -123,8 +116,8 @@ public class UserCommands {
   public void activate(BoardHex hex) {
     Unit active = _game.selectedUnit();
     Unit last = null;
-    if (_spcCtx != null) {
-      for (Unit u : _spcCtx) {
+    if (_commandedUnits != null) {
+      for (Unit u : _commandedUnits) {
         u.clearOrders();
         last = u;
       }
@@ -150,7 +143,7 @@ public class UserCommands {
       }
     }
 
-    if (_paused == false && last != null) {
+    if (last != null) {
       Log.debug("UI", "Activating :" + last);
       _game.endWait(last);
     }
@@ -209,12 +202,18 @@ public class UserCommands {
   public void headHome() {
     issueOrders(OrderType.HEAD_HOME);
   }
-
-  public void setFocus(BoardHex hex) {
-    Log.debug(this, "Setting focus");
-    _game.getBoard().setFocus(hex);
+  
+  
+  @Override
+  public Location getCurrentLocation() {
+    if (_game.selectedUnit() != null) {
+      return _game.selectedUnit().getLocation();
+    } else {
+      return null;
+    }
   }
-
+ 
+  @Override
   public void choose(BoardHex hex) {
     Unit u = _game.selectedUnit();
     Point p = hex.center();
@@ -225,7 +224,7 @@ public class UserCommands {
       ArrayList<Unit> ulist = new ArrayList<Unit>();
       ulist.add(u);
 
-      UserCommands spc = specialContext(ulist);
+      GameCommander spc = commanderForSpecifiedUnits(ulist);
       OrderMenuBuilder om = new OrderMenuBuilder(_frame, _game, ulist, spc);
       pm = om.build();
     } else {
@@ -236,7 +235,7 @@ public class UserCommands {
         pm = cmb.build();
       } else {
         List<Unit> ul = _game.unitsAtLocation(loc);
-        UserCommands spc = specialContext(ul);
+        GameCommander spc = commanderForSpecifiedUnits(ul);
         OrderMenuBuilder omb = new OrderMenuBuilder(_frame, _game, ul, spc);
         pm = omb.build();
       }
@@ -246,22 +245,11 @@ public class UserCommands {
       pm.show(_canvas, p.x, p.y);
   }
 
+  @Override
   public boolean isDraggable(BoardHex hex) {
     Unit unit = _game.unitAtLocation(hex.getLocation());
     return (unit != null);
   }
 
-  public void setPlayMode() {
-    _paused = false;
-  }
 
-  public void setPauseMode() {
-    _paused = true;
-  }
-
-  public void refocus() {
-    if (!_canvas.hasFocus()) {
-      _canvas.requestFocus();
-    }
-  }
 }
