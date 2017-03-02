@@ -405,7 +405,13 @@ public class SaDFrame extends JFrame {
     _runner = new GameRunner(_game);
     _runner.start();
     
+    
     _controller = new UIController(this, _game);
+    _canvas.addMouseListener(_controller.mouseListener());
+    _canvas.addMouseMotionListener(_controller.mouseMotionListener());
+    _canvas.addKeyListener(_controller.keyListener());
+    
+  
     _controller.switchMode(UIMode.GAME);
 
   }

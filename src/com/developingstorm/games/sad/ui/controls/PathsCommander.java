@@ -1,16 +1,11 @@
 package com.developingstorm.games.sad.ui.controls;
 
-import java.awt.Point;
-import java.util.List;
-
 import com.developingstorm.games.hexboard.BoardHex;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Game;
-import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.ui.BoardCanvas;
 import com.developingstorm.games.sad.ui.SaDFrame;
-import com.developingstorm.games.sad.util.Log;
 
 /**
 

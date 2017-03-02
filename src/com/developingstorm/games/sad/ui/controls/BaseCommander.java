@@ -9,8 +9,7 @@ import com.developingstorm.games.sad.ui.SaDFrame;
 import com.developingstorm.games.sad.util.Log;
 
 /**
-
- * 
+ * BaseCommander is a common foundation class for objects that act as glue between the UI and the game model. 
  */
 public abstract class BaseCommander {
   protected SaDFrame _frame;
@@ -28,6 +27,7 @@ public abstract class BaseCommander {
   }
 
   public void showLine(Location start, Location end) {
+    Log.debug("Show line");
     _canvas.setLine(start, end);
   }
 
