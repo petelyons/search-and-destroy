@@ -34,7 +34,7 @@ public class Player implements UnitLens, LocationLens {
   protected String _name;
   private volatile LinkedList<Unit> _pendingPlay;
   private volatile LinkedList<Unit> _pendingOrders;
-  
+  private EdictFactory _edictFactory;
   
   protected UnitStats _unitStats;
 
@@ -50,6 +50,8 @@ public class Player implements UnitLens, LocationLens {
     _unitStats = new UnitStats();
     _pendingPlay = new LinkedList<>();
     _pendingOrders = new LinkedList<>();
+    
+    _edictFactory = new EdictFactory(this);
   }
   
   public Unit popPendingPlay() {
@@ -81,6 +83,11 @@ public class Player implements UnitLens, LocationLens {
   public int getId() {
 
     return _id;
+  }
+  
+  
+  public EdictFactory edictFactory() {
+    return _edictFactory;
   }
 
   public void setGame(Game g) {
@@ -925,5 +932,9 @@ public class Player implements UnitLens, LocationLens {
       }
     }
     return nextHop;
+  }
+
+  public Game getGame() {
+   return _game;
   }
 }

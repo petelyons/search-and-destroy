@@ -1,6 +1,8 @@
 package com.developingstorm.games.sad;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.util.Log;
@@ -16,10 +18,8 @@ public class City {
   private volatile Board _board;
   private volatile Game _game;
   private volatile boolean _productionCompletedThisTurn;
-
-  private volatile City _seaPath;
-  private volatile City _airPath;
-  private volatile City _groundPath;
+  private EdictGovernor _edicts;
+  
 
   public City(Location loc, Game game) {
     _name = GameNames.getName();
@@ -31,9 +31,7 @@ public class City {
     _game = game;
     _board = _game.getBoard();
     _productionCompletedThisTurn = false;
-    _seaPath = null;
-    _airPath = null;
-    _groundPath = null;
+    
   }
 
   public String toString() {
@@ -55,13 +53,20 @@ public class City {
     _owner = p;
     _produces = null;
     _productionStart = -1;
+    _edicts = new EdictGovernor(_owner, this);
     _owner.captureCity(this);
+    
   }
 
   public String getName() {
     return _name;
   }
 
+  public EdictGovernor getGovernor() {
+    return _edicts;
+  }
+
+  
   public Player getOwner() {
     return _owner;
   }
@@ -85,57 +90,6 @@ public class City {
 
   public int getContinent() {
     return _board.getContinentId(_location);
-  }
-
-  /**
-   * @return Returns the airPath.
-   */
-  public City getAirPath() {
-
-    return _airPath;
-  }
-
-  /**
-   * @param airPath
-   *          The airPath to set.
-   */
-  public void setAirPath(City airPath) {
-
-    _airPath = airPath;
-  }
-
-  /**
-   * @return Returns the groundPath.
-   */
-  public City getGroundPath() {
-
-    return _groundPath;
-  }
-
-  /**
-   * @param groundPath
-   *          The groundPath to set.
-   */
-  public void setGroundPath(City groundPath) {
-
-    _groundPath = groundPath;
-  }
-
-  /**
-   * @return Returns the seaPath.
-   */
-  public City getSeaPath() {
-
-    return _seaPath;
-  }
-
-  /**
-   * @param seaPath
-   *          The seaPath to set.
-   */
-  public void setSeaPath(City seaPath) {
-
-    _seaPath = seaPath;
   }
 
   public List<Unit> getUnits() {
@@ -164,6 +118,8 @@ public class City {
         _productionStart = _round;
         _productionCompletedThisTurn = true;
       }
+      
+      _edicts.execute(_game);
     }
   }
   
@@ -203,7 +159,13 @@ public class City {
       return false;
     return true;
   }
+  
 
+
+
+  public boolean shareContinent(City _selectedCity) {
+    return true;
+  }
     
 }
 

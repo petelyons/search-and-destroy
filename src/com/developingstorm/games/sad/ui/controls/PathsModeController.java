@@ -10,6 +10,7 @@ import com.developingstorm.games.hexboard.BoardHex;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.OrderType;
 import com.developingstorm.games.sad.ui.SaDFrame;
+import com.developingstorm.games.sad.util.Log;
 
 /**
  * 
@@ -26,8 +27,7 @@ public class PathsModeController  extends BaseController {
   public PathsModeController(SaDFrame frame,  PathsCommander commander) {
     _frame = frame;
     _commander = commander;
-    
-    
+   
     _keyListener = new KeyListener() {
       private boolean _controlSet = false;
       
@@ -69,7 +69,6 @@ public class PathsModeController  extends BaseController {
       }
 
     };
-  
     
     _hexMouseListenerAdapter = new HexMouseListenerAdapter(commander, new IHexMouseListener() {
             
@@ -78,23 +77,16 @@ public class PathsModeController  extends BaseController {
         int button = e.getButton();
         Location loc = hex.getLocation();
         if (button == MouseEvent.BUTTON1) {
-          if (_commander.isDraggable(hex)) {
-            _mouseDown = hex;
+          if (_commander.isValidDestination(hex)) {
+            Log.info("Setting destination");
+            _commander.setDestination(hex);
+            _commander.endPathsMode();
           }
         }
       }
 
       @Override
       public void hexMouseReleased(MouseEvent e, BoardHex hex) {
-        int button = e.getButton();
-        if (hex == null)
-          return;
-        if (_mouseDown != null) {
-
-        } else if (button == MouseEvent.BUTTON1) {
-          _commander.setFocus(hex);
-        }
-        _mouseDown = null;
       }
 
       @Override
@@ -120,23 +112,25 @@ public class PathsModeController  extends BaseController {
             
       @Override
       public void hexMouseDragged(MouseEvent e, BoardHex hex) {
-        
-        if (_mouseDown != null) {
-          if (hex != null && !hex.equals(_mouseDown)) {
-            _commander.showLine(_mouseDown.getLocation(), hex.getLocation());
-          }
-        }
+    
       }
 
       @Override
       public void hexMouseMoved(MouseEvent e, BoardHex hex) {
-        // TODO Auto-generated method stub
+        
+        Location start = _commander.autoDraggingLocation();
+        if (start != null) {
+          if (hex != null && !hex.equals(start)) {
+            _commander.showLine(start, hex.getLocation());
+          }
+        }
         
       }
 
     });
   }
-
+  
+ 
   @Override
   public MouseListener mouseListener() {
     return _hexMouseListenerAdapter;

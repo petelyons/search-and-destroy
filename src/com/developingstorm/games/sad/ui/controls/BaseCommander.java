@@ -27,7 +27,6 @@ public abstract class BaseCommander {
   }
 
   public void showLine(Location start, Location end) {
-    Log.debug("Show line");
     _canvas.setLine(start, end);
   }
 
@@ -56,6 +55,10 @@ public abstract class BaseCommander {
     if (!_canvas.hasFocus()) {
       _canvas.requestFocus();
     }
+  }
+  
+  public BoardHex locationToHex(Location loc) {
+    return _game.getBoard().get(loc);
   }
 
   public abstract Location getCurrentLocation();

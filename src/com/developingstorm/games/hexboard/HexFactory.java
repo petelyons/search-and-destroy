@@ -32,8 +32,6 @@ public class HexFactory {
     double x2;
     double y2;
 
-    Location loc = Location.get(x, y);
-
     if (y % 2 != 0)
       x2 = _hexHalfWidth;
     else
@@ -56,7 +54,7 @@ public class HexFactory {
 
     int px[] = new int[7];
     int py[] = new int[7];
-    String s;
+
     for (int i = 0; i < 6; i++) {
       px[i] = (int) (xCoord[i]);
       py[i] = (int) (yCoord[i]);

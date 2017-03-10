@@ -35,9 +35,6 @@ public class SpriteEngine {
       _frameRate = 100;
     }
 
-    public void setFrameRate(long rate) {
-      _frameRate = rate;
-    }
 
     public void requestStop() {
       _stop = true;
@@ -81,6 +78,7 @@ public class SpriteEngine {
     }
   }
 
+  @SuppressWarnings("unchecked")
   public SpriteEngine(HexCanvas canvas, Image[] images, int numZ) {
 
     _images = images;
@@ -88,7 +86,7 @@ public class SpriteEngine {
     _time = 0;
     _g2 = null;
     _numZ = numZ;
-    _sprites = new List[_numZ];
+    _sprites = (List<Sprite>[]) new List<?>[_numZ];
     for (int i = 0; i < _numZ; i++) {
       _sprites[i] = new ArrayList<Sprite>();
     }

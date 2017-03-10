@@ -7,7 +7,6 @@ import java.awt.Polygon;
 import java.awt.Stroke;
 
 /**
-
  * 
  */
 public class PolygonSprite extends StrokeSprite {

@@ -14,11 +14,11 @@ public class Type extends Enum {
   public static Type ARMOR = new Type("Armor", "A", Travel.LAND, 2, 4, 10,
       Vision.SURFACE, 1, -1, null, 0, 2, 2, GameIcons.iTANK);
   public static Type FIGHTER = new Type("Fighter", "F", Travel.AIR, 5, 2, 10,
-      Vision.SURFACE, 3, 15, null, 0, 1, 1, GameIcons.iFIGHTER);
+      Vision.SURFACE, 3, 4, null, 0, 1, 1, GameIcons.iFIGHTER);
   public static Type BOMBER = new Type("Bomber", "B", Travel.AIR, 4, 2, 15,
-      Vision.SURFACE, 3, 20, null, 0, 0, 3, GameIcons.iBOMBER);
+      Vision.SURFACE, 3, 8, null, 0, 0, 3, GameIcons.iBOMBER);
   public static Type CARGO = new Type("Cargo Plane", "C", Travel.AIR, 3, 2, 15,
-      Vision.SURFACE, 3, 20, new Type[] { INFANTRY }, 1, 0, 0, GameIcons.iCARGO);
+      Vision.SURFACE, 5, 6, new Type[] { INFANTRY }, 1, 0, 0, GameIcons.iCARGO);
   public static Type DESTROYER = new Type("Destroyer", "DE", Travel.SEA, 3, 3,
       20, Vision.COMPLETE, 2, -1, null, 0, 0, 3, GameIcons.iDESTROYER);
   public static Type TRANSPORT = new Type("Transport", "TR", Travel.SEA, 2, 2,
@@ -55,7 +55,7 @@ public class Type extends Enum {
   }
 
   private Type(String desc, String abr, Travel t, int dist, int hits, int cost,
-      Vision vis, int vdist, int max, Type[] carryTypes, int carryCount,
+      Vision vis, int vdist, int maxf, Type[] carryTypes, int carryCount,
       int weight, int attack, int iconID) {
     super(_class, desc);
     _travel = t;
@@ -64,7 +64,7 @@ public class Type extends Enum {
     _cost = cost;
     _vis = vis;
     _vdist = vdist;
-    _max = max;
+    _max = maxf * _dist;
     _carryTypes = carryTypes;
     _carryCount = carryCount;
     _weight = weight;

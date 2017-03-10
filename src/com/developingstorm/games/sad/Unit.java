@@ -113,11 +113,17 @@ public class Unit {
     }
     return s;
   }
+  
+  public int turnAroundDist() {
+    if (_travel == Travel.AIR) {
+      return (getMaxTravel() / 2);
+    }
+    return 0;
+  }
 
   public boolean mustLand() {
     if (_travel == Travel.AIR) {
-      int max = getMaxTravel();
-      if (max > 0 && _totalMoved >= (max / 2)) {
+      if (_totalMoved >= turnAroundDist()) {
         return true;
       }
     }
@@ -272,12 +278,15 @@ public class Unit {
     return true;
   }
 
-  public boolean hit(int count) {
-    if (count <= 0) {
-      throw new SaDException("BAD HIT COUNT");
+  public boolean hit(int attackVal) {
+    if (attackVal == 0) {
+      return isDead();
     }
-    _hits -= count;
-    return (isDead());
+    if (attackVal < 0) {
+      throw new SaDException("BAD ATTACK VALUE");
+    }
+    _hits -= attackVal;
+    return isDead();
   }
 
   // Should only be called by (Game).killUnit

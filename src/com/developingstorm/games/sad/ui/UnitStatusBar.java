@@ -101,8 +101,8 @@ public class UnitStatusBar extends JComponent {
     _health.setText(_unit.healthDesc());
 
     _move.setText(_unit.moveDesc());
-    layout();
-    repaint();
+    validate();
+    //repaint();
   }
 
   public Dimension preferredSize() {

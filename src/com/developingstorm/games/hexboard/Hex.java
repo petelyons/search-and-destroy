@@ -8,6 +8,8 @@ import java.awt.Polygon;
  */
 public class Hex extends Polygon {
 
+
+  private static final long serialVersionUID = 5794657692668164331L;
   private Point _center;
   private Point _origin;
 
@@ -16,7 +18,7 @@ public class Hex extends Polygon {
 
     int originy = Integer.MAX_VALUE;
     int originx = Integer.MAX_VALUE;
-    String s;
+
     for (int i = 0; i < 6; i++) {
 
       if (xpoints[i] < originx) {

@@ -13,8 +13,6 @@ import java.awt.Stroke;
  */
 public class ArrowSprite extends StrokeSprite {
 
-  private Stroke[] _strokes;
-  private Color[] _colors;
   private Point _tail;
   private Point _head;
 

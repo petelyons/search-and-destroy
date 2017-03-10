@@ -1,14 +1,9 @@
-/*
- * Created on Oct 29, 2004
- *
- */
 package com.developingstorm.games.hexboard.sprites;
 
 import java.awt.Graphics2D;
 import java.awt.Image;
 
 /**
-
  * 
  */
 public abstract class Sprite {

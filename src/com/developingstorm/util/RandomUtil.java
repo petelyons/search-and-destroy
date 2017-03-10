@@ -1,5 +1,6 @@
 package com.developingstorm.util;
 
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -23,6 +24,11 @@ public class RandomUtil {
 
   public static boolean nextBoolean() {
     return s_rand.nextBoolean();
+  }
+  
+  
+  public static <T> T randomValue(List<T> vals) {
+    return vals.get(getInt(vals.size()));
   }
 
 }

@@ -6,7 +6,7 @@ import com.developingstorm.games.hexboard.Direction;
  * 
  */
 public class MoveEast extends DirectionalMove {
-  protected MoveEast() {
+  public MoveEast() {
     super(Direction.EAST);
   }
 }

@@ -109,7 +109,6 @@ public class HexBoardMap {
 
   public static HexBoardMap loadMap(Reader reader) throws IOException,
       InvalidMapException {
-    int i = 0;
     String line;
     int width;
     int height;

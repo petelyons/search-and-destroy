@@ -7,7 +7,7 @@ import com.developingstorm.util.EnumClass;
  * Class information
  */
 public class OrderType extends Enum {
-  private static final EnumClass _class = new EnumClass("UnitFunction");
+  private static final EnumClass _class = new EnumClass("OrderType");
 
   public static final OrderType NONE = new OrderType("None");
  /*

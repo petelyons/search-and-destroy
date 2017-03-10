@@ -14,7 +14,6 @@ import com.developingstorm.games.sad.ui.UserAction;
 import com.developingstorm.games.sad.util.Log;
 
 /**
-
  * 
  */
 public class GameModeController extends BaseController {

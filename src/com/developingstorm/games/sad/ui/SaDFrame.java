@@ -30,6 +30,7 @@ import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Robot;
 import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.ui.controls.PathsCommander;
 import com.developingstorm.games.sad.ui.controls.UIController;
 import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.NoKeyScrollPane;
@@ -658,16 +659,27 @@ public class SaDFrame extends JFrame {
   }
 
   public boolean isGameMode() {
-   
-    return _canvas.getUIMode() == UIMode.GAME;
+    if (_controller == null) {
+      return true;
+    }
+    return _controller.getUIMode() == UIMode.GAME;
   }
 
   public boolean isPathsMode() {
-   
-    return _canvas.getUIMode() == UIMode.PATHS;
+    if (_controller == null) {
+      return false;
+    }
+    return _controller.getUIMode() == UIMode.PATHS;
   }
   
-
-
+  public PathsCommander startPathsMode() {
+    _controller.switchMode(UIMode.PATHS);
+    return _controller.getPathsCommander();
+    
+  }
+  
+  public void endPathsMode() {
+    _controller.switchMode(UIMode.GAME);    
+  }
 
 }

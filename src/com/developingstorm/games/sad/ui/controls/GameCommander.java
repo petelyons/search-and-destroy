@@ -12,6 +12,7 @@ import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.OrderType;
 import com.developingstorm.games.sad.SaDException;
+import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.ui.BoardCanvas;
 import com.developingstorm.games.sad.ui.CityMenuBuilder;
@@ -251,5 +252,30 @@ public class GameCommander extends BaseCommander {
     return (unit != null);
   }
 
+  public void setSeaPath(City c) {
+    PathsCommander pathsCommander = _frame.startPathsMode();
+    pathsCommander.setPathOrigin(c, Travel.SEA);
+    
+  }
+
+  public void setAirPath(City c) {
+    PathsCommander pathsCommander = _frame.startPathsMode();
+    pathsCommander.setPathOrigin(c, Travel.AIR);
+  }
+
+  public void setLandPath(City c) {
+    PathsCommander pathsCommander = _frame.startPathsMode();
+    pathsCommander.setPathOrigin(c, Travel.LAND);
+  }
+
+  public void setAirPatrol(City c) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  public void setAutoSentry(City c) {
+    // TODO Auto-generated method stub
+    
+  }
 
 }

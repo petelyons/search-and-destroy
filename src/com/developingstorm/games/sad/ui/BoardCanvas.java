@@ -248,9 +248,10 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
 
     List<City> cities = player.getCities();
     for(City c : cities) {
-      City airPath = c.getAirPath();
-      City groundPath = c.getGroundPath();
-      City seaPath = c.getSeaPath();
+      
+      City airPath = c.getGovernor().getAirPathDest();
+      City groundPath = c.getGovernor().getLandPathDest();
+      City seaPath = c.getGovernor().getSeaPathDest();
 
       ArrowSprite s;
       if (air && airPath != null) {
@@ -431,6 +432,10 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
   
   public UIMode getUIMode() {
     return _uiMode;
+  }
+
+  public void clearArrow() {
+    setArrow(null, null);
   }
   
 }

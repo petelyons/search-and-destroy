@@ -143,4 +143,12 @@ public class UIController {
   public KeyListener keyListener() {
     return _keyboardListener;
   }
+
+  public UIMode getUIMode() {
+    return _mode;  
+  }
+
+  public PathsCommander getPathsCommander() {
+    return _pathsCommander;
+  }
 }

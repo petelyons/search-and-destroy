@@ -37,6 +37,10 @@ public class Location implements AStarPosition {
     return LocationMap.INSTANCE.get(x, y);
   }
   
+  private static Location get(LocStruct val) {
+    return get(val.x, val.y);
+  }
+
   public Location relative(Direction dir) {
     Location loc = _directionMap.get(dir);
     if (loc == null) {
@@ -63,7 +67,7 @@ public class Location implements AStarPosition {
       x = x1;
       y = y1;
     }
-  };
+  }
   
   private LocStruct internalRelative(Direction dir) {
 
@@ -101,21 +105,51 @@ public class Location implements AStarPosition {
   }
   
   
+  private static LocStruct relativeLoc(LocStruct loc, Direction dir) {
+
+    if (dir == null) {
+      throw new IllegalArgumentException();
+    }
+
+    int xx;
+    int yy;
+    boolean oddRow = ((loc.y % 2) != 0);
+    int oddMod = (oddRow) ? 1 : 0;
+    int evenMod = (oddRow) ? 0 : 1;
+
+    if (dir == Direction.NORTH_WEST) {
+      xx = loc.x - evenMod;
+      yy = loc.y - 1;
+    } else if (dir == Direction.NORTH_EAST) {
+      xx = loc.x + oddMod;
+      yy = loc.y - 1;
+    } else if (dir == Direction.EAST) {
+      xx = loc.x + 1;
+      yy = loc.y;
+    } else if (dir == Direction.SOUTH_EAST) {
+      xx = loc.x + oddMod;
+      yy = loc.y + 1;
+    } else if (dir == Direction.SOUTH_WEST) {
+      xx = loc.x - evenMod;
+      yy = loc.y + 1;
+    } else { // dir == Direction.WEST
+      xx = loc.x - 1;
+      yy = loc.y;
+    }
+
+    return new LocStruct(xx, yy);
+  }
+  
   private LocStruct internalRelative(Direction dir, int count) {
-    LocStruct val = null;
-    for (int x = 0; x < count; x++) {
-       val = internalRelative(dir);
+    LocStruct val = new LocStruct(x, y);
+    for (int x1 = 0; x1 < count; x1++) {
+       val = relativeLoc(val, dir);
     }
     return val;
   }
   
   
   public static void test() {
-    
-    Location loc1 = get(48, 9);
-    Location loc2 = get(49, 47);
-    int dist = loc1.distance(loc2);
-
   }
 
   public Location relative(Direction dir, int dist) {
@@ -150,50 +184,60 @@ public class Location implements AStarPosition {
       }
     }
   }
-
+  
+  
   public List<Location> getRing(int dist) {
-    if (dist == 1) {
-      return _neighbors;
-    }
-    
-    Set<Location> set = new HashSet<Location>();
-    LocStruct nw = internalRelative(Direction.NORTH_WEST, dist);
-    LocStruct ne = internalRelative(Direction.NORTH_EAST, dist);
     LocStruct e = internalRelative(Direction.EAST, dist);
-    LocStruct se = internalRelative(Direction.SOUTH_EAST, dist);
-    LocStruct sw = internalRelative(Direction.SOUTH_WEST, dist);
     LocStruct w = internalRelative(Direction.WEST, dist);
-   
-    /*
-    Log.debug("--- Ring for: " + this + " -----");
-    Log.debug("NW is " + nw);
-    Log.debug("NE is " + ne);
-    Log.debug("W is " + w);
-    Log.debug("E is " + e);
-    Log.debug("SW is " + sw);
-    Log.debug("SE is " + se);
-    */
-
-
-    int startX = nw.x;
-    int endX = ne.x;
-    int startY = ne.y;
-    for (int yn = startX; yn < y; yn++) {
-      loadRow(startX, endX, startY, set, null);
-      startX--;
-      endX++;
-    }
+    Set<Location> set = new HashSet<Location>();
     loadRow(w.x, e.x, y, set, this);
-    startX = sw.x;
-    endX = se.x;
-    startY = se.y;
-    for (int yn = startY; yn > y; yn--) {
-      loadRow(startX, endX, startY, set, null);
-      startX--;
-      endX++;
+    
+    LocStruct westEnd = w;
+    LocStruct eastEnd = e;
+    for (int x = 0; x < dist; x++) {
+      westEnd = relativeLoc(westEnd, Direction.NORTH_EAST);
+      eastEnd = relativeLoc(eastEnd, Direction.NORTH_WEST);
+      loadRow(westEnd.x, eastEnd.x, westEnd.y, set, this);
+    }
+
+    westEnd = w;
+    eastEnd = e;
+    for (int x = 0; x < dist; x++) {
+      westEnd = relativeLoc(westEnd, Direction.SOUTH_EAST);
+      eastEnd = relativeLoc(eastEnd, Direction.SOUTH_WEST);
+      loadRow(westEnd.x, eastEnd.x, westEnd.y, set, this);
     }
     return new ArrayList<Location>(set);
   }
+  
+  
+  public List<Location> getCircle(int dist) {
+    LocStruct e = internalRelative(Direction.EAST, dist);
+    LocStruct w = internalRelative(Direction.WEST, dist);
+    Set<Location> set = new HashSet<Location>();
+    set.add(get(e));
+    set.add(get(w));
+    LocStruct westEnd = w;
+    LocStruct eastEnd = e;
+    for (int x = 0; x < dist; x++) {
+      westEnd = relativeLoc(westEnd, Direction.NORTH_EAST);
+      eastEnd = relativeLoc(eastEnd, Direction.NORTH_WEST);
+      set.add(get(westEnd));
+      set.add(get(eastEnd));
+    }
+
+    westEnd = w;
+    eastEnd = e;
+    for (int x = 0; x < dist; x++) {
+      westEnd = relativeLoc(westEnd, Direction.SOUTH_EAST);
+      eastEnd = relativeLoc(eastEnd, Direction.SOUTH_WEST);
+      set.add(get(westEnd));
+      set.add(get(eastEnd));
+    }
+    return new ArrayList<Location>(set);
+  }
+
+
 
   @Override
   public int hashCode() {
@@ -324,7 +368,6 @@ public class Location implements AStarPosition {
   }
 
   void initNeighbors() {
-    ArrayList<Location> list = new ArrayList<Location>();
     LocStruct nw = internalRelative(Direction.NORTH_WEST);
     LocStruct ne = internalRelative(Direction.NORTH_EAST);
     LocStruct e = internalRelative(Direction.EAST);
@@ -348,8 +391,6 @@ public class Location implements AStarPosition {
     addDir(Direction.WEST, get(w));
   }
 
-  private static Location get(LocStruct val) {
-    return get(val.x, val.y);
-  }
+
 
 }

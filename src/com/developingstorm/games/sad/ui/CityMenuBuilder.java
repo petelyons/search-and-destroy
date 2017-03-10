@@ -7,6 +7,7 @@ import java.awt.event.ActionListener;
 import java.util.List;
 
 import javax.swing.ButtonGroup;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -51,12 +52,28 @@ public class CityMenuBuilder {
   private final JMenuItem AIRCRAFT_CARRIER_SEL = new JRadioButtonMenuItem(
       "Aircraft Carrier");
 
+  
+  private final JMenuItem SEND_SEA_SEL = new JMenuItem("Set Sea Path...");
+  private final JMenuItem SEND_AIR_SEL = new JMenuItem("Set Air Path...");
+  private final JMenuItem SEND_LAND_SEL = new JMenuItem("Set Land Path...");
+  private final JMenuItem CLEAR_SEA_SEL = new JMenuItem("Cancel Sea Path");
+  private final JMenuItem CLEAR_AIR_SEL = new JMenuItem("Cancel Air Path");
+  private final JMenuItem CLEAR_LAND_SEL = new JMenuItem("Cancel Land Path");
+  
+  private final JCheckBoxMenuItem AIR_PATROL_SEL = new JCheckBoxMenuItem("Air Patrol");
+  private final JCheckBoxMenuItem AUTO_SENTRY_SEL = new JCheckBoxMenuItem("Automatic Sentry");
+
+  
+  
+  
   private final JMenuItem UNITS_SEL = new JMenuItem("Units...");
-  private final JMenuItem ORDERS_SEL = new JMenuItem("City Orders...");
+
+  private final SaDFrame _frame;
  
 
   public CityMenuBuilder(SaDFrame frame, Game g, City c, GameCommander commander) {
     
+    _frame = frame;
     _game = g;
     _c = c;
     _commander = commander;
@@ -139,6 +156,53 @@ public class CityMenuBuilder {
           om.show(frame.getCanvas(), p.x, p.y);
         }
       }});
+    
+    SEND_SEA_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _commander.setSeaPath(_c);
+      }});
+    
+    SEND_AIR_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _commander.setAirPath(_c);
+      }});
+    SEND_LAND_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _commander.setLandPath(_c);
+      }});
+    
+    CLEAR_SEA_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _c.getGovernor().clearSeaPath();
+      }});
+    
+    CLEAR_AIR_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _c.getGovernor().clearAirPath();
+      }});
+    CLEAR_LAND_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _c.getGovernor().clearLandPath();
+      }});
+    
+    
+    AIR_PATROL_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _commander.setAirPatrol(_c);
+      }});
+    AUTO_SENTRY_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _commander.setAutoSentry(_c);
+      }});
+  
   }
 
   
@@ -154,6 +218,18 @@ public class CityMenuBuilder {
 
     fillMenu(_game, cityMenu, _c);
     return cityMenu;
+  }
+  
+  
+  private static void addSep(Container menu) {
+    if (menu instanceof JPopupMenu) {
+      JPopupMenu pm = (JPopupMenu) menu;
+      pm.addSeparator();
+    }
+    if (menu instanceof JMenu) {
+      JMenu mm = (JMenu) menu;
+      mm.addSeparator();
+    }
   }
 
   
@@ -207,17 +283,33 @@ public class CityMenuBuilder {
       menu.add(menuItem);
     }
 
-    if (menu instanceof JPopupMenu) {
-      JPopupMenu pm = (JPopupMenu) menu;
-      pm.addSeparator();
+    addSep(menu);
+    
+    menuItem = _c.getGovernor().hasAirPatrolEdict() ? CLEAR_AIR_SEL : SEND_AIR_SEL;
+    menu.add(menuItem);
+
+    menuItem = _c.getGovernor().hasLandPatrolEdict() ? CLEAR_LAND_SEL : SEND_LAND_SEL;
+    menu.add(menuItem);
+    
+    if (c.isCoastal()) {
+      menuItem = _c.getGovernor().hasLandPatrolEdict() ? CLEAR_SEA_SEL : SEND_SEA_SEL;
+      menu.add(menuItem);
     }
-    if (menu instanceof JMenu) {
-      JMenu mm = (JMenu) menu;
-      mm.addSeparator();
-    }
+    
+    menuItem = AIR_PATROL_SEL;
+    menu.add(menuItem);
+
+    menuItem = AUTO_SENTRY_SEL;
+    menu.add(menuItem);
+    
+    addSep(menu);
  
     menuItem = UNITS_SEL;
     menu.add(menuItem);
+    
+    
+   
+
   }
   
   private void selectProduction(Type t) {

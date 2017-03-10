@@ -21,6 +21,7 @@ import com.developingstorm.games.hexboard.sprites.SpriteEngine;
  */
 public class HexCanvas extends JComponent implements HexBoardView {
 
+  private static final long serialVersionUID = -8867069101522503660L;
   private HexBoardContext _ctx;
   private HexBoard _board;
   private Dimension _size;
@@ -29,8 +30,6 @@ public class HexCanvas extends JComponent implements HexBoardView {
   private int _iconHeight;
   private int _iconWidth;
   private int _zs;
-  private int _w;
-  private int _h;
   private CursorSprite _cursor;
   private ArrowSprite _arrow;
   private Image _background;
@@ -40,8 +39,6 @@ public class HexCanvas extends JComponent implements HexBoardView {
   public HexCanvas(HexBoardContext ctx, HexBoard board) {
 
     _ctx = ctx;
-    _w = ctx.getWidth();
-    _h = ctx.getHeight();
     _zs = ctx.getZs();
     _board = board;
     _images = ctx.getImages();

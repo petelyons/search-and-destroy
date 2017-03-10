@@ -2,17 +2,12 @@ package com.developingstorm.games.hexboard.sprites;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Stroke;
-
 import com.developingstorm.games.hexboard.Hex;
 
 /**
  *
  */
 public class CursorSprite extends PolygonSprite {
-
-  private Stroke[] _strokes;
-  private Color[] _colors;
 
   public CursorSprite() {
 

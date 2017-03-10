@@ -1,6 +1,5 @@
 package com.developingstorm.games.hexboard;
 
-import java.awt.Image;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -8,7 +7,6 @@ import java.util.List;
 import java.util.Random;
 
 import com.developingstorm.exceptions.ConfigException;
-import com.developingstorm.games.sad.util.Log;
 
 /*
  * Created on Nov 8, 2004
@@ -25,9 +23,7 @@ public class HexBoard {
 
   private int _width;
   private int _height;
-  private int _side;
   private BoardHex[][] _hexes;
-  private Image[] _images;
   private HexBoardContext _ctx;
   private BoardHex _focus;
   private List<HexBoardView> _views;
@@ -122,7 +118,7 @@ public class HexBoard {
     }
   }
 
-  public void setSelected(List<BoardHex> listOfHexes, boolean b) {
+  public static void setSelected(List<BoardHex> listOfHexes, boolean b) {
     Iterator<BoardHex> itr = listOfHexes.iterator();
     while (itr.hasNext()) {
       BoardHex h = (BoardHex) itr.next();

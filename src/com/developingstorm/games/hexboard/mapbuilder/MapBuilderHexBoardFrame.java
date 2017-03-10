@@ -37,6 +37,8 @@ import com.developingstorm.games.hexboard.Location;
 public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
     MouseMotionListener, ActionListener {
 
+   private static final long serialVersionUID = 5049729837199753440L;
+
   class MapContext implements HexBoardContext {
 
     Image[] _images;
@@ -128,11 +130,6 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
   private int _brushSize = 0;
 
   private String _fileName = "map1" + MAP_EXT;
-  private BoardHex _focus;
-  private BoardHex _mouseDown;
-  private BoardHex _oldFocus;
-  private int _range = 0;
-  private List _rangeList;
 
   private JScrollPane _scroll;
   private int _terrainType = iLAND;
@@ -176,7 +173,8 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
     }
 
     try {
-      MapBuilderHexBoardFrame frame = new MapBuilderHexBoardFrame();
+     @SuppressWarnings("unused")
+    MapBuilderHexBoardFrame mapBuilderHexBoardFrame = new MapBuilderHexBoardFrame();
     } catch (Throwable ex) {
       ex.printStackTrace();
     }
@@ -199,11 +197,7 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
 
     });
 
-    _mouseDown = null;
-    _focus = null;
-    _oldFocus = null;
-
-    MapContext ctx = new MapContext();
+     MapContext ctx = new MapContext();
     _board = new HexBoard(ctx);
     _scroll = new JScrollPane();
     _scroll.setOpaque(true);
@@ -401,7 +395,6 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
 
   public void mouseReleased(MouseEvent arg0) {
 
-    _mouseDown = null;
   }
 
   void onOpen() {
