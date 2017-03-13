@@ -267,7 +267,7 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
 
       }
       if (ground && groundPath != null) {
-        s = new ArrowSprite(9, Color.GREEN);
+        s = new ArrowSprite(9, Color.GREEN.darker().darker());
         s.setArrow(getCityCenter(c), getCityCenter(groundPath));
         _groundPaths.add(s);
 

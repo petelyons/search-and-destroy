@@ -1,6 +1,7 @@
 package com.developingstorm.games.sad;
 
 import com.developingstorm.games.sad.edicts.AirPatrol;
+import com.developingstorm.games.sad.edicts.AutoSentry;
 import com.developingstorm.games.sad.edicts.SendAirUnits;
 import com.developingstorm.games.sad.edicts.SendLandUnits;
 import com.developingstorm.games.sad.edicts.SendSeaUnits;
@@ -28,6 +29,16 @@ public class EdictFactory {
   
   public AirPatrol sendSeaUnits(City from) {
     return new AirPatrol(_player, from);
+  }
+
+
+  public AirPatrol airPatrol(City from) {
+    return new AirPatrol(_player, from);
+  }
+
+
+  public AutoSentry autoSentry(City from) {
+    return new AutoSentry(_player, from);
   }
   
 }

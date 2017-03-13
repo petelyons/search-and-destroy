@@ -192,15 +192,25 @@ public class CityMenuBuilder {
       }});
     
     
+    AIR_PATROL_SEL.setSelected(_c.getGovernor().hasAirPatrol());
     AIR_PATROL_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        _commander.setAirPatrol(_c);
+        if (_c.getGovernor().hasAirPatrol()) {
+          _c.getGovernor().clearAirPatrol();
+        } else {
+          _c.getGovernor().setAirPatrol();
+        }
       }});
+    AUTO_SENTRY_SEL.setSelected(_c.getGovernor().hasAutoSentry());
     AUTO_SENTRY_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        _commander.setAutoSentry(_c);
+        if (_c.getGovernor().hasAutoSentry()) {
+          _c.getGovernor().clearAutoSenty();
+        } else {
+          _c.getGovernor().setAutoSentry();
+        }
       }});
   
   }
@@ -285,14 +295,14 @@ public class CityMenuBuilder {
 
     addSep(menu);
     
-    menuItem = _c.getGovernor().hasAirPatrolEdict() ? CLEAR_AIR_SEL : SEND_AIR_SEL;
+    menuItem = _c.getGovernor().hastAirPath() ? CLEAR_AIR_SEL : SEND_AIR_SEL;
     menu.add(menuItem);
 
-    menuItem = _c.getGovernor().hasLandPatrolEdict() ? CLEAR_LAND_SEL : SEND_LAND_SEL;
+    menuItem = _c.getGovernor().hasLandPath() ? CLEAR_LAND_SEL : SEND_LAND_SEL;
     menu.add(menuItem);
     
     if (c.isCoastal()) {
-      menuItem = _c.getGovernor().hasLandPatrolEdict() ? CLEAR_SEA_SEL : SEND_SEA_SEL;
+      menuItem = _c.getGovernor().hasSeaPath() ? CLEAR_SEA_SEL : SEND_SEA_SEL;
       menu.add(menuItem);
     }
     

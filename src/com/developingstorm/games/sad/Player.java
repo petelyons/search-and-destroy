@@ -54,6 +54,28 @@ public class Player implements UnitLens, LocationLens {
     _edictFactory = new EdictFactory(this);
   }
   
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + _id;
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    Player other = (Player) obj;
+    if (_id != other._id)
+      return false;
+    return true;
+  }
+
   public Unit popPendingPlay() {
     if (_pendingPlay.isEmpty()) {
       return null;
@@ -188,10 +210,15 @@ public class Player implements UnitLens, LocationLens {
     ArrayList<Unit> list = new ArrayList<Unit>();
     ArrayList<Location> reachable = getReachable(u);
     for (Location loc : reachable) {
+      
       if (isExplored(loc)) {
         Unit u2 = visibleUnit(loc);
-        if (u2 != null && u2.getOwner() != this)
-          list.add(u2);
+        if (u2 != null && u2.getOwner() != this) {
+          City c = _game.cityAtLocation(u2.getLocation());
+          if (u.canAttackCity() || c == null) {
+            list.add(u2);
+          }
+        }
       }
     }
     return list;

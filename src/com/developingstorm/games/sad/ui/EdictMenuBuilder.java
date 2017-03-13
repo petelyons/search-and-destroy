@@ -104,10 +104,10 @@ public class EdictMenuBuilder {
   }
   
   private void select() {
-    if (_c.getGovernor().hasAirPatrolEdict()) {
+    if (_c.getGovernor().hasAirPatrol()) {
       AIR_PATROL_SEL.setSelected(true);
     }
-    if (_c.getGovernor().hasAutoSentryEdict()) {
+    if (_c.getGovernor().hasAutoSentry()) {
       AUTO_SENTRY_SEL.setSelected(true);
     }
 

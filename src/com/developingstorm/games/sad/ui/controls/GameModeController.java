@@ -185,7 +185,7 @@ public class GameModeController extends BaseController {
   
       @Override
       public void hexMousePressed(MouseEvent e, BoardHex hex) {
-        Log.debug("hexMousePressed");
+     
         if (_commander.isWaiting() == false) {
           return;
         }
@@ -199,7 +199,6 @@ public class GameModeController extends BaseController {
 
       @Override
       public void hexMouseReleased(MouseEvent e, BoardHex hex) {
-        Log.debug("hexMouseReleased");
         if (_commander.isWaiting() == false) {
           return;
         }
@@ -244,7 +243,6 @@ public class GameModeController extends BaseController {
     
       @Override
       public void hexMouseDragged(MouseEvent e, BoardHex hex) {
-        Log.debug("hexMouseDragged");
         if (_commander.isWaiting() == false) {
           return;
         }
@@ -255,18 +253,13 @@ public class GameModeController extends BaseController {
         }
       }
 
- 
-
       @Override
       public void hexMouseMoved(MouseEvent e, BoardHex hex) {
 
       }
-    });
-    
+    });    
   }
   
-  
-
   @Override
   public MouseListener mouseListener() {
     return _hexMouseListenerAdapter;

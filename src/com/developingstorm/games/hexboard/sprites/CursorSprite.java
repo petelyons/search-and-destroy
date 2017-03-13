@@ -20,7 +20,7 @@ public class CursorSprite extends PolygonSprite {
     _colors = new Color[6];
 
     for (int x = 0; x < 6; x++) {
-      _strokes[x] = new BasicStroke(1.5f, BasicStroke.CAP_BUTT,
+      _strokes[x] = new BasicStroke(3.0f, BasicStroke.CAP_BUTT,
           BasicStroke.JOIN_BEVEL, 10.0f, new float[] { 3.0f, 3.0f }, x);
       _colors[x] = Color.BLACK;
     }

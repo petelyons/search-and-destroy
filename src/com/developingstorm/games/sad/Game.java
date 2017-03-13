@@ -115,7 +115,7 @@ public class Game implements UnitLens, LocationLens {
 
   public Path calcPath(Player player, Location from, Location to, Travel travel) {
     Path p = calcTravelPath(player, from, to, travel, true, true);
-    if (p == null) {
+    if (p == null || p.isEmpty()) {
       p = calcTravelPath(player, from, to, travel, false, true);
     }
     return p;
@@ -223,6 +223,7 @@ public class Game implements UnitLens, LocationLens {
 
   public void killUnit(Unit u, boolean showDeath) {
     Log.debug(this, "Killing Unit: " + u);
+    
     u.kill();
     Player p = u.getOwner();
     p.removeUnit(u);

@@ -202,6 +202,12 @@ public class SaDFrame extends JFrame {
 
   private UIController _controller;
   
+  
+  public static boolean SHOW_AIR_PATHS = true;
+  public static boolean SHOW_SEA_PATHS = true;
+  public static boolean SHOW_LAND_PATHS = true;
+
+  
 
   public static boolean DEBUG_ASTAR = false;
   public static boolean DEBUG_EXPLORE = false;
@@ -307,12 +313,7 @@ public class SaDFrame extends JFrame {
 
       @Override
       public void selectPlayer(Player p) {
-        if (DEBUG_GOD_LENS)
-          _canvas.setLens(_game);
-        else
-          _canvas.setLens(p);
-        _canvas.resetPaths(p, true, true, true);
-        _canvas.repaint();
+        SaDFrame.this.selectPlayer(p);
       }
 
       @Override
@@ -331,11 +332,7 @@ public class SaDFrame extends JFrame {
         else {
           throw new SaDException("No UNIT");
         }
-        
-
       }
-
-
     });
 
 /*    _tbar = new GameToolbar(null, new ItemListener() {
@@ -398,7 +395,14 @@ public class SaDFrame extends JFrame {
     initGame();
   }
 
-  
+  private void selectPlayer(Player p) {
+    if (DEBUG_GOD_LENS)
+      _canvas.setLens(_game);
+    else
+      _canvas.setLens(p);
+    _canvas.resetPaths(p, SHOW_AIR_PATHS, SHOW_LAND_PATHS, SHOW_SEA_PATHS);
+    _canvas.repaint();
+  }
 
   public void initGame() {
     _canvas.startAmination();
@@ -679,7 +683,8 @@ public class SaDFrame extends JFrame {
   }
   
   public void endPathsMode() {
-    _controller.switchMode(UIMode.GAME);    
+    _controller.switchMode(UIMode.GAME);  
+    selectPlayer(_game.currentPlayer());
   }
 
 }

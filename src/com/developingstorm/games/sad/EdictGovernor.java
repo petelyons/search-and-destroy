@@ -8,7 +8,6 @@ import com.developingstorm.games.sad.edicts.AutoSentry;
 import com.developingstorm.games.sad.edicts.SendAirUnits;
 import com.developingstorm.games.sad.edicts.SendLandUnits;
 import com.developingstorm.games.sad.edicts.SendSeaUnits;
-import com.developingstorm.games.sad.ui.controls.GameCommander;
 
 public class EdictGovernor {
   
@@ -38,6 +37,12 @@ public class EdictGovernor {
     _seaPath = _player.edictFactory().sendSeaUnits(_c, c);
   }
 
+  public void setAirPatrol() {
+    _airPatrol = _player.edictFactory().airPatrol(_c);
+  }
+  public void setAutoSentry() {
+    _autoSentry = _player.edictFactory().autoSentry(_c);
+  }
 
   public City getAirPathDest() {
     if (_airPath != null) {
@@ -70,11 +75,11 @@ public class EdictGovernor {
     return (_seaPath != null);
   }
   
-  public boolean hasAirPatrolEdict() {
+  public boolean hasAirPatrol() {
     return _airPatrol != null;
   }
     
-  public boolean hasAutoSentryEdict() {
+  public boolean hasAutoSentry() {
     return _autoSentry != null;
   }
   
@@ -120,8 +125,14 @@ public class EdictGovernor {
     
   }
 
-  public boolean hasLandPatrolEdict() {
-    // TODO Auto-generated method stub
-    return false;
+  public void clearAirPatrol() {
+    _airPatrol = null;
+    
   }
+
+  public void clearAutoSenty() {
+    _autoSentry = null;
+    
+  }
+
 }

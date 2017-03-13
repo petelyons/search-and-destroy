@@ -144,6 +144,26 @@ public class MenuBarBuilder {
         _handler.onPathsMode();
       }});
     
+    
+    
+    VIEW_SEA_PATHS.setSelected(SaDFrame.SHOW_SEA_PATHS);
+    VIEW_SEA_PATHS.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        SaDFrame.SHOW_SEA_PATHS = !SaDFrame.SHOW_SEA_PATHS;
+      }});
+    VIEW_AIR_PATHS.setSelected(SaDFrame.SHOW_AIR_PATHS);
+    VIEW_AIR_PATHS.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        SaDFrame.SHOW_AIR_PATHS = !SaDFrame.SHOW_AIR_PATHS;
+      }});
+    VIEW_GROUND_PATHS.setSelected(SaDFrame.SHOW_LAND_PATHS);
+    VIEW_GROUND_PATHS.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        SaDFrame.SHOW_LAND_PATHS = !SaDFrame.SHOW_LAND_PATHS;
+      }});
     ButtonGroup group = new ButtonGroup();
     group.add(GAME_MODE);
     group.add(PATHS_MODE);

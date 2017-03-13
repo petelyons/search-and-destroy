@@ -6,6 +6,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.swing.event.ListSelectionEvent;
+
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.util.Log;
 
@@ -294,6 +296,7 @@ public class Unit {
     if (_isDead) {
       return;
     }
+    killCarried();
     _isDead  = true;
     _hits = 0;
     _game.killUnit(this);
@@ -402,6 +405,18 @@ public class Unit {
       }
     }
     return list;
+  }
+  
+  
+  void killCarried() {
+   
+    if (_carries != null) {
+      @SuppressWarnings("unchecked")
+      List<Unit> copy =  (List<Unit>) _carries.clone();
+      for (Unit u : copy) {
+        _game.killUnit(u);
+      }
+    }
   }
   
   
@@ -551,6 +566,10 @@ public class Unit {
       return (city != null && city.getOwner() == getOwner());
     }
     throw new SaDException("hasLanded called for non air unit");
+  }
+
+  public boolean canAttackCity() {
+    return (_travel == Travel.LAND || _type == Type.BOMBER);
   }
 
 }
