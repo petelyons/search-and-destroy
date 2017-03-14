@@ -1,11 +1,10 @@
-package com.developingstorm.games.sad.ui;
+package com.developingstorm.games.sad.ui.controls;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
 import com.developingstorm.games.hexboard.BoardHex;
-import com.developingstorm.games.sad.ui.controls.GameCommander;
 
 /**
  *

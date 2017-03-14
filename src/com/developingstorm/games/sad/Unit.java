@@ -76,7 +76,26 @@ public class Unit {
       sb.append(": On=");
       sb.append(_onboard.toUIString());
     }
+    if (_carries != null) {
+      sb.append(": Carries=");
+      sb.append(carriesDesc());
+    }
     sb.append(']');
+    return sb.toString();
+  }
+  
+  
+  public String carriesDesc() {
+    if (!canCarry()) {
+      return "N/A";
+    }
+    if (_carries == null || _carries.isEmpty()) {
+      return "None";
+    }
+    StringBuffer sb = new StringBuffer();
+    for (Unit u : _carries) {
+      sb.append(u.getType().getAbr());
+    }
     return sb.toString();
   }
 
@@ -299,7 +318,6 @@ public class Unit {
     killCarried();
     _isDead  = true;
     _hits = 0;
-    _game.killUnit(this);
     if (_onboard != null) {
       _onboard.removeCarried(this);
     }
@@ -413,9 +431,7 @@ public class Unit {
     if (_carries != null) {
       @SuppressWarnings("unchecked")
       List<Unit> copy =  (List<Unit>) _carries.clone();
-      for (Unit u : copy) {
-        _game.killUnit(u);
-      }
+      _game.killUnits(copy);
     }
   }
   

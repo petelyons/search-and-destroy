@@ -186,9 +186,8 @@ public class Board extends HexBoard {
 
     List<BoardHex> ring = getRing(loc, 1);
 
-    Iterator<BoardHex> itr = ring.iterator();
-    while (itr.hasNext()) {
-      Location l2 = ((BoardHex) itr.next()).getLocation();
+    for (BoardHex hex : ring) {
+      Location l2 = hex.getLocation();
       if (l2.x < 0 || l2.y < 0) {
         continue;
       }

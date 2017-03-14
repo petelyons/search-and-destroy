@@ -6,12 +6,12 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import com.developingstorm.games.astar.AStarPosition;
 import com.developingstorm.games.astar.AStarState;
@@ -24,6 +24,7 @@ import com.developingstorm.games.hexboard.sprites.ArrowSprite;
 import com.developingstorm.games.hexboard.sprites.Sprite;
 import com.developingstorm.games.sad.Board;
 import com.developingstorm.games.sad.City;
+import com.developingstorm.games.sad.Continent;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.SaDException;
@@ -41,11 +42,18 @@ import com.developingstorm.games.sad.ui.sprites.ExplosionSprite;
 public class BoardCanvas extends HexCanvas implements AStarWatcher {
   
   
+  /**
+   * 
+   */
+  private static final long serialVersionUID = 7394548177221258018L;
+
   static final boolean USE_BACKING_BUFFER = false;
+  
+  public static boolean SHOW_CONTINENT_NUMBERS = false;
 
   private Board _board;
-  private int _width;
-  private int _height;
+//  private int _width;
+//  private int _height;
   private Game _game;
   private Image[] _mapImages;  
   private GameIcons _icons;
@@ -69,8 +77,8 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
     _icons = icons;
     _game = game;
     _board = game.getBoard();
-    _width = _board.getWidth();
-    _height = _board.getHeight();
+ //   _width = _board.getWidth();
+ //   _height = _board.getHeight();
 
     _seaPaths = null;
     _airPaths = null;
@@ -189,6 +197,21 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
     g.drawString(name, center.x - (w / 2), center.y + h + (h / 2));
     g.setColor(oldColor);
 
+  }
+  
+  
+  private static void drawContinentNumber(int num, Graphics2D g, BoardHex bh, Location loc, Point center) {
+    Color oldColor = g.getColor();
+    g.setColor(Color.LIGHT_GRAY);
+    Font f = g.getFont();
+    FontRenderContext frc = g.getFontRenderContext();
+    String val = "" + num;
+    Rectangle2D rd = f.getStringBounds(val, frc);
+    int w = (int) rd.getWidth();
+    int h = (int) rd.getHeight();
+    g.drawString(val, center.x - (w / 2), (center.y - h ) + (h / 2));
+    g.setColor(oldColor);
+  
   }
 
   private static void drawRect(Graphics g, boolean highlight, Point p, Color c,
@@ -313,6 +336,22 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
   }
   
   
+  private void drawContinentNumbers(Graphics2D g) {
+    for (int i = 0; i < _board.getContinentCount(); i++) {
+      Continent c = _board.getContinent(i);
+      Set<Location> locations = c.getLocations();
+      for (Location loc : locations) {
+        BoardHex hex = _board.get(loc.x, loc.y);
+        Hex h = hex.getHex();
+        Point center = h.getCenter();
+        if (_lens != null && _lens.isExplored(loc)) {
+          drawContinentNumber(i, g, hex, loc, center);
+        }
+      }
+    }
+  }
+  
+  
   private void drawCities(Graphics2D g) {
     for (City c : _board.getCities()) {
       Location loc = c.getLocation();
@@ -362,6 +401,10 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
    
    
     if (z == 1) {
+      
+      if (SHOW_CONTINENT_NUMBERS) {
+        drawContinentNumbers(g);
+      }
       drawCities(g);
       drawUnits(g);
               

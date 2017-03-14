@@ -8,10 +8,7 @@ import java.awt.event.MouseMotionListener;
 
 import com.developingstorm.games.hexboard.BoardHex;
 import com.developingstorm.games.hexboard.Location;
-import com.developingstorm.games.sad.ui.MoveAction;
 import com.developingstorm.games.sad.ui.SaDFrame;
-import com.developingstorm.games.sad.ui.UserAction;
-import com.developingstorm.games.sad.util.Log;
 
 /**
  * 
@@ -133,7 +130,7 @@ public class GameModeController extends BaseController {
           }
           break;
         case KeyEvent.VK_T:
-          _currentAction = new MoveAction(_commander, GameModeController.this);
+          _currentAction = new MoveController(_commander, GameModeController.this);
           break;
 
         case KeyEvent.VK_H:
@@ -279,7 +276,7 @@ public class GameModeController extends BaseController {
 
   @Override
   public void clearAction() {
-    // TODO Auto-generated method stub
+    _currentAction = null;
     
   }
   

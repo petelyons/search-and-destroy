@@ -446,19 +446,21 @@ public class SaDFrame extends JFrame {
       @Override
       public void onDebugAstar(boolean v) {
         DEBUG_ASTAR = v;
-        
+        _canvas.validate();
       }
 
       @Override
       public void onDebugExplore(boolean v) {
         DEBUG_EXPLORE = v;
         Debug.setDebugExplore(v);
+        _canvas.validate();
         
       }
 
       @Override
       public void onDebugGodLens(boolean v) {
-        DEBUG_GOD_LENS = v;   
+        DEBUG_GOD_LENS = v;  
+        selectPlayer(_game.currentPlayer());
       }
 
       @Override
@@ -526,6 +528,12 @@ public class SaDFrame extends JFrame {
       @Override
       public void onPathsMode() {
         _controller.switchMode(UIMode.PATHS);
+      }
+
+      @Override
+      public void onDebugContinentNumbers(boolean selected) {
+        BoardCanvas.SHOW_CONTINENT_NUMBERS = selected;
+        _canvas.validate();
       }
       
     });

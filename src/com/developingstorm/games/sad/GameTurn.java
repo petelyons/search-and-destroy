@@ -14,12 +14,14 @@ class GameTurn {
   private final Player _player;
   private final Game _game;
   private TurnState _turnState;
+  private boolean _unitKilled;
   
   GameTurn(Game game, Player player, long turn) {
     _game = game;
     _player = player;
     _turn = turn; 
     _turnState = TurnState.START;
+    _unitKilled = false;
   }
   
   private OrderResponse play(Unit u, TurnState turnState) {
@@ -98,14 +100,12 @@ class GameTurn {
         throw new SaDException("Nothing should be yielding at this point!");
       }
       
-      
       Unit pending = _player.popPendingPlay();
       // Move the unit the user interacted with
       if (pending != null && pending.hasOrders() && unplayed.contains(pending)) {
         unplayed.remove(pending);
         process(pending);
       }
-      
      
       for (Unit u : unplayed) {
         if (!u.hasOrders()) {
@@ -128,7 +128,12 @@ class GameTurn {
   }
 
   private void process(Unit u) {
+    if (u.isDead()) {
+      Log.debug(u, "is dead. Skipping play");
+      return;
+    }
     Log.debug(this, "playing unit: " + u + " with order " + u.getOrder());
+
     
     _game.unitChange(u);
     OrderResponse response = play(u, _turnState);
@@ -170,6 +175,11 @@ class GameTurn {
     if (u.turn().isReady()) {
       throw new SaDException("A unit MUST NOT be READY after a turn pass");
     }
+    
+  }
+
+  public void unitKilled() {
+    _unitKilled = true;
     
   }
 

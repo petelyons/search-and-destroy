@@ -1,22 +1,21 @@
-package com.developingstorm.games.sad.ui;
+package com.developingstorm.games.sad.ui.controls;
 
 import java.awt.event.KeyEvent;
 
 import com.developingstorm.games.hexboard.Direction;
 import com.developingstorm.games.hexboard.Location;
-import com.developingstorm.games.sad.ui.controls.GameCommander;
 
 /**
  *
  *
  */
-public class MoveAction extends UserAction {
+public class MoveController extends UserAction {
 
   private Location _start;
   private Location _end;
   private int _boardMiddle;
 
-  public MoveAction(GameCommander commander, UserActionOwner owner) {
+  public MoveController(GameCommander commander, UserActionOwner owner) {
     super(commander, owner);
     _start = _end = commander.getCurrentLocation();
     _boardMiddle = (commander.boardWidth() / 2);
@@ -60,6 +59,7 @@ public class MoveAction extends UserAction {
       break;
     case KeyEvent.VK_ENTER:
       _commander.move(_end);
+      _commander.showLine(null, null);
       _owner.clearAction();
       return;
 

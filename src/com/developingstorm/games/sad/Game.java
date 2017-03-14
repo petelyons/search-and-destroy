@@ -48,6 +48,8 @@ public class Game implements UnitLens, LocationLens {
   
   private volatile Unit _selectedUnit;
 
+  private GameTurn _turnRunner;
+
 
 
   @SuppressWarnings("unchecked")
@@ -231,7 +233,7 @@ public class Game implements UnitLens, LocationLens {
     _gameListener.killUnit(u, showDeath);
     List<Unit> list = modifiableUnitsAtLocation(u.getLocation());
     list.remove(u);
-
+    _turnRunner.unitKilled();
   }
   
   public List<Unit> units() {
@@ -394,16 +396,12 @@ public class Game implements UnitLens, LocationLens {
       }
     }
     return null;
-
   }
 
   public ResponseCode resolveMove(Unit u, final Location dest) {
-    
-    
     if (u.getLocation().equals(dest)) {
       throw new SaDException("Unit already at location!");
     }
-
     City unownedCity = null;
     City enemyCity = null;
     City ourCity = null;
@@ -664,8 +662,8 @@ public class Game implements UnitLens, LocationLens {
         uc = p.unitCount();
         cc = p.cityCount();
         if (!(uc == 0 && cc == 0)) {
-          GameTurn turn = new GameTurn(this, p, _turn);
-          turn.play();
+          _turnRunner = new GameTurn(this, p, _turn);
+          _turnRunner.play();
         }
         _currentPlayer = nextPlayer();
         if (_currentPlayer == _players[0]) {

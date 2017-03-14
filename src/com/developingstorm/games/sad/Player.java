@@ -785,7 +785,7 @@ public class Player implements UnitLens, LocationLens {
    
     Unit pending = popPendingOrders();
     while (pending != null) {
-      if (pending.hasOrders()) {
+      if (pending.hasOrders() || pending.turn().isDone()) {
         pending = popPendingOrders();
       } else {
         break;
@@ -794,7 +794,7 @@ public class Player implements UnitLens, LocationLens {
  
     if (pending == null) {
       for (Unit u : _units) {
-        if (!u.hasOrders()) {
+        if (!u.hasOrders() &&  !u.turn().isDone()) {
           pending = u;
           break;
         }

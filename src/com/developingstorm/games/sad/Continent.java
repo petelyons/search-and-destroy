@@ -74,4 +74,8 @@ public class Continent {
     return coast;
   }
 
+  public Set<Location> getLocations() {
+    return _locations;
+  }
+
 }

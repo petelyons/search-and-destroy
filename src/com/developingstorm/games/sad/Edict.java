@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import com.developingstorm.games.sad.ui.controls.GameCommander;
-
 /**
  * Edicts are orders assigned to Cities instead of Units.
  */

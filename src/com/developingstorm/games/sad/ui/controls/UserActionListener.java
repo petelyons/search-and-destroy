@@ -1,4 +1,4 @@
-package com.developingstorm.games.sad.ui;
+package com.developingstorm.games.sad.ui.controls;
 
 import java.awt.event.ActionListener;
 import java.awt.event.KeyListener;

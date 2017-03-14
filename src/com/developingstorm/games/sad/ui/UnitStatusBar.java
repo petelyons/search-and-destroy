@@ -18,6 +18,7 @@ public class UnitStatusBar extends JComponent {
   private static final String STATUS = "Status:";
   private static final String HEALTH = "Health:";
   private static final String MOVE = "Moved:";
+  private static final String CARRIES = "Carries:";
   private static final Color LABEL_COLOR = new Color(20, 0, 100);
 
   private Unit _unit = null;
@@ -33,7 +34,8 @@ public class UnitStatusBar extends JComponent {
   private JLabel _health = new JLabel();
   private JLabel _movelabel = new JLabel();
   private JLabel _move = new JLabel();
-
+  private JLabel _carrieslabel = new JLabel();
+  private JLabel _carries = new JLabel();
   private JLabel _turnlabel = new JLabel();
   private JLabel _turnDesc = new JLabel();
   private JLabel _spacer = new JLabel();
@@ -77,6 +79,12 @@ public class UnitStatusBar extends JComponent {
     _move.setText("(unknown)");
     add(_move);
     _move.setForeground(LABEL_COLOR);
+    
+    _carrieslabel.setText(CARRIES);
+    add(_carrieslabel);
+
+    _carries.setText("(none)");
+    add(_carries);
 
     _statlabel.setText(STATUS);
     add(_statlabel);
@@ -101,6 +109,8 @@ public class UnitStatusBar extends JComponent {
     _health.setText(_unit.healthDesc());
 
     _move.setText(_unit.moveDesc());
+    
+    _carries.setText(_unit.carriesDesc());
     validate();
     //repaint();
   }
