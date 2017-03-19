@@ -106,9 +106,9 @@ public class UnitStatusBar extends JComponent {
 
     _location.setText(_unit.locationDesc());
 
-    _health.setText(_unit.healthDesc());
+    _health.setText(_unit.life().healthDesc());
 
-    _move.setText(_unit.moveDesc());
+    _move.setText(_unit.life().moveDesc());
     
     _carries.setText(_unit.carriesDesc());
     validate();

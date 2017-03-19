@@ -94,59 +94,59 @@ public class GameCommander extends BaseCommander {
 
   private void issueOrders(OrderType order, Location moveTo) {
     
-
-    if (_commandedUnits != null) {
-      for(Unit u : _commandedUnits) {
-        Log.debug("UI", "Issuing Order:" + order + " to special context:" + u);
-        _game.issueOrders(u, order, moveTo, null);
+    _game.postGameAction(()->{
+      if (_commandedUnits != null) {
+        for(Unit u : _commandedUnits) {
+          Log.debug("UI", "Issuing Order:" + order + " to special context:" + u);
+          u.assignOrder(u.newOrder(order, moveTo));
+        }
+      } else if (_game.selectedUnit() != null){
+        Log.debug("UI", "Issuing Order:" + order + " to selected unit:" + _game.selectedUnit());
+        _game.selectedUnit().assignOrder(_game.selectedUnit().newOrder(order, moveTo));
       }
-    } else if (_game.selectedUnit() != null){
-      Log.debug("UI", "Issuing Order:" + order + " to selected unit:" + _game.selectedUnit());
-      _game.issueOrders(_game.selectedUnit(), order, moveTo, null);
-    }
-    else {
-      throw new SaDException("No unit avaialble for orders");
-    }
-
-    Unit active = _game.selectedUnit();
-    if (active != null && active.hasOrders()) {
-      _game.endWait(active);
-    }
+      else {
+        throw new SaDException("No unit avaialble for orders");
+      }
+  
+      Unit active = _game.selectedUnit();
+    });
   }
 
   public void activate(BoardHex hex) {
-    Unit active = _game.selectedUnit();
-    Unit last = null;
+    Unit current = _game.selectedUnit();
+    Unit newSel = null;
+    
     if (_commandedUnits != null) {
+      Log.debug("Acting on specified units");
       for (Unit u : _commandedUnits) {
-        u.clearOrders();
-        last = u;
+        u.activate();
+        newSel = u;
       }
     } else {
       Location loc = hex.getLocation();
       
-      if (!active.getLocation().equals(loc)) {
+      if (!current.getLocation().equals(loc)) {
         City c = _game.cityAtLocation(hex.getLocation());
 
         if (c != null) {
           // do nothing
         } else {
-          active = _game.unitAtLocation(loc);
+          newSel = _game.unitAtLocation(loc);
         }
       }
 
-      if (active != null) {
-        active.clearOrders();
+      if (newSel != null) {
+        newSel.activate();
         //if (active.hasMoved()) {
         //  Log.println("UI", "*** Activated unit has already moved:" + active);
-        //}
-        last = active;
+        //
       }
     }
 
-    if (last != null) {
-      Log.debug("UI", "Activating :" + last);
-      _game.endWait(last);
+    if (newSel != null) {
+      Log.debug("UI", "Activating :" + newSel);
+      _game.selectUnit(newSel);
+      _game.resume(newSel);
     }
   }
 

@@ -1,9 +1,6 @@
 package com.developingstorm.games.sad;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.util.Log;
 
@@ -96,6 +93,10 @@ public class City {
     return _game.unitsAtLocation(_location);
   }
   
+  public Game getGame() {
+    return _game;
+  }
+  
 
   public void bombCity() {
     long d = _round - _productionStart;
@@ -105,22 +106,20 @@ public class City {
     _productionStart += d;
   }
 
-  public void startTurnPass(TurnState state) {
-    if (state == TurnState.START) {
-      int cost = _produces.getCost();
-      _round++;
-      _productionCompletedThisTurn = false;
-      if (_productionStart != -1 && _productionStart + cost == _round) {
-        Log.info(this, "Creating unit:" + _produces);
-        Unit u = _game.createUnit(_produces, _owner, _location);
-        Log.debug(u, "Created");
-        _owner.addUnit(u);
-        _productionStart = _round;
-        _productionCompletedThisTurn = true;
-      }
-      
-      _edicts.execute(_game);
+  public void startNewTurn() {
+    int cost = _produces.getCost();
+    _round++;
+    _productionCompletedThisTurn = false;
+    if (_productionStart != -1 && _productionStart + cost == _round) {
+      Log.info(this, "Creating unit:" + _produces);
+      Unit u = _game.createUnit(_produces, _owner, _location);
+      Log.debug(u, "Created at " + this);
+      _owner.addUnit(u);
+      _productionStart = _round;
+      _productionCompletedThisTurn = true;
     }
+    
+    _edicts.execute();
   }
   
   public boolean isNear(City target, int dist) {

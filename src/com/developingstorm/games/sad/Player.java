@@ -403,29 +403,7 @@ public class Player implements UnitLens, LocationLens {
     // ArrayList _board.getCoast(
 //  }
 
-  protected void startTurnPass(long turn, TurnState state) {
-    Log.debug(this, "Starting new turn pass");
-    for (City c: _cities) {
-      c.startTurnPass(state);
-    }
-
-    buildCityLists();
-    buildEnemyUnitList();
-    calcEnemyActivity();
-    calcContinentsLoadingPositions();
-
-    for (Unit u : _units) {
-      u.startTurnPass(state);
-    }
-
-    if (state == TurnState.START) {
-      _unitStats.recalc(_units, _cities);
-      Log.info("===========================================================================\r\nStarting new turn with:\n" + _unitStats);
-    }
-    else {
-      Log.info("---------------------------------------------------------------------------\r\n");
-    }
- }
+ 
 
   public Path getTravelPath(Travel travel, Location from, Location to) {
 
@@ -775,13 +753,11 @@ public class Player implements UnitLens, LocationLens {
   }
 
 
-  protected void unitsNeedOrders() {
+  public void unitsNeedOrders() {
     
     if (isRobot()) {
       throw new SaDException("The override method should have been called!");
     }
-    
-    
    
     Unit pending = popPendingOrders();
     while (pending != null) {
@@ -792,22 +768,24 @@ public class Player implements UnitLens, LocationLens {
       }
     }
  
-    if (pending == null) {
-      for (Unit u : _units) {
-        if (!u.hasOrders() &&  !u.turn().isDone()) {
-          pending = u;
-          break;
-        }
-      }
-    }
-      
     
     if (pending != null) {
-      _game.unitChange(pending);
+      _game.selectUnit(pending);
     }
     
-    if (_game.selectedUnit() == null) {
-      throw new SaDException("Turn needs units with orders but all units appear to already have them");
+    pending = _game.selectedUnit();
+    if (pending != null) {
+      if (!pending.life().hasMoves()) {
+        pending = null;
+      }
+    }
+    
+    if (pending == null) {
+      List<Unit> unplayed = unplayedUnits();
+      if (unplayed.isEmpty()) {
+        throw new SaDException("Trying to get orders when no units are playable!");
+      }
+      _game.selectUnit(unplayed.get(0));
     }
     
     _game.waitUser();
@@ -821,29 +799,7 @@ public class Player implements UnitLens, LocationLens {
   }
 
   
-  public List<Unit> unplayedUnits() {
-    ArrayList<Unit> units = new ArrayList<Unit>();
-    
-    for (Unit u : _units) {
-      if (!u.turn().isDone()) {
-        units.add(u);
-      }
-    }
-    
-    Unit selected = _game.selectedUnit();
-    if (selected != null) {
-      Location loc = selected.getLocation();
-      List<Unit> atLoc = _game.unitsAtLocation(loc);
-      for (Unit u : atLoc) {
-        if (units.contains(u)) {
-          units.remove(u);
-          units.add(0, u);
-        }
-      }
-    }
-   
-    return units;
-  }
+
   
   /**
    * Finds cities within n spaces of the frontier
@@ -963,5 +919,131 @@ public class Player implements UnitLens, LocationLens {
 
   public Game getGame() {
    return _game;
+  }
+
+   public void startNewTurn() {
+    Log.debug(this, "Starting new turn");
+    for (City c: _cities) {
+      c.startNewTurn();
+    }
+
+    buildCityLists();
+    buildEnemyUnitList();
+    calcEnemyActivity();
+    calcContinentsLoadingPositions();
+
+    for (Unit u : _units) {
+      u.turn().beginTurn();
+    }
+
+
+   _unitStats.recalc(_units, _cities);
+    Log.info("===========================================================================\r\nStarting new turn with:\n" + _unitStats);
+  }
+
+  public void completeTurn() {
+   
+    @SuppressWarnings("unchecked")
+    List<Unit> list = (List<Unit>) _units.clone();
+    for (Unit u : list) {
+      u.turn().completeTurn();
+    }
+   
+  }
+  
+
+  static class OrderStateCounts {
+    int availableMoves = 0;
+    int noOrders;
+  }
+
+  private static OrderStateCounts analyseUnplayed(List<Unit> units) {
+    OrderStateCounts counts = new OrderStateCounts();
+    for (Unit u : units) {
+
+      if (u.turn().isDone() == false && !u.hasOrders() && u.life().isSleeping() == false) {
+        counts.noOrders++;
+      }
+      counts.availableMoves += u.life().movesLeft();
+    }
+    return counts;
+  }
+  
+  
+  public List<Unit> unplayedUnits() {
+    ArrayList<Unit> units = new ArrayList<Unit>();
+    
+    forEachUnit((Unit u)->{Log.info(u, (u.life().hasMoves() ? "HAS MOVES" : "NO MOVES")); });
+    
+    forEachUnit((Unit u)->{if (u.life().hasMoves()) {units.add(u);} });
+    
+    Unit selected = _game.selectedUnit();
+    if (selected != null) {
+      Location loc = selected.getLocation();
+      List<Unit> atLoc = _game.unitsAtLocation(loc);
+      for (Unit u : atLoc) {
+        if (units.contains(u)) {
+          units.remove(u);
+          units.add(0, u);
+        }
+      }
+    }
+    
+    Log.info("Found " + units.size() + " potentially playable units");
+   
+    return units;
+  }
+
+  public void play() {
+    
+    int previousMovesLeft = 0;
+    
+    startNewTurn();
+    
+    while (true) {
+      List<Unit> unplayed = unplayedUnits();
+    
+      if (unplayed.isEmpty()) {
+        Log.info(this, "Turn over");
+        break;
+      }
+    
+      Unit pending = popPendingPlay();
+      // Move the unit the user interacted with
+      if (pending != null && pending.hasOrders()  && unplayed.contains(pending)) {
+        unplayed.remove(pending);
+        pending.turn().attemptTurn();
+      }
+      
+      for (Unit u : unplayed) {
+        if (!u.hasOrders()) {
+          continue;
+        }
+        
+        _game.selectUnit(u);
+        u.turn().attemptTurn();
+      }
+      
+      unplayed = unplayedUnits();
+      OrderStateCounts orderStats = analyseUnplayed(unplayed);
+      
+      if (orderStats.availableMoves == previousMovesLeft && orderStats.noOrders == 0) {
+        Log.debug("Nothing moved this pass.  Consider the turn done");
+        break;
+      }
+ 
+      previousMovesLeft = orderStats.availableMoves;
+      
+      if ( orderStats.noOrders > 0) {
+        Log.debug(this, "Needs more orders");
+        unitsNeedOrders();
+        previousMovesLeft = -1;
+      }
+
+      // pass++;
+    }
+    
+    completeTurn();
+      
   }
 }

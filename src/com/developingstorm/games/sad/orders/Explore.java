@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.City;
+import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Order;
 import com.developingstorm.games.sad.OrderResponse;
 import com.developingstorm.games.sad.OrderType;
@@ -11,28 +12,31 @@ import com.developingstorm.games.sad.Path;
 import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.ResponseCode;
 import com.developingstorm.games.sad.Travel;
-import com.developingstorm.games.sad.TurnState;
+import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.util.Log;
 
 /**
  * 
  */
-public class Explore extends Move {
+public class Explore extends Order {
+  
+  public Explore(Game g, Unit u) {
+    super(g, u, OrderType.EXPLORE);
+  }
 
-  public OrderResponse executeInternal(TurnState turnState) {
+  public OrderResponse executeInternal() {
     Player owner = _unit.getOwner();
 
-    Order headHome = alternateOrder(OrderType.HEAD_HOME, null, null);
+    Order headHome = new HeadHome(_game, _unit);
 
     ArrayList<Location> frontierLocations = owner.getFrontier(_unit);
     ArrayList<Location> blockedLocations = new ArrayList<>();
 
     ResponseCode resp;
     do {
-      if (_unit.mustLand() &&  !_unit.hasLanded()) {
+      if (_unit.life().mustLand() &&  !_unit.hasLanded()) {
         Log.debug(_unit, "requires landing!");
-        _lastPath = null;
-        OrderResponse response = headHome.execute(turnState);
+        OrderResponse response = headHome.execute();
         if (response.getCode() == ResponseCode.ORDER_COMPLETE) {
           return new OrderResponse(ResponseCode.TURN_COMPLETE, this, null);
         }
@@ -41,14 +45,14 @@ public class Explore extends Move {
         Log.debug(_unit, "no reachable frontier to explore!");
         if (_unit.getTravel() == Travel.AIR) {
           if (!_unit.hasLanded()) {
-            return headHome.execute(turnState);
+            return headHome.execute();
           }
           else {
             City currentCity = _game.cityAtLocation(_unit.getLocation());
             City hop = _unit.getOwner().findHopCity(currentCity, _unit.getMaxTravel());
             if (hop != null) {
-              Order altMove = alternateOrder(OrderType.MOVE, hop.getLocation(), null);
-              return altMove.execute(turnState);
+              Order altMove = new Move(_game, _unit, hop.getLocation());
+              return altMove.execute();
             }
           }
         }
@@ -80,6 +84,10 @@ public class Explore extends Move {
       }
 
       resp = _game.resolveMove(_unit, dest);
+      if (resp == ResponseCode.DIED) {
+        return new OrderResponse(resp, this, null);
+      }
+
       if (resp == ResponseCode.YIELD_PASS && blockedLocations.contains(dest)) {
         return new OrderResponse(resp, this, null);
       }
@@ -93,8 +101,9 @@ public class Explore extends Move {
         frontierLocations.remove(dest);
         blockedLocations.add(dest);
       }
+      
  
-    } while (_unit.movesLeft() > 0);
+    } while (_unit.life().movesLeft() > 0);
 
     if (resp == ResponseCode.ORDER_AND_TURN_COMPLETE || resp == ResponseCode.STEP_COMPLETE) {
       resp = ResponseCode.TURN_COMPLETE;

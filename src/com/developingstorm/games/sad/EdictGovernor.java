@@ -9,39 +9,52 @@ import com.developingstorm.games.sad.edicts.SendAirUnits;
 import com.developingstorm.games.sad.edicts.SendLandUnits;
 import com.developingstorm.games.sad.edicts.SendSeaUnits;
 
+
+
+/**
+ * Each city has an EdictGovernor that executes its assigned edicts.
+ */
 public class EdictGovernor {
   
   
   private final City _c;
   private final Player _player;
-  private SendAirUnits _airPath;
-  private SendLandUnits _landPath;
-  private SendSeaUnits _seaPath;
-  private AirPatrol _airPatrol;
-  private AutoSentry _autoSentry;
+  private volatile SendAirUnits _airPath;
+  private volatile SendLandUnits _landPath;
+  private volatile SendSeaUnits _seaPath;
+  private volatile AirPatrol _airPatrol;
+  private volatile AutoSentry _autoSentry;
+  
+  private final Game _game;
 
   EdictGovernor(Player player, City c) {
     _c = c;
     _player = player;
+    _game = _c.getGame();
   }
   
   public void setAirPathDest(City c) {
     _airPath = _player.edictFactory().sendAirUnits(_c, c);
+    _airPath.execute(_game);
   }
 
   public void setLandPathDest(City c) {
     _landPath = _player.edictFactory().sendLandUnits(_c, c);
+    _landPath.execute(_game);
   }
 
   public void setSeaPathDest(City c) {
     _seaPath = _player.edictFactory().sendSeaUnits(_c, c);
+    _seaPath.execute(_game);
   }
 
   public void setAirPatrol() {
     _airPatrol = _player.edictFactory().airPatrol(_c);
+    _airPatrol.execute(_game);
   }
   public void setAutoSentry() {
     _autoSentry = _player.edictFactory().autoSentry(_c);
+    _autoSentry.execute(_game);
   }
 
   public City getAirPathDest() {
@@ -103,10 +116,10 @@ public class EdictGovernor {
     return edicts;
   }
 
-  public void execute(Game game) {
+  public void execute() {
     List<Edict> edicts = getEdicts();
     for (Edict e : edicts) {
-      e.onTurnStart(game);
+      e.execute(_game);
     }
   }
 

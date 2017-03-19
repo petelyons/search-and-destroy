@@ -3,11 +3,11 @@ package com.developingstorm.games.sad.orders;
 import java.util.List;
 
 import com.developingstorm.games.hexboard.Location;
-import com.developingstorm.games.sad.City;
+import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Order;
 import com.developingstorm.games.sad.OrderResponse;
+import com.developingstorm.games.sad.OrderType;
 import com.developingstorm.games.sad.ResponseCode;
-import com.developingstorm.games.sad.TurnState;
 import com.developingstorm.games.sad.Unit;
 
 /**
@@ -15,19 +15,23 @@ import com.developingstorm.games.sad.Unit;
  * 
  */
 public class Sentry extends Order {
+  
+  public Sentry(Game g, Unit u) {
+    super(g, u, OrderType.SENTRY);
+  }
 
-  public OrderResponse executeInternal(TurnState turnState) {
+  public OrderResponse executeInternal() {
     if (_unit.canCarry()) {
-      return executeTransport(turnState);
+      return executeTransport();
     }
     else {
-      return executeNonTransport(turnState);
+      return executeNonTransport();
     }
   }
   
   
-  private OrderResponse executeTransport(TurnState turnState) {
-    
+  private OrderResponse executeTransport() {
+    _unit.life().sleep();
     if (_unit.carriableWeight() > 0
         && _unit.carriedWeight() < _unit.carriableWeight()) {
 
@@ -49,8 +53,9 @@ public class Sentry extends Order {
   }
   
   
-  private OrderResponse executeNonTransport(TurnState turnState) {
-    return new OrderResponse(ResponseCode.YIELD_PASS, this, null);
+  private OrderResponse executeNonTransport() {
+    _unit.life().sleep();
+    return new OrderResponse(ResponseCode.TURN_COMPLETE, this, null);
   }
 
 //  public boolean complete() {

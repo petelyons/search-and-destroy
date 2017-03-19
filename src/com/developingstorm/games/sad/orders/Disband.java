@@ -1,16 +1,23 @@
 package com.developingstorm.games.sad.orders;
 
+import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Order;
 import com.developingstorm.games.sad.OrderResponse;
+import com.developingstorm.games.sad.OrderType;
 import com.developingstorm.games.sad.ResponseCode;
-import com.developingstorm.games.sad.TurnState;
+import com.developingstorm.games.sad.Unit;
 
 /**
 
  * 
  */
 public class Disband extends Order {
-  public OrderResponse executeInternal(TurnState turnState) {
+  
+  protected Disband(Game g, Unit u) {
+    super(g, u, OrderType.DISBAND);
+  }
+
+  public OrderResponse executeInternal() {
     _game.killUnit(_unit);
     return new OrderResponse(ResponseCode.TURN_COMPLETE, this, null);
   }

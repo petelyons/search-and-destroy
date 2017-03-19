@@ -305,7 +305,16 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
 
   private void drawUnit(Unit u, Graphics g, BoardHex bh, Location loc,
       Point center) {
+    
 
+    if (u.life().hasMoves()) {
+      Color oldColor = g.getColor();
+      g.setColor(Color.YELLOW);
+      g.fillOval(center.x - 18, center.y - 18, 36, 36);
+      g.setColor(oldColor);
+    }
+    
+    
     Player p = u.getOwner();
     int size = 14;
     Color c = _ctx.getPlayerColor(p);

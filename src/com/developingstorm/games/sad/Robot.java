@@ -87,7 +87,7 @@ public class Robot extends Player {
       for (City c : cities) {
         if (c != null && c.getOwner() != this) {
           Log.debug(this, "Moving to city:" + c);
-          return Order.factory(_game, u, OrderType.MOVE, c.getLocation(), null);
+          return u.newMoveOrder(c.getLocation());
         }
       }
     }
@@ -95,10 +95,10 @@ public class Robot extends Player {
     if (u.getType() == Type.TRANSPORT || u.getType() == Type.CARGO) {
       if (u.carriedWeight() < u.carriableWeight()) {
         if (isUnitInOrAdjascentToCityProducingLoadableUnits(u)) {
-          return Order.factory(_game, u, OrderType.SENTRY, null, null);
+          return u.newSentryOrder();
         }
         if (isUnitNextToTargetLand(u)) {
-          return Order.factory(_game, u, OrderType.UNLOAD, null, null);
+          return u.newUnloadOrder();
         }
       } else {
       }
@@ -125,31 +125,28 @@ public class Robot extends Player {
         }
       }
       Log.debug(u, "Moving to attack:" + closestEnemy);
-      return Order.factory(_game, u, OrderType.MOVE,
-          closestEnemy.getLocation(), null);
+      return u.newMoveOrder(closestEnemy.getLocation());
     }
 
  
-    return Order.factory(_game, u, OrderType.EXPLORE);
+    return u.newExploreOrder();
   }
 
   private static boolean isUnitNextToTargetLand(Unit u) {
     return false;
   }
+  
 
   @Override
-  protected void startTurnPass(long turn, TurnState state) {
+  public void startNewTurn() {
     
-    super.startTurnPass(turn, state);
-    
-    if (state == TurnState.START) {
-      for (City c : _cities) {
-        if (c.productionCompleted()) {
-          
-          Type t = _unitStats.productionChoice(c);
-          Log.debug(this, "Resetting production of " + c + " to: " + t);
-          c.produce(t);
-        }
+    super.startNewTurn();
+    for (City c : _cities) {
+      if (c.productionCompleted()) {
+        
+        Type t = _unitStats.productionChoice(c);
+        Log.debug(this, "Resetting production of " + c + " to: " + t);
+        c.produce(t);
       }
     }
   }
@@ -162,9 +159,9 @@ public class Robot extends Player {
 
   
   @Override
-  protected void unitsNeedOrders() {
+  public void unitsNeedOrders() {
     for (Unit u : _units) {
-      if (u.turn().awaitingOrders()) {
+      if (!u.hasOrders()) {
         u.assignOrder(getOrders(u));
       }
     }

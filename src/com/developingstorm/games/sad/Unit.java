@@ -6,9 +6,20 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.swing.event.ListSelectionEvent;
-
 import com.developingstorm.games.hexboard.Location;
+import com.developingstorm.games.sad.orders.Explore;
+import com.developingstorm.games.sad.orders.HeadHome;
+import com.developingstorm.games.sad.orders.Move;
+import com.developingstorm.games.sad.orders.MoveEast;
+import com.developingstorm.games.sad.orders.MoveNorthEast;
+import com.developingstorm.games.sad.orders.MoveNorthWest;
+import com.developingstorm.games.sad.orders.MoveSouthEast;
+import com.developingstorm.games.sad.orders.MoveSouthWest;
+import com.developingstorm.games.sad.orders.MoveWest;
+import com.developingstorm.games.sad.orders.Sentry;
+import com.developingstorm.games.sad.orders.SkipTurn;
+import com.developingstorm.games.sad.orders.Unload;
+import com.developingstorm.games.sad.turn.UnitTurnState;
 import com.developingstorm.games.sad.util.Log;
 
 public class Unit {
@@ -23,37 +34,187 @@ public class Unit {
   private volatile Game _game;
   private volatile ArrayList<Unit> _carries;
   private volatile Unit _onboard;
-  private volatile int _hits;
   private volatile int _dist;
   private volatile Order _order;
-  private volatile int _moved;
-  private volatile int _totalMoved;
   private volatile String _name;
   private volatile long _id;
-  private volatile TurnFlow _turnFlow;
-
+  private volatile UnitTurnState _turn;
   private boolean _isDead = false;  //Used to prevent endless looping during kill processing u->game->u->game->u->game...
+  private Life _life;
+  
+  public class Life {
+    private volatile int _hits;
+    private volatile int _fuel;
+    private volatile int _moves;
+    private volatile boolean _sleeping;
+    
+    
+    public Life() {
+      _hits = _type.getHits();
+      _fuel = _type.getFuel();
+      _moves = _type.getDist();
+      _sleeping = false;
+    }
+
+    public void repair() {
+      if (_hits < _type.getHits()) {
+        _hits++;
+      }
+    }
+
+    public void fuel() {
+      _fuel = _type.getFuel();
+    }
+    
+    public void resetForTurn() {
+      _moves = _type.getDist();
+    }
+
+    public void move() {
+      _moves--;
+      
+      if ( _type.getFuel() == 0) {
+        _fuel--;
+      }
+    }
+    
+    public void wake() {
+      _sleeping = false;
+    }
+        
+    public void sleep() {
+      _sleeping = true;
+    }
+    
+    public boolean isSleeping() {
+      return _sleeping;
+    }
+    
+    public void burnMoves() {
+      while (movesLeft() > 0) {
+        move();
+      }
+    }
+
+    public void burnMovesButNotFuel() {
+      while (movesLeft() > 0) {
+        _moves--;
+      }
+    }
+
+    
+    public boolean hasDied() {
+      return _hits <= 0 || !hasFuel();
+    }
+   
+    public boolean hasFuel() {
+      if ( _type.getFuel() == 0) {
+        return true;
+      }
+      return _fuel <= 0;
+    }
+ 
+    public boolean hasMoves() {
+      return _sleeping == false && _moves > 0 && !hasDied();
+    }
+    
+    public int turnAroundDist() {
+      if (_travel == Travel.AIR) {
+        return (getMaxTravel() / 2);
+      }
+      return 0;
+    }
+
+    public boolean mustLand() {
+      if (_travel == Travel.AIR) {
+        if (_fuel < turnAroundDist()) {
+          return true;
+        }
+      }
+      return false;
+    }
+    
+    public String healthDesc() {
+      return "" + _hits + " of " + _type.getHits();
+    }
+    
+
+    public String moveDesc() {
+      String s = "" + _moves + " of " + _dist;
+      int maxTravel = getMaxTravel();
+      if (maxTravel > 0) {
+        s += " [" + _fuel + " of " + maxTravel + "]";
+      }
+      return s;
+    }
+    
+    public int movesLeft() {
+      return _moves;
+    }
+    
+    public boolean attack(int attackVal) {
+      if (attackVal == 0) {
+        return isDead();
+      }
+      if (attackVal < 0) {
+        throw new SaDException("BAD ATTACK VALUE");
+      }
+      _hits -= attackVal;
+      return isDead();
+    }
+    
+    public String toString() {
+      StringBuffer sb = new StringBuffer();
+      sb.append('[');
+      sb.append("HITS=");
+      sb.append(_hits);
+      sb.append("/");
+      sb.append(_type.getHits());
+      sb.append(": MOVE=");
+      sb.append(_moves);
+      sb.append("/");
+      sb.append(_type.getDist());
+      if (_type.getFuel() > 0) {
+        sb.append(": FUEL=");
+        sb.append(_fuel);
+        sb.append("/");
+        sb.append(_type.getFuel());
+      }
+      sb.append(']');
+      return sb.toString();
+    }
+
+    public void kill() {
+      _hits = 0;
+    }
+  }
+  
+  
+  
+
 
   public Unit(Type t, Player owner, Location loc, Game game) {
     _type = t;
     _loc = loc;
     _name = null;
-    _hits = _type.getHits();
     _dist = _type.getDist();
     _travel = _type.getTravel();
     _owner = owner;
     _game = game;
     _board = _game.getBoard();
     _order = null;
-    _game.initUnit(this);
-    _turnFlow = new TurnFlow();
+    _turn = new UnitTurnState(game, this);
+    _life = new Life();
     synchronized (this) {
       s_unitCounter++;
       _id = s_unitCounter;
     }
+    // A unit needs an ID before it can be placed!
+    _game.placeUnitOnBoard(this);
   }
 
-  private void changeLoc(Location loc) {
+  private synchronized void changeLoc(Location loc) {
+    Log.info(this, "change location to " + loc);
     _game.changeUnitLoc(this, loc);
     _loc = loc;
   }
@@ -62,16 +223,12 @@ public class Unit {
     StringBuffer sb = new StringBuffer();
     sb.append('[');
     sb.append(toUIString());
-    sb.append(": TS=");
-    sb.append(turn());
     sb.append(": Own=");
     sb.append(_owner);
     sb.append(": Loc=(");
     sb.append(_loc);
-    sb.append(": Mv=");
-    sb.append(_moved);
-    sb.append(": Dist=");
-    sb.append(_dist);
+    sb.append("): Life=");
+    sb.append(_life);
     if (_onboard != null) {
       sb.append(": On=");
       sb.append(_onboard.toUIString());
@@ -105,7 +262,16 @@ public class Unit {
     sb.append(_type);
     sb.append(' ');
     sb.append(_id);
-    sb.append(':');
+    sb.append(": ");
+    if (_life == null) {
+      sb.append("INIT");
+    }
+    else if (_life.isSleeping()) {
+      sb.append("SLEEP");
+    } else {
+      sb.append("AWAKE");
+    }
+    sb.append(": ");
     sb.append((_order != null) ? _order.getType().toString() : "No Orders");
     return sb.toString();
   }
@@ -122,34 +288,9 @@ public class Unit {
     }
   }
 
-  public String healthDesc() {
-    return "" + _hits + " of " + _type.getHits();
-  }
 
-  public String moveDesc() {
-    String s = "" + _moved + " of " + _dist;
-    int maxTravel = getMaxTravel();
-    if (maxTravel > 0) {
-      s += " [" + _totalMoved + " of " + maxTravel + "]";
-    }
-    return s;
-  }
   
-  public int turnAroundDist() {
-    if (_travel == Travel.AIR) {
-      return (getMaxTravel() / 2);
-    }
-    return 0;
-  }
 
-  public boolean mustLand() {
-    if (_travel == Travel.AIR) {
-      if (_totalMoved >= turnAroundDist()) {
-        return true;
-      }
-    }
-    return false;
-  }
 
   public String locationDesc() {
     return _loc.toString();
@@ -172,13 +313,12 @@ public class Unit {
       throw new SaDException("Invalid Move:");
     }
     
-    if (movesLeft() == 0) {
+    if (!_life.hasMoves()) {
       return;
     }
 
-   // Location oldLoc = _loc;
-    _moved++;
-    _totalMoved++;
+    _life.move();
+    
     changeLoc(loc);
     _owner.adjustVisibility(this);
     _game.trackUnit(this);
@@ -200,29 +340,23 @@ public class Unit {
     if (_travel == Travel.AIR) {
       City city = _board.getCity(loc);
       if (city != null && city.getOwner() == getOwner()) {
-        _totalMoved = 0;
-        clearOrderAndCompleteTurn();
+        _turn.clearOrderAndCompleteTurn();
       }
     }
 
     // If the unit ran out of fuel, it dies
-    int maxTravel = getMaxTravel();
-    if (maxTravel > 0 && _totalMoved >= maxTravel) {
+    if (!_life.hasFuel()) {
       _game.killUnit(this);
     }
 
   }
   
-  public TurnFlow turn() {
-    return _turnFlow;
+  public UnitTurnState turn() {
+    return _turn;
   }
 
   public Travel getTravel() {
     return _travel;
-  }
-
-  public int getMaxTravel() {
-    return _type.getMaxTravel();
   }
 
   public Type getType() {
@@ -262,14 +396,13 @@ public class Unit {
   }
 
   public boolean isDead() {
-    return _hits <= 0 || _isDead;
+    return _life.hasDied() || _isDead;
   }
 
   @Override
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + ((_game == null) ? 0 : _game.hashCode());
     result = prime * result + (int) (_id ^ (_id >>> 32));
     result = prime * result + ((_type == null) ? 0 : _type.hashCode());
     return result;
@@ -284,11 +417,6 @@ public class Unit {
     if (getClass() != obj.getClass())
       return false;
     Unit other = (Unit) obj;
-    if (_game == null) {
-      if (other._game != null)
-        return false;
-    } else if (!_game.equals(other._game))
-      return false;
     if (_id != other._id)
       return false;
     if (_type == null) {
@@ -299,16 +427,7 @@ public class Unit {
     return true;
   }
 
-  public boolean hit(int attackVal) {
-    if (attackVal == 0) {
-      return isDead();
-    }
-    if (attackVal < 0) {
-      throw new SaDException("BAD ATTACK VALUE");
-    }
-    _hits -= attackVal;
-    return isDead();
-  }
+
 
   // Should only be called by (Game).killUnit
   void kill() {
@@ -316,8 +435,8 @@ public class Unit {
       return;
     }
     killCarried();
+    _life.kill();
     _isDead  = true;
-    _hits = 0;
     if (_onboard != null) {
       _onboard.removeCarried(this);
     }
@@ -384,8 +503,7 @@ public class Unit {
     }
 
     for(Unit u : _carries) {
-      u.clearOrders();
-      u.turn().setWaitingOrders();
+      u.activate();
       _owner.pushPendingOrders(u);
     }
   }
@@ -436,7 +554,7 @@ public class Unit {
   }
   
   
-  private void autoLoad() {
+  public void autoLoad() {
     if (_game.isCity(_loc)) {
       if (carriableWeight() > 0  && carriedWeight() < carriableWeight()) {
         List<Unit> ul = _game.unitsAtLocation(_loc);
@@ -451,63 +569,26 @@ public class Unit {
     }
   }
   
-  public void startTurnPass(TurnState state) {
-    // CALLED FOR EVERY PASS OF THE TURN.  IF YOU WANT TO ONLY DO SOMETHING AT THE START OF THE TURN
-    ///  YOU HAVE TO CHECK THE STATE!
-    
-    if (state == TurnState.START) {
-      _moved = 0;
-      if (_order != null && _order.getType() == OrderType.SKIPTURN) {
-        clearOrders();
-      }
-    }
-    
-    autoLoad();
-    _turnFlow.startPass(state, this);
-  }
 
-  public void completeTurn() {
-    
-    // Planes run out of fuel even when they don't move
-    int maxTravel = getMaxTravel();
-    if (maxTravel > 0 && _moved < _type.getDist()) {
-      _totalMoved += (_type.getDist() - _moved);
-    }
-    if (maxTravel > 0 && _totalMoved >= maxTravel) {
-      _game.killUnit(this);
-    }
-    _turnFlow.completeTurn();
-  }
 
   public void clearOrders() {
     if (_order != null && _order.getType().equals(OrderType.SKIPTURN)) {
        Log.stack("Clearing skip turn");
     }
     _order = null;
-    if (_turnFlow.isReady()) {
-      _turnFlow.setWaitingOrders();
-    }
-    
-  }
-  public void clearOrderAndCompleteTurn() {
-    _order = null;
-    _turnFlow.completeTurn();
   }
 
 
   public void orderSentry() {
-    assignOrder(Order.factory(_game, this, OrderType.SENTRY, null, null));
+    assignOrder(newSentryOrder());
   }
 
   public void orderMove(Location loc) {
-    assignOrder(Order.factory(_game, this, OrderType.MOVE, loc, null));
+    assignOrder(newMoveOrder(loc));
   }
 
   public void assignOrder(Order order) {
     _order = order;
-    if (_turnFlow.awaitingOrders()) {
-      _turnFlow.setReady();
-    }
   }
 
   public Location getClosestLocation(List<?> locations) {
@@ -572,9 +653,7 @@ public class Unit {
     return _type.getCarryCount() > 0;
   }
 
-  public int movesLeft() {
-    return _dist - _moved;
-  }
+
 
   public boolean hasLanded() {
     if (_travel == Travel.AIR) {
@@ -586,6 +665,130 @@ public class Unit {
 
   public boolean canAttackCity() {
     return (_travel == Travel.LAND || _type == Type.BOMBER);
+  }
+  
+  
+  public Explore newExploreOrder() {
+    return new Explore(_game, this);
+  }
+  
+  public HeadHome newHeadHomeOrder() {
+    return new HeadHome(_game, this);
+  }
+  
+  public Move newMoveOrder(Location loc) {
+    return new Move(_game, this, loc);
+  }
+  
+  public Sentry newSentryOrder() {
+    return new Sentry(_game, this);
+  }
+  
+  public Unload newUnloadOrder() {
+    return new Unload(_game, this);
+  }
+  
+  public MoveEast newMoveEast() {
+    return new MoveEast(_game, this);
+  }
+  public MoveWest newMoveWest() {
+    return new MoveWest(_game, this);
+  }
+
+  public MoveNorthWest newMoveNorthWest() {
+    return new MoveNorthWest(_game, this);
+  }
+  public MoveSouthWest newMoveSouthWest() {
+    return new MoveSouthWest(_game, this);
+  }
+  
+  public MoveNorthEast newMoveNorthEast() {
+    return new MoveNorthEast(_game, this);
+  }
+  public MoveSouthEast newMoveSouthEast() {
+    return new MoveSouthEast(_game, this);
+  }
+  
+  public SkipTurn newSkipTurn() {
+    return new SkipTurn(_game, this);
+  }
+  
+  
+  /**
+   * Construct and order given an OrderType and an optional parameter.
+   * 
+   * WHEN OrderType.MOVE, p1 MUST BE Location 
+   * 
+   * Otherwise p1 is ignored 
+   *  
+   * @param order
+   * @param p1
+   * @return
+   */
+  public Order newOrder(OrderType order, Object p1) {
+    if (order.equals(OrderType.EXPLORE)) {
+      return newExploreOrder();
+    } else if (order.equals(OrderType.HEAD_HOME)) {
+      return newHeadHomeOrder();
+    } else if (order.equals(OrderType.MOVE)) {
+      return newMoveOrder((Location) p1);
+    } else if (order.equals(OrderType.SENTRY)) {
+      return newSentryOrder();
+    } else if (order.equals(OrderType.UNLOAD)) {
+      return newUnloadOrder();
+    } else if (order.equals(OrderType.MOVE_WEST)) {
+      return newMoveWest();
+    } else if (order.equals(OrderType.MOVE_EAST)) {
+      return newMoveEast();
+    } else if (order.equals(OrderType.MOVE_NORTH_WEST)) {
+      return newMoveNorthWest();
+    } else if (order.equals(OrderType.MOVE_SOUTH_WEST)) {
+      return newMoveSouthWest();
+    } else if (order.equals(OrderType.MOVE_NORTH_EAST)) {
+      return newMoveNorthEast();
+    } else if (order.equals(OrderType.MOVE_SOUTH_EAST)) {
+      return newMoveSouthEast();
+    } else if (order.equals(OrderType.SKIPTURN)) {
+        return newSkipTurn();
+    } else  {
+      throw new SaDException("Unknown order type:" + order.toString());
+    }
+  }
+
+  
+  public Life life() {
+    return _life;
+  }
+
+
+  public int getMaxTravel() {
+    return _type.getFuel();
+  }
+
+  
+  public OrderResponse execOrder() {
+
+    OrderResponse lastOrderResponse = null;
+    if (isDead()) {
+      throw new SaDException("Dead units should not be playing");
+    }
+
+    Log.debug(this, "Getting units orders");
+    Order order = getOrder();
+    if (order == null) {
+      throw new SaDException("Attempting to play unit with no order!");
+    }
+    if (this != order.getAssignee()) {
+      throw new SaDException("Order does not belong to unit running it!");
+    }
+
+    lastOrderResponse = order.execute();
+    return lastOrderResponse;
+  }
+
+  public void activate() {
+    clearOrders();
+    _life.wake();
   }
 
 }

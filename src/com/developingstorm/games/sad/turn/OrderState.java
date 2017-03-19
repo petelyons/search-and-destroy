@@ -1,4 +1,4 @@
-package com.developingstorm.games.sad;
+package com.developingstorm.games.sad.turn;
 
 import com.developingstorm.util.Enum;
 import com.developingstorm.util.EnumClass;

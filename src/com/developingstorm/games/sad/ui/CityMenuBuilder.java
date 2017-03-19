@@ -138,7 +138,6 @@ public class CityMenuBuilder {
     UNITS_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-
         CityDialog cd = new CityDialog(frame, _game, _c);
         List<Unit> list = cd.show();
 
@@ -153,7 +152,7 @@ public class CityMenuBuilder {
           BoardHex hex = _game.getBoard().get(loc);
           Point p = hex.center();
 
-          om.show(frame.getCanvas(), p.x, p.y);
+          om.show(frame.getCanvas(), p.x, p.y); 
         }
       }});
     
@@ -166,51 +165,62 @@ public class CityMenuBuilder {
     SEND_AIR_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        _commander.setAirPath(_c);
+       _commander.setAirPath(_c);
       }});
     SEND_LAND_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        _commander.setLandPath(_c);
+       _commander.setLandPath(_c);
       }});
     
     CLEAR_SEA_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        _c.getGovernor().clearSeaPath();
+        // TODO Move to Commander - all the postGameAction calls
+        _game.postGameAction(()->{
+          _c.getGovernor().clearSeaPath();
+        });
       }});
     
     CLEAR_AIR_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        _c.getGovernor().clearAirPath();
+        _game.postGameAction(()->{
+          _c.getGovernor().clearAirPath();
+        });
       }});
     CLEAR_LAND_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        _c.getGovernor().clearLandPath();
+        _game.postGameAction(()->{
+          _c.getGovernor().clearLandPath();
+        });
       }});
-    
     
     AIR_PATROL_SEL.setSelected(_c.getGovernor().hasAirPatrol());
     AIR_PATROL_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        if (_c.getGovernor().hasAirPatrol()) {
-          _c.getGovernor().clearAirPatrol();
-        } else {
-          _c.getGovernor().setAirPatrol();
-        }
+        _game.postGameAction(()->{
+          if (_c.getGovernor().hasAirPatrol()) {
+            _c.getGovernor().clearAirPatrol();
+          } else {
+            _c.getGovernor().setAirPatrol();
+          }
+        });
       }});
     AUTO_SENTRY_SEL.setSelected(_c.getGovernor().hasAutoSentry());
     AUTO_SENTRY_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        if (_c.getGovernor().hasAutoSentry()) {
-          _c.getGovernor().clearAutoSenty();
-        } else {
-          _c.getGovernor().setAutoSentry();
-        }
+        _game.postGameAction(()->{
+
+          if (_c.getGovernor().hasAutoSentry()) {
+            _c.getGovernor().clearAutoSenty();
+          } else {
+            _c.getGovernor().setAutoSentry();
+          }
+        });
       }});
   
   }

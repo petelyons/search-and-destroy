@@ -28,8 +28,6 @@ public class OrderType extends Enum {
   public static final OrderType FOLLOW_SHORE = new OrderType("Follow shore");
   */
   public static final OrderType EXPLORE = new OrderType("Explore");
-  public static final OrderType BOARD_TRANSPORT = new OrderType(
-      "Board Transport");
   public static final OrderType SENTRY = new OrderType("Sentry");
   public static final OrderType MOVE = new OrderType("Move");
   public static final OrderType HEAD_HOME = new OrderType("Head Home");
@@ -43,11 +41,11 @@ public class OrderType extends Enum {
   public static final OrderType MOVE_NORTH_WEST = new OrderType("NorthWest");
   public static final OrderType MOVE_SOUTH_EAST = new OrderType("SouthEast");
   public static final OrderType MOVE_SOUTH_WEST = new OrderType("SouthWest");
-  public static final OrderType YIELD = new OrderType("Yield");
-  public static final OrderType DISBAND = new OrderType("Disband");
+   public static final OrderType DISBAND = new OrderType("Disband");
 
   private OrderType(String name) {
     super(_class, name);
   }
+
 
 }

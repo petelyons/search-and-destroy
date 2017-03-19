@@ -9,6 +9,7 @@ import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.util.Log;
 
 public class SendUnits extends Edict {
   
@@ -26,11 +27,12 @@ public class SendUnits extends Edict {
   }
   
   @Override
-  public void onTurnStart(Game game) {
+  public void execute(Game game) {
     
     List<Unit> units = unitsMatchingTravel(_travel);
     if (!units.isEmpty()) {
       for (Unit u : units) {
+        Log.debug(u, "Applying send edict. " + _travel);
         u.orderMove(_dest.getLocation());
       }
     }

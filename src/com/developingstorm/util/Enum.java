@@ -52,6 +52,7 @@ package com.developingstorm.util;
  */
 public class Enum {
 
+
   private final EnumClass _class;
   private final String _name;
   private final int _id;
@@ -100,5 +101,40 @@ public class Enum {
   String getName() {
     return _name;
   }
+  
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((_class == null) ? 0 : _class.hashCode());
+    result = prime * result + _id;
+    result = prime * result + ((_name == null) ? 0 : _name.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    Enum other = (Enum) obj;
+    if (_class == null) {
+      if (other._class != null)
+        return false;
+    } else if (!_class.equals(other._class))
+      return false;
+    if (_id != other._id)
+      return false;
+    if (_name == null) {
+      if (other._name != null)
+        return false;
+    } else if (!_name.equals(other._name))
+      return false;
+    return true;
+  }
+
 
 }

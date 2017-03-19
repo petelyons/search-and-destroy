@@ -1,13 +1,15 @@
 package com.developingstorm.games.sad.orders;
 
 import com.developingstorm.games.hexboard.Location;
+import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.MapState;
 import com.developingstorm.games.sad.Order;
 import com.developingstorm.games.sad.OrderResponse;
+import com.developingstorm.games.sad.OrderType;
 import com.developingstorm.games.sad.Path;
 import com.developingstorm.games.sad.ResponseCode;
 import com.developingstorm.games.sad.SaDException;
-import com.developingstorm.games.sad.TurnState;
+import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.util.Log;
 
 /**
@@ -17,8 +19,19 @@ import com.developingstorm.games.sad.util.Log;
 public class Move extends Order {
 
   protected Path _lastPath = null;
+  protected Location _loc;
+  
+  public Move(Game g, Unit u, Location loc) {
+    super(g, u, OrderType.MOVE);
+    _loc = loc;
+  }
 
-  public OrderResponse executeInternal(TurnState turnState) {
+  protected Move(Game g, Unit u,  OrderType t, Location loc) {
+    super(g, u, t);
+    _loc = loc;
+  }
+
+  public OrderResponse executeInternal() {
     ResponseCode resp = ResponseCode.CANCEL_ORDER;
    
     if (_loc == null) {
@@ -48,7 +61,7 @@ public class Move extends Order {
         }
       }
      
-      while (_unit.movesLeft() > 0){
+      while (_unit.life().movesLeft() > 0){
         dest = _lastPath.next(_unit.getLocation());
         if (dest == null) {
           int finalMove = _unit.getLocation().distance(_loc);
@@ -65,6 +78,8 @@ public class Move extends Order {
           continue;
         } else if (resp == ResponseCode.TURN_COMPLETE) {
           return new OrderResponse(resp, this, null);
+        } else if (resp == ResponseCode.DIED) {
+            return new OrderResponse(resp, this, null);
         } else if (resp == ResponseCode.YIELD_PASS) {
           return new OrderResponse(resp, this, null);
         } else {
@@ -89,10 +104,12 @@ public class Move extends Order {
       resp = _game.resolveMove(_unit, dest);
       if (resp == ResponseCode.TURN_COMPLETE) {
         Log.info(_unit, "Unit reports turn complete");
+      } else if (resp != ResponseCode.DIED) {
+        Log.info(_unit, "DIED DURING MOVE!");
       } else if (resp != ResponseCode.STEP_COMPLETE) {
         Log.info(_unit, "Bad move:" + resp);
       }
-      if (_unit.movesLeft() > 0) {
+      if (_unit.life().movesLeft() > 0) {
         resp = ResponseCode.ORDER_COMPLETE;
       } else {
         resp = ResponseCode.ORDER_AND_TURN_COMPLETE;

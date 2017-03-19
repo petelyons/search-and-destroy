@@ -6,6 +6,31 @@ import com.developingstorm.util.EnumClass;
 
 public class Type extends Enum {
 
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((_abr == null) ? 0 : _abr.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    Type other = (Type) obj;
+    if (_abr == null) {
+      if (other._abr != null)
+        return false;
+    } else if (!_abr.equals(other._abr))
+      return false;
+    return true;
+  }
+
   private static final EnumClass _class = new EnumClass("Type");
 
   /* DST HT CST VDST MX CRY W ATK */
@@ -101,7 +126,7 @@ public class Type extends Enum {
     return _travel;
   }
 
-  public int getMaxTravel() {
+  public int getFuel() {
     return _max;
   }
 

@@ -10,6 +10,7 @@ import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.RandomUtil;
 
 public class AirPatrol extends Edict {
@@ -24,15 +25,16 @@ public class AirPatrol extends Edict {
   
 
   @Override
-  public void onTurnStart(Game game) {
+  public void execute(Game game) {
     
     List<Unit> units = unitsMatchingTravel(_travel);
     if (!units.isEmpty()) {
       
       for (Unit u : units) {
-        List<Location> locs = _city.getLocation().getCircle(u.turnAroundDist());
+        List<Location> locs = _city.getLocation().getCircle(u.life().turnAroundDist());
         Location loc = RandomUtil.randomValue(locs);
         u.orderMove(loc);
+        Log.debug(u, "Applying air patrol. " + loc);
       }
     }
   }

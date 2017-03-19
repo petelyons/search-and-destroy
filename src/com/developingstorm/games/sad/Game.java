@@ -7,8 +7,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import com.developingstorm.games.astar.AStar;
 import com.developingstorm.games.astar.AStarNode;
@@ -42,15 +45,13 @@ public class Game implements UnitLens, LocationLens {
 
   private volatile boolean _waiting;
 
-  private volatile List<Unit>[][] _locations;
+  private volatile Set<Unit>[][] _locations;
 
   private volatile HexBoardContext _ctx;
   
   private volatile Unit _selectedUnit;
 
-  private GameTurn _turnRunner;
-
-
+  private LinkedList<Runnable> _pendingActions;
 
   @SuppressWarnings("unchecked")
   public Game(Player[] players, HexBoardMap grid, HexBoardContext ctx) {
@@ -58,6 +59,7 @@ public class Game implements UnitLens, LocationLens {
     _gameListener = null;
     _players = players;
     _allUnits = new ArrayList<Unit>();
+    _pendingActions = new LinkedList<Runnable>();
     
     _turn = 0;
     _selectedUnit = null;
@@ -84,11 +86,11 @@ public class Game implements UnitLens, LocationLens {
 
     int w = _gridMap.getWidth();
     int h = _gridMap.getWidth();
-    _locations = (List<Unit>[][]) new List[w][h];
+    _locations = (Set<Unit>[][]) new Set[w][h];
     for (int i = 0; i < w; i++) {
       for (int j = 0; j < h; j++) {
         _locations[i][j] = Collections
-            .synchronizedList(new ArrayList<Unit>());
+            .synchronizedSet(new HashSet<Unit>());
       }
     }
 
@@ -217,23 +219,19 @@ public class Game implements UnitLens, LocationLens {
     return _board;
   }
 
-  public Unit createUnit(Type produces, Player owner, Location location) {
+  public synchronized Unit createUnit(Type produces, Player owner, Location location) {
     Unit u = new Unit(produces, owner, location, this);
     _allUnits.add(u);
     return u;
   }
 
-  public void killUnit(Unit u, boolean showDeath) {
+  public synchronized void killUnit(Unit u, boolean showDeath) {
     Log.debug(this, "Killing Unit: " + u);
-    
     u.kill();
-    Player p = u.getOwner();
-    p.removeUnit(u);
+    u.getOwner().removeUnit(u);
     _allUnits.remove(u);
     _gameListener.killUnit(u, showDeath);
-    List<Unit> list = modifiableUnitsAtLocation(u.getLocation());
-    list.remove(u);
-    _turnRunner.unitKilled();
+    removeUnitFromBoard(u);
   }
   
   public List<Unit> units() {
@@ -251,44 +249,44 @@ public class Game implements UnitLens, LocationLens {
     }
   }
 
-  private boolean resolveUnitAttack(Unit atk, Unit def) {
+  private synchronized boolean resolveUnitAttack(Unit atk, Unit def) {
 
     Type at = atk.getType();
    // Type dt = def.getType();
 
     // trade blows until someone dies
     while (true) {
-      int attack;
+      int attackStrength;
       // attacker hit
       if (RandomUtil.nextBoolean()) {
-        attack = at.getAttack();
+        attackStrength = at.getAttack();
 
         _gameListener.hitLocation(def.getLocation());
-        if (attack == 0 && def.getAttack() == 0) {
-          attack = 1;
+        if (attackStrength == 0 && def.getAttack() == 0) {
+          attackStrength = 1;
         }
 
-        if (def.hit(attack)) {
+        if (def.life().attack(attackStrength)) {
           return true;
         }
       }
 
       // defender hit
       if (RandomUtil.nextBoolean()) {
-        attack = def.getAttack();
+        attackStrength = def.getAttack();
         _gameListener.hitLocation(atk.getLocation());
 
-        if (attack == 0 && def.getAttack() == 0) {
-          attack = 1;
+        if (attackStrength == 0 && def.getAttack() == 0) {
+          attackStrength = 1;
         }
-        if (atk.hit(attack)) {
+        if (atk.life().attack(attackStrength)) {
           return false;
         }
       }
     }
   }
 
-  private boolean resolveCityAttack(Unit atk, City def) {
+  private synchronized boolean resolveCityAttack(Unit atk, City def) {
 
     if (def.getOwner() == null) {
       _gameListener.hitLocation(def.getLocation());
@@ -313,7 +311,7 @@ public class Game implements UnitLens, LocationLens {
     }
   }
 
-  public Unit unitAtLocation(Location loc) {
+  public synchronized Unit unitAtLocation(Location loc) {
     if (!_board.onBoard(loc)) {
       return null;
     }
@@ -372,20 +370,55 @@ public class Game implements UnitLens, LocationLens {
     return newList;
   }
 
-  private List<Unit> modifiableUnitsAtLocation(Location loc) {
+  private Set<Unit> getSetofUnitsAtLocation(Location loc) {
     return _locations[loc.x][loc.y];
   }
 
   void changeUnitLoc(Unit u, Location loc) {
-    List<Unit> l = modifiableUnitsAtLocation(u.getLocation());
-    List<Unit> l2 = modifiableUnitsAtLocation(loc);
+    Set<Unit> l = getSetofUnitsAtLocation(u.getLocation());
+    Set<Unit> l2 = getSetofUnitsAtLocation(loc);
     l.remove(u);
     l2.add(u);
   }
 
-  void initUnit(Unit u) {
-    List<Unit> l = modifiableUnitsAtLocation(u.getLocation());
+  void placeUnitOnBoard(Unit u) {
+    Log.info(u, "Placing unit on board");
+    Set<Unit> l = getSetofUnitsAtLocation(u.getLocation());
     l.add(u);
+    
+    validateLocations();
+  }
+  
+  void removeUnitFromBoard(Unit u) {
+    Log.info(u, "Removing unit from board");
+    Set<Unit> l = getSetofUnitsAtLocation(u.getLocation());
+    l.remove(u);
+    
+    validateLocations();
+  }
+
+  private void validateLocations() {
+    int w = _gridMap.getWidth();
+    int h = _gridMap.getWidth();
+    int errors = 0;
+    for (int x = 0; x < w; x++) {
+      for (int y = 0; y < h; y++) {
+        Set<Unit> units = _locations[x][y];
+        if (units != null) {
+          for (Unit u : units) {
+            Location loc = u.getLocation();
+            if (x != loc.x || y != loc.y) {
+              Log.error(u, "Not at location " + x + "," + y);
+              errors++;
+            }
+          }
+        }
+      }
+      if (errors > 0) {
+        throw new SaDException("Found " + errors + " units at wrong locations");
+      }
+    }
+
   }
 
   private static ResponseCode resolveLoad(Unit u, Unit t) {
@@ -430,6 +463,8 @@ public class Game implements UnitLens, LocationLens {
 
     if (ourCity != null) {
       u.move(dest);
+      Log.debug(u, "Moved into City.");
+      u.life().burnMovesButNotFuel();
       return ResponseCode.TURN_COMPLETE;
     } else if (unownedCity != null) {
       if (u.getTravel() != Travel.LAND) {
@@ -491,16 +526,19 @@ public class Game implements UnitLens, LocationLens {
           return rc;
         }
       }
+      Log.debug(u, "Move - CANCEL");
       return ResponseCode.CANCEL_ORDER;
     }
 
     Unit blocking = unitAtLocation(dest);
     if (blocking == null || blocking.equals(u)) {
       u.move(dest);
-      if (u.movesLeft() > 0) {
+      if (u.life().movesLeft() > 0) {
+        Log.debug(u, "Moved - step complete");
         return ResponseCode.STEP_COMPLETE;
       }
       else {
+        Log.debug(u, "Moved - turn complete");
         return ResponseCode.TURN_COMPLETE;
       }
     }
@@ -557,21 +595,6 @@ public class Game implements UnitLens, LocationLens {
     return _currentPlayer;
   }
 
-
-  public void issueOrders(Unit u, OrderType ot, Location dest, Unit target) {
-    issueOrders(u, Order.factory(this, u, ot, dest, target));
-  }
-
-
-  public void issueOrders(Unit u, Order order) {
-
-    Log.info(u, "Being Issuing order: " + order);
-    if (u.getOwner() != _currentPlayer) {
-      throw new SaDException("Unit not owned but being issued orders!");
-    }
-    u.assignOrder(order);
-  }
-
   private void signalGameThread() {
     synchronized (this) {
       if (_waiting) {
@@ -583,11 +606,16 @@ public class Game implements UnitLens, LocationLens {
   
   
   public synchronized Unit selectedUnit() {
+    if (_selectedUnit != null && _selectedUnit.isDead()) {
+      _selectedUnit = null;
+      return null;
+    }
     return _selectedUnit;
   }
 
-  public void endWait(Unit u) {
+  public void resume(Unit u) {
     if (u != null) {
+      selectUnit(u);
       u.getOwner().pushPendingPlay(u);
     }
     signalGameThread();
@@ -597,22 +625,14 @@ public class Game implements UnitLens, LocationLens {
     return "Game";
   }
 
-  public void continuePlay() {
-  
-    signalGameThread();
-  }
-
-  public void pausePlay() {
-  }
-  
-  
-  
-
   public void waitUser() {
 
     while (true) {
       try {
         Unit u = selectedUnit();
+        if (u == null) {
+          throw new SaDException("No unit is selected!");
+        }
         trackUnit(u);
         synchronized (this) {
           Log.debug(u, "Waiting for order...");
@@ -624,6 +644,8 @@ public class Game implements UnitLens, LocationLens {
             }});
           t.start();
           wait();
+          
+          processPostedGameActions();
           return;
         }
       } catch (Exception e) {
@@ -632,13 +654,32 @@ public class Game implements UnitLens, LocationLens {
       return;
     }
   }
+  
+  
+  public void postGameAction(Runnable runnable) {
+    synchronized(_pendingActions) {
+      _pendingActions.offer(runnable);
+    }
+    resume(null);
+  }
+
+  private void processPostedGameActions() {
+    
+    synchronized(_pendingActions) {
+      while (!_pendingActions.isEmpty()) {
+        Runnable r = _pendingActions.pop();
+        r.run();
+      }
+    }
+      
+  }
 
   private void playerChange() {
     if (_gameListener != null)
       _gameListener.selectPlayer(_currentPlayer);
   }
 
-  void unitChange(Unit u) {
+  public void selectUnit(Unit u) {
     if (u != null)
       _selectedUnit = u;
       _gameListener.selectUnit(u);
@@ -647,8 +688,7 @@ public class Game implements UnitLens, LocationLens {
   public void play() {
     int uc;
     int cc;
-    Player p;
-
+   
     try {
       playerChange();
       
@@ -658,12 +698,10 @@ public class Game implements UnitLens, LocationLens {
       //DEBUG
 
       do {
-        p = _currentPlayer;
-        uc = p.unitCount();
-        cc = p.cityCount();
+        uc = _currentPlayer.unitCount();
+        cc = _currentPlayer.cityCount();
         if (!(uc == 0 && cc == 0)) {
-          _turnRunner = new GameTurn(this, p, _turn);
-          _turnRunner.play();
+          _currentPlayer.play();
         }
         _currentPlayer = nextPlayer();
         if (_currentPlayer == _players[0]) {

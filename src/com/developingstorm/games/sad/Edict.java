@@ -32,7 +32,7 @@ public abstract class Edict {
   }
 
 
-  public abstract void onTurnStart(Game game);
+  public abstract void execute(Game game);
   
 
 }
