@@ -170,50 +170,6 @@ public class UnitStats {
 
   }
 
-  private Type rawProductionChoice(City c) {
-    if (percent_infantry < 0.15)
-      return Type.INFANTRY;
-    if (percent_fighters < 0.15)
-      return Type.FIGHTER;
-    if (percent_armor < 0.15)
-      return Type.ARMOR;
-
-    if (c.isCoastal()) {
-      if (percent_transports < 0.10)
-        return Type.TRANSPORT;
-      if (percent_destroyers < 0.075)
-        return Type.DESTROYER;
-      if (percent_submarines < 0.075)
-        return Type.SUBMARINE;
-      if (percent_cruisers < 0.05)
-        return Type.CRUISER;
-      if (percent_carriers < 0.05)
-        return Type.CARRIER;
-      if (percent_battleships < 0.05)
-        return Type.BATTLESHIP;
-    } else {
-      if (percent_bombers < 0.10)
-        return Type.BOMBER;
-      if (percent_transports < 0.05)
-        return Type.CARGO;
-      if (percent_armor < percent_infantry)
-        return Type.ARMOR;
-    }
-    return Type.BOMBER;
-  }
-
-  public Type productionChoice(City c) {
-    Type t = rawProductionChoice(c);
-
-    if (t == Type.INFANTRY && prod_infantry < 1)
-      return t;
-    else if (t == Type.FIGHTER && fighters < 1)
-      return t;
-    else if (c.isCoastal() && transports < 1 && prod_transports == 0)
-      return Type.TRANSPORT;
-
-    return t;
-  }
   
   private static void buildLine(StringBuilder sb, String desc, int count, double percent, int beingProduced) {
     sb.append(desc);

@@ -85,8 +85,8 @@ public class City {
     return _board.isCoast(_location);
   }
 
-  public int getContinent() {
-    return _board.getContinentId(_location);
+  public Continent getContinent() {
+    return _board.getContinent(_location);
   }
 
   public List<Unit> getUnits() {

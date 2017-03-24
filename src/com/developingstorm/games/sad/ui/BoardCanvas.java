@@ -346,15 +346,14 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
   
   
   private void drawContinentNumbers(Graphics2D g) {
-    for (int i = 0; i < _board.getContinentCount(); i++) {
-      Continent c = _board.getContinent(i);
+    for (Continent c : _board.getContinents()) {
       Set<Location> locations = c.getLocations();
       for (Location loc : locations) {
         BoardHex hex = _board.get(loc.x, loc.y);
         Hex h = hex.getHex();
         Point center = h.getCenter();
         if (_lens != null && _lens.isExplored(loc)) {
-          drawContinentNumber(i, g, hex, loc, center);
+          drawContinentNumber(c.getID(), g, hex, loc, center);
         }
       }
     }

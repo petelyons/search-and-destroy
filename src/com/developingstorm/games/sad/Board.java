@@ -2,8 +2,9 @@ package com.developingstorm.games.sad;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.developingstorm.games.hexboard.BoardHex;
 import com.developingstorm.games.hexboard.HexBoard;
@@ -11,6 +12,11 @@ import com.developingstorm.games.hexboard.HexBoardContext;
 import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.Location;
 
+
+
+/**
+ * Encapsulate SaD board behaviors
+ */
 public class Board extends HexBoard {
 
   private HexBoardMap _map;
@@ -18,8 +24,8 @@ public class Board extends HexBoard {
   private int[][] _contData;
   private HashMap<Location, City> _ctoks;
   private Game _game;
-  private ArrayList<Continent> _continents;
-  private ArrayList<City> _cities;
+  private Set<Continent> _continents;
+  private List<City> _cities;
 
   public Board(Game game, HexBoardMap grid, HexBoardContext ctx) {
     super(ctx);
@@ -27,7 +33,7 @@ public class Board extends HexBoard {
     _mapData = _map.getData();
     _ctoks = new HashMap<Location, City>();
     _game = game;
-    _continents = new ArrayList<Continent>();
+    _continents = new HashSet<Continent>();
     _cities = new ArrayList<City>();
 
     calcContinents();
@@ -49,10 +55,8 @@ public class Board extends HexBoard {
     sprinkleCities((_map.getHeight() + _map.getWidth()) / 2);
 
     // this must follow the sprinkling of the cities
-    Iterator<Continent> itr = _continents.iterator();
-    while (itr.hasNext()) {
-      Continent c = (Continent) itr.next();
-      c.init();
+    for (Continent cont : _continents) {
+      cont.init();
     }
   }
 
@@ -134,10 +138,8 @@ public class Board extends HexBoard {
     }
 
     List<BoardHex> ring = getRing(loc, 1);
-    Iterator<BoardHex> itr = ring.iterator();
-    while (itr.hasNext()) {
-      Location l2 = ((BoardHex) itr.next()).getLocation();
-      if (isWater(l2)) {
+    for (BoardHex hex : ring) {
+      if (isWater(hex.getLocation())) {
         return true;
       }
     }
@@ -185,7 +187,7 @@ public class Board extends HexBoard {
   private void markContinent(Location loc, int c, Continent cont) {
 
     List<BoardHex> ring = getRing(loc, 1);
-
+   
     for (BoardHex hex : ring) {
       Location l2 = hex.getLocation();
       if (l2.x < 0 || l2.y < 0) {
@@ -212,6 +214,7 @@ public class Board extends HexBoard {
           Continent cont = new Continent(this, count);
           _continents.add(cont);
           Location loc = Location.get(x, y);
+          cont.add(loc);
           markContinent(loc, count, cont);
         }
       }
@@ -219,9 +222,7 @@ public class Board extends HexBoard {
   }
 
   public boolean isWaterPath(Path p) {
-    Iterator<Location> itr = p.iterator();
-    while (itr.hasNext()) {
-      Location loc = (Location) itr.next();
+    for (Location loc : p) {
       if (isLand(loc) && !isCity(loc)) {
         return false;
       }
@@ -230,9 +231,7 @@ public class Board extends HexBoard {
   }
 
   public boolean isLandPath(Path p) {
-    Iterator<Location> itr = p.iterator();
-    while (itr.hasNext()) {
-      Location loc = (Location) itr.next();
+    for (Location loc : p) {
       if (!isLand(loc)) {
         return false;
       }
@@ -240,10 +239,29 @@ public class Board extends HexBoard {
     return true;
   }
 
-  public Continent getContinent(int i) {
-    return (Continent) _continents.get(i);
+  
+  public Set<Continent> getContinents() {
+    return _continents;
+  }
+  
+  public Continent getContinent(Location loc) {
+    int id = getContinentId(loc);
+    if (id == 0) {
+      return null;
+    }
+    return getContinentById(id);
   }
 
+  
+  public Continent getContinentById(int id) {
+    for (Continent cont : _continents) {
+      if (cont.getID() == id) {
+        return cont;
+      }
+    }
+    throw new SaDException("Invalid continent ID");
+  }
+  
   public int getContinentId(Location loc) {
     return _contData[loc.x][loc.y];
   }
@@ -264,5 +282,6 @@ public class Board extends HexBoard {
     }
     return true;
   }
+
 
 }

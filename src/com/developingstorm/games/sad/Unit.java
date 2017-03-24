@@ -1,9 +1,9 @@
 package com.developingstorm.games.sad;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 
 import com.developingstorm.games.hexboard.Location;
@@ -22,7 +22,16 @@ import com.developingstorm.games.sad.orders.Unload;
 import com.developingstorm.games.sad.turn.UnitTurnState;
 import com.developingstorm.games.sad.util.Log;
 
-public class Unit {
+
+/**
+ * Units are the moveable pieces of the game.  
+ * Units have attributes based on their Type. Infantry, Battleships and Bombers are all examples of Types of units.
+ * Different Types of units can travel in different terrains.  
+ * Units have a 'life' which controls how much damage they can absorb, and how much they can move.
+ * Some units can carry other units.
+ * Units are always owned by one of the games players. 
+ */
+public abstract class Unit {
 
   static long s_unitCounter = 1;
 
@@ -41,6 +50,9 @@ public class Unit {
   private volatile UnitTurnState _turn;
   private boolean _isDead = false;  //Used to prevent endless looping during kill processing u->game->u->game->u->game...
   private Life _life;
+  
+  
+  
   
   public class Life {
     private volatile int _hits;
@@ -101,7 +113,6 @@ public class Unit {
         _moves--;
       }
     }
-
     
     public boolean hasDied() {
       return _hits <= 0 || !hasFuel();
@@ -136,8 +147,7 @@ public class Unit {
     
     public String healthDesc() {
       return "" + _hits + " of " + _type.getHits();
-    }
-    
+    }  
 
     public String moveDesc() {
       String s = "" + _moves + " of " + _dist;
@@ -189,11 +199,7 @@ public class Unit {
     }
   }
   
-  
-  
-
-
-  public Unit(Type t, Player owner, Location loc, Game game) {
+  protected Unit(Type t, Player owner, Location loc, Game game) {
     _type = t;
     _loc = loc;
     _name = null;
@@ -212,7 +218,7 @@ public class Unit {
     // A unit needs an ID before it can be placed!
     _game.placeUnitOnBoard(this);
   }
-
+    
   private synchronized void changeLoc(Location loc) {
     Log.info(this, "change location to " + loc);
     _game.changeUnitLoc(this, loc);
@@ -569,6 +575,14 @@ public class Unit {
     }
   }
   
+  
+  public boolean hasCargo() {
+    if (_carries == null) {
+      return false;
+    }
+    return !_carries.isEmpty();
+  }
+  
 
 
   public void clearOrders() {
@@ -591,16 +605,18 @@ public class Unit {
     _order = order;
   }
 
-  public Location getClosestLocation(List<?> locations) {
+  public Location getClosestLocation(Collection<Location> locationsCollection) {
 
+    List<Location> locations = new ArrayList<>(locationsCollection);
     Collections.sort(locations, new DistanceComparator(_loc));
 
-    Iterator<?> itr = locations.iterator();
     Location shortest = null;
     int shortestLen = 99999;
 
-    while (itr.hasNext()) {
-      Location loc = (Location) itr.next();
+    for (Location loc : locations) {
+      if (_loc.equals(loc)) {
+        return loc;
+      }
       Path p = getPath(loc);
       int pLen = p.length();
       int tLen = _loc.distance(loc);
@@ -677,6 +693,9 @@ public class Unit {
   }
   
   public Move newMoveOrder(Location loc) {
+    if (loc == null) {
+      throw new SaDException("Cannot move to NULL location");
+    }
     return new Move(_game, this, loc);
   }
   
@@ -791,4 +810,43 @@ public class Unit {
     _life.wake();
   }
 
+  public boolean isInfantry() {
+   return _type == Type.INFANTRY;
+  }
+
+  public boolean isArmour() {
+    return _type == Type.ARMOR;
+  }
+
+  public boolean isBomber() {
+    return _type == Type.BOMBER;
+  }
+
+  public boolean isTransport() {
+    return _type == Type.TRANSPORT;
+  }
+  
+  public boolean isCargo() {
+    return _type == Type.CARGO;
+  }
+  
+  public boolean isDestroyer() {
+    return _type == Type.DESTROYER;
+  }
+
+  public boolean isFighter() {
+    return _type == Type.FIGHTER;
+  }
+
+  public boolean isSubmarine() {
+    return _type == Type.SUBMARINE;
+  }
+  
+  public boolean isCruiser() {
+    return _type == Type.CRUISER;
+  }
+  
+  public boolean isBattleship() {
+    return _type == Type.BATTLESHIP;
+  }
 }

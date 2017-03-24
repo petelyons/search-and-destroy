@@ -7,7 +7,7 @@ import java.util.Iterator;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.util.Log;
 
-public class Path {
+public class Path implements Iterable<Location> {
 
   private ArrayList<Location> _path;
   private Location _start;

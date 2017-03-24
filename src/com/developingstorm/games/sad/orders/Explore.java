@@ -84,7 +84,7 @@ public class Explore extends Order {
       }
 
       resp = _game.resolveMove(_unit, dest);
-      if (resp == ResponseCode.DIED) {
+      if (resp == ResponseCode.DIED || resp == ResponseCode.TURN_COMPLETE) {
         return new OrderResponse(resp, this, null);
       }
 

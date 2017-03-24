@@ -245,7 +245,9 @@ public class Player implements UnitLens, LocationLens {
     for (Location loc : reachable) {
       if (isExplored(loc)) {
         City c = _board.getCity(loc);
-        list.add(c);
+        if (c != null) {
+          list.add(c);
+        }
       }
     }
     return list;
@@ -333,10 +335,34 @@ public class Player implements UnitLens, LocationLens {
       }
     }
   }
+  
+  public Set<Unit> getKnownEnemies() {
+   
+    Set<Unit> set = new HashSet<Unit>();
 
-  private HashSet<City> getCitiesBuildingArmies() {
+    int width = _board.getWidth();
+    int height = _board.getHeight();
 
-    HashSet<City> set = new HashSet<City>();
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        Location loc = Location.get(x, y);
+        if (isExplored(loc)) {
+          Unit u = visibleUnit(loc);
+          if (u != null) {
+            Player p = u.getOwner();
+            if (p != this) {
+              set.add(u);
+            }
+          }
+        }
+      }
+    }
+    return set;
+  }
+
+  private Set<City> getCitiesBuildingArmies() {
+
+    Set<City> set = new HashSet<City>();
     for (City c : _cities) {
       if (c.getProduction() == Type.INFANTRY) {
         set.add(c);
@@ -345,21 +371,12 @@ public class Player implements UnitLens, LocationLens {
     return set;
   }
 
-  private int[] getContinentsContainingCities(Iterator<City> cities) {
-
-    int cc = _board.getContinentCount();
-    int[] continents = new int[cc + 1];
-    Iterator<City> itr = cities;
-    while (itr.hasNext()) {
-      City c = (City) itr.next();
-      int id = c.getContinent();
-      if (id > cc) {
-        throw new SaDException(
-            "Continent id exceeds specified continent count:" + id + ">" + cc);
-      }
-      continents[id]++;
+  public Set<Continent> getColonizedContinents() {
+    Set<Continent> colonized = new HashSet<Continent>();
+    for (City c : _cities) {
+      colonized.add(c.getContinent());
     }
-    return continents;
+    return colonized;
   }
 
   private void calcEnemyActivity() {
@@ -369,26 +386,24 @@ public class Player implements UnitLens, LocationLens {
 
     _enemyActivity = new int[width][height];
 
-    Iterator<Unit> itr = _enemyUnits.iterator();
-    while (itr.hasNext()) {
-      Unit u = (Unit) itr.next();
-      ArrayList<?> influence = u.getAreaOfInfluence();
-      Iterator<?> i2 = influence.iterator();
-      while (i2.hasNext()) {
-        Location loc = (Location) i2.next();
+    for(Unit u : _enemyUnits) {
+      List<Location> influence = u.getAreaOfInfluence();
+      for (Location loc : influence) {
         _enemyActivity[loc.x][loc.y]++;
       }
     }
   }
 
+  
+  public Set<City> enemyCities() {
+    return _enemyCities;
+    
+  }
+  
+  
   private void calcContinentsLoadingPositions() {
 
-    HashSet<City> cities = getCitiesBuildingArmies();
-    int[] continents = getContinentsContainingCities(cities.iterator());
-
-    for (int x = 0; x < continents.length; x++) {
-      // chooseLoadingPosition(continents[x]);
-    }
+  
     // ArrayList _board.getCoast(
   }
 
@@ -699,6 +714,21 @@ public class Player implements UnitLens, LocationLens {
       }
     }
   }
+  
+  public Set<Continent> getDiscoveredContinents() {
+    int width = _board.getWidth();
+    int height = _board.getHeight();
+
+    Set<Continent> set = new HashSet<Continent>();
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        Location loc = Location.get(x, y);
+        Continent cont = _board.getContinent(loc);
+        set.add(cont);
+      }
+    }
+    return set;
+  }
 
   public void adjustVisibility(Unit u) {
 
@@ -716,14 +746,6 @@ public class Player implements UnitLens, LocationLens {
     markRegion(loc, Vision.COMPLETE, dist);
   }
 
-  public void calcVisibility(Iterator<?> unitItr) {
-
-    clearVis();
-    while (unitItr.hasNext()) {
-      Unit u = (Unit) unitItr.next();
-      adjustVisibility(u);
-    }
-  }
 
   public Vision getVisibility(Location loc) {
 

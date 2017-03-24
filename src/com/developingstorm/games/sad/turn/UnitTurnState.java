@@ -15,11 +15,13 @@ public class UnitTurnState {
   
   private OrderState _orderState;
   private final Unit _unit;
+  private int _attemptCounter;
 
   
   public UnitTurnState(Game g, Unit u) {
     _game = g;
     _unit = u;
+    _attemptCounter = 0;
     updateOrderState();
   }
   
@@ -28,6 +30,12 @@ public class UnitTurnState {
   
   public boolean attemptTurn() {
     Unit u = _unit;
+    
+    _attemptCounter++;
+    if (_attemptCounter > 10) {
+      Log.warn(u, "***ATTEMPT COUNTER EXCEEEDED****");
+      u.turn().completeTurn();
+    }
     if (u.isDead()) {
       throw new SaDException("DEAD UNIT!");
     }
@@ -67,6 +75,8 @@ public class UnitTurnState {
 
   
   public void beginTurn() {
+    _attemptCounter = 0;
+    
     _unit.life().resetForTurn();
   
     Order order = _unit.getOrder();

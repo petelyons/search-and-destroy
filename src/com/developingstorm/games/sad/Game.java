@@ -20,6 +20,17 @@ import com.developingstorm.games.hexboard.HexBoardContext;
 import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.hexboard.LocationLens;
+import com.developingstorm.games.sad.types.Armor;
+import com.developingstorm.games.sad.types.Battleship;
+import com.developingstorm.games.sad.types.Bomber;
+import com.developingstorm.games.sad.types.Cargo;
+import com.developingstorm.games.sad.types.Carrier;
+import com.developingstorm.games.sad.types.Cruiser;
+import com.developingstorm.games.sad.types.Destroyer;
+import com.developingstorm.games.sad.types.Fighter;
+import com.developingstorm.games.sad.types.Infantry;
+import com.developingstorm.games.sad.types.Submarine;
+import com.developingstorm.games.sad.types.Transport;
 import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.RandomUtil;
 import com.developingstorm.util.Tracer;
@@ -219,8 +230,34 @@ public class Game implements UnitLens, LocationLens {
     return _board;
   }
 
-  public synchronized Unit createUnit(Type produces, Player owner, Location location) {
-    Unit u = new Unit(produces, owner, location, this);
+  public synchronized Unit createUnit(Type type, Player owner, Location location) {
+    Unit u = null;
+    
+    if (type == Type.INFANTRY) {
+      u = new Infantry(owner, location, this);
+    } else if (type == Type.ARMOR) {
+      u = new Armor(owner, location, this);
+    } else if (type == Type.BATTLESHIP) {
+      u = new Battleship(owner, location, this);
+    } else if (type == Type.BOMBER) {
+      u = new Bomber(owner, location, this);
+    } else if (type == Type.CARGO) {
+      u = new Cargo(owner, location, this);
+    } else if (type == Type.CARRIER) {
+      u = new Carrier(owner, location, this);
+    } else if (type == Type.CRUISER) {
+      u = new Cruiser(owner, location, this);
+    } else if (type == Type.DESTROYER) {
+      u = new Destroyer(owner, location, this);
+    } else if (type == Type.FIGHTER) {
+      u = new Fighter(owner, location, this);
+    } else if (type == Type.SUBMARINE) {
+      u = new Submarine(owner, location, this);
+    } else if (type == Type.TRANSPORT) {
+      u = new Transport(owner, location, this);
+    } else {
+      throw new SaDException("Unsupported type");
+    }
     _allUnits.add(u);
     return u;
   }

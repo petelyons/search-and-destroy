@@ -4,12 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.developingstorm.games.hexboard.Location;
+import com.developingstorm.games.sad.brain.RobotBrain;
 import com.developingstorm.games.sad.util.Log;
 
 /**
  * Class information
  */
 public class Robot extends Player {
+
+  private IBrain _brain;
+
 
   public Robot(String name, int id) {
     super(name, id);
@@ -27,12 +31,16 @@ public class Robot extends Player {
   public void captureCity(City c) {
     super.captureCity(c);
   }
+  
+  @Override
+  public void setGame(Game g) {
+    super.setGame(g);
+    _brain = new RobotBrain(this);
+  }
 
   @Override
   protected void initProduction(City c) {
-    UnitStats us = new UnitStats();
-    us.recalc(_units, _cities);
-    Type t = us.productionChoice(c);
+    Type t = _brain.getProduction(c);
     Log.debug(this, "Setting production to: " + t);
     c.produce(t);
 
@@ -56,7 +64,7 @@ public class Robot extends Player {
     return list;
   }
 
-  private boolean isUnitInOrAdjascentToCityProducingLoadableUnits(Unit u) {
+  public boolean isUnitInOrAdjascentToCityProducingLoadableUnits(Unit u) {
     List<City> cities = getOwnedCities();
 
     Location unitLoc = u.getLocation();
@@ -81,74 +89,15 @@ public class Robot extends Player {
 
   public Order getOrders(Unit u) {
 
-    if (u.getType() == Type.INFANTRY) {
-
-      List<City> cities = reachableCities(u);
-      for (City c : cities) {
-        if (c != null && c.getOwner() != this) {
-          Log.debug(this, "Moving to city:" + c);
-          return u.newMoveOrder(c.getLocation());
-        }
-      }
-    }
-
-    if (u.getType() == Type.TRANSPORT || u.getType() == Type.CARGO) {
-      if (u.carriedWeight() < u.carriableWeight()) {
-        if (isUnitInOrAdjascentToCityProducingLoadableUnits(u)) {
-          return u.newSentryOrder();
-        }
-        if (isUnitNextToTargetLand(u)) {
-          return u.newUnloadOrder();
-        }
-      } else {
-      }
-    }
-
-    List<Unit> enemies = reachableEnemies(u);
-    if (!enemies.isEmpty()) {
-
-      Unit closestEnemy = null;
-      Location unitLocation = u.getLocation();
-      for (Unit enemy : enemies) {
-        if (closestEnemy == null) {
-          closestEnemy = enemy;
-        } else {
-          Location knownClosestEnemyLocation = closestEnemy.getLocation();
-          Location enemyLocation = enemy.getLocation();
-          Path pathToEnemy = u.getPath(enemyLocation);
-          if (pathToEnemy != null && !pathToEnemy.isEmpty()) {
-            if (unitLocation.distance(enemyLocation) < unitLocation
-              .distance(knownClosestEnemyLocation)) {
-              closestEnemy = enemy;
-            }
-          }
-        }
-      }
-      Log.debug(u, "Moving to attack:" + closestEnemy);
-      return u.newMoveOrder(closestEnemy.getLocation());
-    }
+    return _brain.getOrders(u);
+  }
 
  
-    return u.newExploreOrder();
-  }
-
-  private static boolean isUnitNextToTargetLand(Unit u) {
-    return false;
-  }
-  
-
   @Override
   public void startNewTurn() {
     
     super.startNewTurn();
-    for (City c : _cities) {
-      if (c.productionCompleted()) {
-        
-        Type t = _unitStats.productionChoice(c);
-        Log.debug(this, "Resetting production of " + c + " to: " + t);
-        c.produce(t);
-      }
-    }
+    _brain.startNewTurn();
   }
   
   
@@ -166,6 +115,12 @@ public class Robot extends Player {
       }
     }
     Log.debug(this, "Generated orders");
+  }
+  
+  public UnitStats getStats() {
+    UnitStats us = new UnitStats();
+    us.recalc(_units, _cities);
+    return us;
   }
   
 }

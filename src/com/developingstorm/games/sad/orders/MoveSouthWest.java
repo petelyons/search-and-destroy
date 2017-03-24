@@ -1,7 +1,6 @@
 package com.developingstorm.games.sad.orders;
 
 import com.developingstorm.games.hexboard.Direction;
-import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.OrderType;
 import com.developingstorm.games.sad.Unit;

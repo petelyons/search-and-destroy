@@ -15,6 +15,11 @@ import javax.swing.JLabel;
 
 public class AboutDialog extends JDialog {
 
+  /**
+   * 
+   */
+  private static final long serialVersionUID = 8798248852693399326L;
+
   public AboutDialog(Frame parent, boolean modal) {
     super(parent, modal);
 
@@ -27,7 +32,7 @@ public class AboutDialog extends JDialog {
     pane.add(label1);
     label1.setFont(new Font("SansSerif", Font.PLAIN, 20));
     label1.setBounds(138 + 56, 20, 178, 37);
-    okButton.setLabel("OK");
+    okButton.setText("OK");
     pane.add(okButton);
     okButton.setFont(new Font("SansSerif", Font.PLAIN, 12));
     okButton.setBounds(158 + 88, 116, 66, 20);
