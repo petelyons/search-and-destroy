@@ -37,7 +37,8 @@ public class UnitTurnState {
       u.turn().completeTurn();
     }
     if (u.isDead()) {
-      throw new SaDException("DEAD UNIT!");
+      Log.error(u, "Unit is dead.  Cannot be played!");
+      throw new SaDException("DEAD UNIT!" );
     }
     Log.debug(this, "playing unit: " + u + " with order " + u.getOrder());
 

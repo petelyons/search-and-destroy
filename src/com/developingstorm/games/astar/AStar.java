@@ -1,6 +1,7 @@
 package com.developingstorm.games.astar;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -70,6 +71,10 @@ public class AStar {
   }
 
   public List<AStarState> solve() {
+    return solve(false);
+  }
+  
+  private List<AStarState> solve(boolean debug) {
 
     // _startTime = System.currentTimeMillis();
 
@@ -96,6 +101,7 @@ public class AStar {
       // Check if OPEN is empty, exit if this is the case
       if (_openNodes.size() == 0) {
         Log.error("No open nodes in A* search:" + count);
+       // solve(true);
         notifyWatchers(null);
         return null;
       }
@@ -104,9 +110,8 @@ public class AStar {
 
       int low = 0;
       int num;
-      Iterator<AStarNode> itr = _openNodes.values().iterator();
-      while (itr.hasNext()) {
-        AStarNode nx = itr.next();
+      Collection<AStarNode> nodes = _openNodes.values();
+      for (AStarNode nx : nodes) {
         if (low == 0) {
           low = nx.f;
           _workingNode = nx;

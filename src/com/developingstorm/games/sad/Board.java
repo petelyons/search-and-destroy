@@ -26,6 +26,7 @@ public class Board extends HexBoard {
   private Game _game;
   private Set<Continent> _continents;
   private List<City> _cities;
+  private boolean isInitialized = false;
 
   public Board(Game game, HexBoardMap grid, HexBoardContext ctx) {
     super(ctx);
@@ -51,13 +52,19 @@ public class Board extends HexBoard {
     }
   }
 
-  public void init() {
+  public synchronized void init() {
+ 
     sprinkleCities((_map.getHeight() + _map.getWidth()) / 2);
 
     // this must follow the sprinkling of the cities
     for (Continent cont : _continents) {
       cont.init();
     }
+    isInitialized = true;
+  }
+  
+  private synchronized boolean isInitialized() {
+    return isInitialized;
   }
 
   public List<City> getCities() {
@@ -245,6 +252,9 @@ public class Board extends HexBoard {
   }
   
   public Continent getContinent(Location loc) {
+    if (!isInitialized()) {
+      throw new SaDException("Board not ready");
+    }
     int id = getContinentId(loc);
     if (id == 0) {
       return null;

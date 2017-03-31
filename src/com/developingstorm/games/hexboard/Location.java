@@ -9,6 +9,7 @@ import java.util.Set;
 
 import com.developingstorm.games.astar.AStarPosition;
 import com.developingstorm.games.sad.SaDException;
+import com.developingstorm.games.sad.util.json.JsonObj;
 
 /**
  * 
@@ -389,6 +390,20 @@ public class Location implements AStarPosition {
     addDir(Direction.SOUTH_EAST, get(se));
     addDir(Direction.SOUTH_WEST, get(sw));
     addDir(Direction.WEST, get(w));
+  }
+
+  public Object toJson() {
+    JsonObj json = new JsonObj();
+    json.put("x", x);
+    json.put("y", y);
+    return json;
+  }
+
+  @SuppressWarnings("boxing")
+  public static Location get(JsonObj obj) {
+    int x = obj.getInteger("x");
+    int y = obj.getInteger("y");
+    return Location.get(x, y);
   }
 
 

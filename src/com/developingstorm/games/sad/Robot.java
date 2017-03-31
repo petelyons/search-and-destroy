@@ -2,6 +2,7 @@ package com.developingstorm.games.sad;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.brain.RobotBrain;
@@ -103,7 +104,7 @@ public class Robot extends Player {
   
   @Override
   public String toString() {
-    return "Robot: N=" + _name + " I=" + _id;
+    return "Robot: I=" + _id;
   }
 
   
@@ -116,11 +117,6 @@ public class Robot extends Player {
     }
     Log.debug(this, "Generated orders");
   }
-  
-  public UnitStats getStats() {
-    UnitStats us = new UnitStats();
-    us.recalc(_units, _cities);
-    return us;
-  }
+
   
 }

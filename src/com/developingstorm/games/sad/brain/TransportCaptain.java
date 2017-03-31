@@ -11,14 +11,19 @@ public class TransportCaptain extends UnitCaptain<Transport> {
  
   @Override
   public Order plan(Transport u) {
+    Order order = null;
     if (u.hasCargo() && atUnloadPoint(u)) {
       return unload(u);
     } else if (u.hasCargo()) {
-      return goToUnloadingPoint(u);
+      order = goToUnloadingPoint(u);
+      if (order == null) {
+        order = explore(u);
+      }
+      return order;
     } else if (atLoadingPoint(u)) {
       return sentry(u);
     } 
-    Order order = goToLoadingPoint(u);
+    order = goToLoadingPoint(u);
     if (order == null) {
       order = explore(u);
     }

@@ -169,4 +169,8 @@ public final class EnumClass {
     return true;
   }
 
+  public int items() {
+    return _list.size();
+  }
+
 }

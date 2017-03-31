@@ -3,6 +3,7 @@ package com.developingstorm.games.sad;
 import java.util.List;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.util.Log;
+import com.developingstorm.games.sad.util.json.JsonObj;
 
 public class City {
 
@@ -29,6 +30,48 @@ public class City {
     _board = _game.getBoard();
     _productionCompletedThisTurn = false;
     
+  }
+  
+  
+  @SuppressWarnings("boxing")
+  public City(Game g, JsonObj json) {
+    _game = g;
+    _board = _game.getBoard();
+    _owner = _game.getPlayer(json.getString("owner"));
+    _produces = Type.get(json.getString("produces"));
+    _location = Location.get(json.getObj("location"));
+    _round = json.getLong("round");
+    _productionStart = json.getLong("ps");
+    _productionCompletedThisTurn = json.getBoolean("prodcomplete");
+  }
+  
+  @SuppressWarnings("boxing")
+  public JsonObj toJson() {
+    JsonObj json = new JsonObj();
+    json.put("name", _name);
+    if (_owner == null) {
+      json.put("owner", null);  
+    }
+    else {
+      json.put("owner", _owner.toJsonLink());
+    }
+    if (_produces == null) {
+      json.put("produces", null);  
+    }
+    else {
+      json.put("produces", _produces.toJsonLink());
+    }
+    json.put("location", _location.toJson());
+    json.put("round", _round);
+    json.put("ps", _productionStart);
+    json.put("prodcomplete", _productionCompletedThisTurn);
+    
+    json.put("edicts", _edicts.toJson());
+    return json;
+  }
+  
+  public Object toJsonLink() {
+    return _name;
   }
 
   public String toString() {
@@ -164,6 +207,14 @@ public class City {
 
   public boolean shareContinent(City _selectedCity) {
     return true;
+  }
+  
+  
+  public UnitStats getContinentStats() {  
+    Continent cont = getContinent();
+    UnitStats stats = _owner.getContinentStats(cont);
+
+    return stats;
   }
     
 }

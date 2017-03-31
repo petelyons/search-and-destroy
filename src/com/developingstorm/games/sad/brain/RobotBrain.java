@@ -17,7 +17,7 @@ public class RobotBrain implements IBrain {
   
   public RobotBrain(Robot owner) {
     _owner = owner;   
-    _battleplan = new Battleplan(_owner.getGame(), _owner);
+   // _battleplan = new Battleplan(_owner.getGame(), _owner);
   }
   
   @Override
@@ -25,12 +25,12 @@ public class RobotBrain implements IBrain {
    
     _battleplan = new Battleplan(_owner.getGame(), _owner);
     _general = new General(_battleplan);
-    _owner.forEachUnit((u) -> {_general.getOrders(u);});
+    _owner.forEachUnit((u) -> {u.assignOrder(_general.getOrders(u));});
     
     for (City c : _owner.getCities()) {
       if (c.productionCompleted()) {
         Type t = _battleplan.productionChoice(c);
-        Log.debug(this, "Resetting production of " + c + " to: " + t);
+        Log.debug(_owner, "Resetting production of " + c + " to: " + t);
         c.produce(t);
       }
     }
@@ -43,6 +43,9 @@ public class RobotBrain implements IBrain {
 
   @Override
   public Type getProduction(City c) {
+    if (_battleplan == null) {
+      return Type.INFANTRY;
+    }
     return _battleplan.productionChoice(c);
   }
   

@@ -10,6 +10,7 @@ import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Continent;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Robot;
+import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
@@ -20,9 +21,6 @@ public class Battleplan {
   
   // We have explored the entire continent and control all the cities 
   private final Set<Continent> _secureContinents;
-  
-  // Colonized but either not fully explored or fully controlled
-  private final Set<Continent> _unsecureContinents;
   
   // Known continents where we don't own a city
   private final Set<Continent> _targetContinents;
@@ -58,7 +56,6 @@ public class Battleplan {
     
     _battlezoneContinents = calcBattlezones(enemies);
     _secureContinents = calcSecureContinents(colonized);
-    _unsecureContinents = CollectionUtil.subtract(colonized, _secureContinents);
     _targetContinents = CollectionUtil.subtract(discovered, colonized);
     _defenseContinents = CollectionUtil.intersect(colonized, _battlezoneContinents);
     
@@ -70,6 +67,9 @@ public class Battleplan {
   private HashSet<Continent> calcSecureContinents(Set<Continent> colonized) {
     HashSet<Continent> set = new HashSet<Continent>();
     for (Continent cont : colonized) {
+      if (cont == null) {
+        throw new SaDException("Null values not allowed in continent sets");
+      }
       int totalCities = cont.getCityCount();
       int ownedCities = 0;
       for (City city : _player.getCities()) {
@@ -152,48 +152,95 @@ public class Battleplan {
   }
   
   
+  
 
-  private Type percentageProductionChoice(City c) {
-    if (_us.percent_infantry < 0.15)
-      return Type.INFANTRY;
-    if (_us.percent_fighters < 0.15)
-      return Type.FIGHTER;
-    if (_us.percent_armor < 0.15)
-      return Type.ARMOR;
-
+  private Type supplyBasedProductionChoice(City c) {
+    _us.recalc();
     if (c.isCoastal()) {
-      if (_us.percent_transports < 0.10)
-        return Type.TRANSPORT;
-      if (_us.percent_destroyers < 0.075)
-        return Type.DESTROYER;
-      if (_us.percent_submarines < 0.075)
-        return Type.SUBMARINE;
-      if (_us.percent_cruisers < 0.05)
-        return Type.CRUISER;
-      if (_us.percent_carriers < 0.05)
-        return Type.CARRIER;
-      if (_us.percent_battleships < 0.05)
-        return Type.BATTLESHIP;
+      return coastalProductionChoice(c);
     } else {
-      if (_us.percent_bombers < 0.10)
-        return Type.BOMBER;
-      if (_us.percent_transports < 0.05)
-        return Type.CARGO;
-      if (_us.percent_armor < _us.percent_infantry)
-        return Type.ARMOR;
+      return inlandProductionChoice(c);
     }
-    return Type.BOMBER;
+  }
+
+
+  private Type inlandProductionChoice(City c) {
+   
+    Continent cont = c.getContinent();
+    List<City> coastal = cont.coastalCities();
+    UnitStats stats = c.getContinentStats();
+  
+    Type currrentProduction = c.getProduction();
+    stats.decrementProduction(currrentProduction);
+
+    int infantry = stats.getProduction(Type.INFANTRY);
+    int armor = stats.getProduction(Type.ARMOR);
+    int bomber = stats.getProduction(Type.BOMBER);
+    int fighter = stats.getProduction(Type.FIGHTER);
+
+    
+    if (infantry + armor > bomber + fighter) {
+      if (bomber > fighter) {
+        return Type.FIGHTER;
+      } else {
+        return Type.BOMBER;
+      }
+      
+    } else {
+      if (infantry > armor) {
+        return Type.INFANTRY;
+      } else {
+        return Type.ARMOR;
+      }      
+    }
+    
+  }
+
+  private Type coastalProductionChoice(City c) {
+    Continent cont = c.getContinent();
+    UnitStats stats = c.getContinentStats();
+    Type currrentProduction = c.getProduction();
+    stats.decrementProduction(currrentProduction);
+
+    int infantry = stats.getProduction(Type.INFANTRY);
+    int armor = stats.getProduction(Type.ARMOR);
+    int transports = stats.getProduction(Type.TRANSPORT);
+
+    if (_us.getCount(Type.INFANTRY) < 6) {
+      return Type.INFANTRY;
+    }
+    
+    if (_us.getCount(Type.TRANSPORT) == 0) {
+      return Type.TRANSPORT;
+    }
+    
+    if (infantry + armor > 0 && transports == 0) {
+      return Type.TRANSPORT;
+    }
+    
+    return percentageCoastalChoice(c);
+  }
+
+  private Type percentageCoastalChoice(City c) {
+    if (_us.getPercentage(Type.DESTROYER) < 0.075)
+      return Type.DESTROYER;
+    if (_us.getPercentage(Type.SUBMARINE) < 0.075)
+      return Type.SUBMARINE;
+    if (_us.getPercentage(Type.CRUISER) < 0.05)
+      return Type.CRUISER;
+    if (_us.getPercentage(Type.CARRIER) < 0.05)
+      return Type.CARRIER;
+    if (_us.getPercentage(Type.BATTLESHIP) < 0.05)
+      return Type.BATTLESHIP;
+    return Type.SUBMARINE;
   }
 
   public Type productionChoice(City city) {
     
     Continent cont = city.getContinent();
-    if (_defenseContinents.contains(cont)) {
-      return Type.INFANTRY;
-    }
-    
     if (_secureContinents.contains(cont)) {
-      return percentageProductionChoice(city);
+      Type t = supplyBasedProductionChoice(city);
+      return t;
     }
 
     return Type.INFANTRY;

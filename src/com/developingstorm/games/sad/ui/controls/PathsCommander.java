@@ -16,8 +16,8 @@ public class PathsCommander extends BaseCommander {
   private City _selectedCity;
   private Travel _selectedTravel;
   
-  public PathsCommander(SaDFrame frame, BoardCanvas canvas, Game game) {
-    super(frame, canvas, game);
+  public PathsCommander(SaDFrame frame, Game game) {
+    super(frame, game);
   }
   
   public void setPathOrigin(City c, Travel travel) {
@@ -81,7 +81,7 @@ public class PathsCommander extends BaseCommander {
 
   public void endPathsMode() {
     _canvas.clearArrow();
-    _frame.endPathsMode();
+    _frame.returnGameMode();
     
   }
 

@@ -16,9 +16,9 @@ public abstract class BaseCommander {
   protected BoardCanvas _canvas;
   protected Game _game;
 
-  public BaseCommander(SaDFrame frame, BoardCanvas canvas, Game game) {
+  public BaseCommander(SaDFrame frame, Game game) {
     _frame = frame;
-    _canvas = canvas;
+    _canvas = frame.getCanvas();
     _game = game;
   }
 

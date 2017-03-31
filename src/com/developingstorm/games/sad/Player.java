@@ -36,7 +36,6 @@ public class Player implements UnitLens, LocationLens {
   private volatile LinkedList<Unit> _pendingOrders;
   private EdictFactory _edictFactory;
   
-  protected UnitStats _unitStats;
 
   public Player(String name, int id) {
 
@@ -47,7 +46,6 @@ public class Player implements UnitLens, LocationLens {
     _unownedCities = new HashSet<City>();
     _enemyCities = new HashSet<City>();
     _enemyUnits = new HashSet<Unit>();
-    _unitStats = new UnitStats();
     _pendingPlay = new LinkedList<>();
     _pendingOrders = new LinkedList<>();
     
@@ -99,7 +97,7 @@ public class Player implements UnitLens, LocationLens {
   }
 
   public String toString() {
-    return "Human: N=" + _name + " I=" + _id;
+    return "Human: I=" + _id;
   }
 
   public int getId() {
@@ -213,7 +211,7 @@ public class Player implements UnitLens, LocationLens {
       
       if (isExplored(loc)) {
         Unit u2 = visibleUnit(loc);
-        if (u2 != null && u2.getOwner() != this) {
+        if (u2 != null && !u2.getOwner().equals(this)) {
           City c = _game.cityAtLocation(u2.getLocation());
           if (u.canAttackCity() || c == null) {
             list.add(u2);
@@ -374,6 +372,11 @@ public class Player implements UnitLens, LocationLens {
   public Set<Continent> getColonizedContinents() {
     Set<Continent> colonized = new HashSet<Continent>();
     for (City c : _cities) {
+      Continent cont = c.getContinent();
+      if (cont == null) {
+        Log.error(c, "City not on continent!");
+        throw new SaDException("Cities must be on a continent!!!");
+      }
       colonized.add(c.getContinent());
     }
     return colonized;
@@ -959,8 +962,8 @@ public class Player implements UnitLens, LocationLens {
     }
 
 
-   _unitStats.recalc(_units, _cities);
-    Log.info("===========================================================================\r\nStarting new turn with:\n" + _unitStats);
+   UnitStats unitStats = new UnitStats(_units, _cities);
+    Log.info("===========================================================================\r\nStarting new turn with:\n" + unitStats);
   }
 
   public void completeTurn() {
@@ -971,6 +974,10 @@ public class Player implements UnitLens, LocationLens {
       u.turn().completeTurn();
     }
    
+  }
+  
+  public UnitStats unitStats() {
+    return new UnitStats(_units, _cities);
   }
   
 
@@ -1038,7 +1045,7 @@ public class Player implements UnitLens, LocationLens {
       }
       
       for (Unit u : unplayed) {
-        if (!u.hasOrders()) {
+        if (!u.hasOrders() || u.isDead()) {
           continue;
         }
         
@@ -1068,4 +1075,39 @@ public class Player implements UnitLens, LocationLens {
     completeTurn();
       
   }
+
+  // Store the full player info
+  public Object toJson() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+  
+  // Store enough to discover the correct player
+  public Object toJsonLink() {
+    return _name;
+  }
+  
+  public UnitStats getStats() {
+    UnitStats us = new UnitStats(_units, _cities);
+    return us;
+  }
+  
+  
+  public List<Unit> getUnitsOnContinent(Continent cont) {
+    List<Unit> units = new ArrayList<Unit>();
+    Set<Location> locations = cont.getLocations();
+    for(Location loc: locations) {
+     List<Unit> lu =  _game.unitsAtLocation(loc);
+     units.addAll(lu);
+    }
+    return units;
+  }
+  
+  public UnitStats getContinentStats(Continent cont) {
+    List<City> cities = cont.getCities();
+    List<Unit> units = getUnitsOnContinent(cont);
+    UnitStats stats = new UnitStats(units, cities);
+    return stats;
+  }
+
 }

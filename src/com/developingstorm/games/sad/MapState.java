@@ -68,23 +68,27 @@ public class MapState implements AStarState {
   }
 
   public static MapState get(Location loc) {
-    if (_player.isExplored(loc)) {
+    if (_player.isExplored(loc) || _canExplore) {
       if (_travel == Travel.SEA) {
         if (_b.isWater(loc) || isPlayersCity(loc)) {
-          if (!isBlocked(loc))
+          if (!isBlocked(loc)) {
             return new MapState(loc);
+          }
           return null;
         }
       } else if (_travel == Travel.LAND) {
-        if (!isBlocked(loc))
+        if (!isBlocked(loc)) {
           return new MapState(loc);
+        }
         return null;
-      } else if (!isBlocked(loc))
+      } else if (!isBlocked(loc)) {
         return new MapState(loc);
+      }
       return null;
     } else {
-      if (_canExplore)
+      if (_canExplore) {
         return new MapState(loc);
+      }
       else
         return null;
     }
@@ -99,12 +103,30 @@ public class MapState implements AStarState {
     return _loc;
   }
 
-  /**
-   * @see com.marlinspike.astar.State#equals(State)
-   */
-  public boolean equals(AStarState state) {
-    MapState ms = (MapState) state;
-    return (ms._loc.x == _loc.x && ms._loc.y == _loc.y);
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((_loc == null) ? 0 : _loc.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    MapState other = (MapState) obj;
+    if (_loc == null) {
+      if (other._loc != null)
+        return false;
+    } else if (!_loc.equals(other._loc))
+      return false;
+    return true;
   }
 
   /**
@@ -225,4 +247,5 @@ public class MapState implements AStarState {
   public int y() {
     return _loc.y;
   }
+
 }

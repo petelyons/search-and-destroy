@@ -10,6 +10,7 @@ import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.util.Log;
+import com.developingstorm.games.sad.util.json.JsonObj;
 
 public class SendUnits extends Edict {
   
@@ -20,6 +21,12 @@ public class SendUnits extends Edict {
     super(p, c, t);
     _travel = travel;
     _dest = dest;
+  }
+  
+  protected SendUnits(Player p, EdictType t, Travel travel, JsonObj json) {
+    super(p, t, json);
+    _travel = travel;
+    _dest = p.getGame().getCity(json.getString("dest"));
   }
 
   public City destination() {
@@ -36,6 +43,12 @@ public class SendUnits extends Edict {
         u.orderMove(_dest.getLocation());
       }
     }
+  }
+  
+  public JsonObj toJson() {
+    JsonObj obj = super.toJson();
+    obj.put("dest", _dest.toJsonLink());
+    return obj;
   }
 
 }

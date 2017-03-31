@@ -64,6 +64,8 @@ public class Game implements UnitLens, LocationLens {
 
   private LinkedList<Runnable> _pendingActions;
 
+  private volatile  boolean _endPlay;
+
   @SuppressWarnings("unchecked")
   public Game(Player[] players, HexBoardMap grid, HexBoardContext ctx) {
     _ctx = ctx;
@@ -93,8 +95,10 @@ public class Game implements UnitLens, LocationLens {
 
     _currentPlayer = _players[0];
 
-    initBoard();
-
+  
+    _board.init();
+    assignCities();
+  
     int w = _gridMap.getWidth();
     int h = _gridMap.getWidth();
     _locations = (Set<Unit>[][]) new Set[w][h];
@@ -200,10 +204,7 @@ public class Game implements UnitLens, LocationLens {
     }
   }
 
-  private void initBoard() {
-    _board.init();
-    assignCities();
-  }
+ 
   
 
   private City findUnownedCoastalCity() {
@@ -727,6 +728,11 @@ public class Game implements UnitLens, LocationLens {
     int cc;
    
     try {
+      synchronized(this) {
+        if (_endPlay) {
+          return;
+        }
+      }
       playerChange();
       
       //DEBUG
@@ -800,6 +806,32 @@ public class Game implements UnitLens, LocationLens {
     for (City city :  _board.getCities()) {
       Log.info(city.toString());
     }
+  }
+
+  public Player getPlayer(String link) {
+    for (Player p : _players) {
+      if (p.toJsonLink().equals(link)) {
+        return p;
+      }
+    }
+    throw new SaDException("No player named:" + link);
+  
+  }
+
+  public City getCity(String link) {
+    for (City c : _board.getCities()) {
+      if (c.toJsonLink().equals(link)) {
+        return c;
+      }
+    }
+    throw new SaDException("No city named:" + link);
+  }
+
+  public void end() {
+    synchronized(this) {
+      _endPlay = true;
+    }
+    
   }
 
 

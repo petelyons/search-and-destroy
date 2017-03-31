@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import com.developingstorm.games.sad.util.json.JsonObj;
+
 /**
  * Edicts are orders assigned to Cities instead of Units.
  */
@@ -17,6 +19,21 @@ public abstract class Edict {
     _player = p;
     _city = c;
     _edictType = t;
+  }
+  
+  
+  public Edict(Player p, EdictType t, JsonObj json) {
+    _player = p;
+    _edictType = t;
+    _city = p.getGame().getCity(json.getString("city"));
+  }
+
+
+  public JsonObj toJson() {
+    JsonObj obj = new JsonObj();
+    obj.put("type", _edictType.getName());
+    obj.put("city", _city.toJsonLink());
+    return obj;
   }
   
  

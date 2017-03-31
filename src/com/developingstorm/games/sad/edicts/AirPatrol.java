@@ -15,19 +15,15 @@ import com.developingstorm.util.RandomUtil;
 
 public class AirPatrol extends Edict {
   
-  Travel _travel;
-  City _dest;
-
   public AirPatrol(Player p, City c) {
     super(p, c, EdictType.AIR_PATROL);
-    _travel = Travel.AIR;
   }
   
 
   @Override
   public void execute(Game game) {
     
-    List<Unit> units = unitsMatchingTravel(_travel);
+    List<Unit> units = unitsMatchingTravel(Travel.AIR);
     if (!units.isEmpty()) {
       
       for (Unit u : units) {

@@ -46,7 +46,7 @@ public class MenuBarBuilder {
   private final JCheckBoxMenuItem VIEW_GROUND_PATHS = new JCheckBoxMenuItem("Ground Paths");
   
   private final JMenuItem GAME_MODE = new JRadioButtonMenuItem("Game Mode");
-  private final JMenuItem PATHS_MODE = new JRadioButtonMenuItem("Paths Mode");
+  private final JMenuItem EXPLORE_MODE = new JRadioButtonMenuItem("Explore Mode");
   
   
 
@@ -143,11 +143,11 @@ public class MenuBarBuilder {
         _handler.onGameMode();
       }});
     
-    PATHS_MODE.setSelected(frame.isPathsMode());
-    PATHS_MODE.addActionListener(new ActionListener() {
+    EXPLORE_MODE.setSelected(frame.isExploreMode());
+    EXPLORE_MODE.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        _handler.onPathsMode();
+        _handler.onExploreMode();
       }});
     
     
@@ -172,7 +172,7 @@ public class MenuBarBuilder {
       }});
     ButtonGroup group = new ButtonGroup();
     group.add(GAME_MODE);
-    group.add(PATHS_MODE);
+    group.add(EXPLORE_MODE);
     
     
     FILE.setMnemonic(KeyEvent.VK_F);
@@ -193,7 +193,7 @@ public class MenuBarBuilder {
     
     
     CONTROLS.add(GAME_MODE);
-    CONTROLS.add(PATHS_MODE);
+    CONTROLS.add(EXPLORE_MODE);
 
     DEBUG.add(DEBUG_ASTAR_SEL);
     DEBUG.add(DEBUG_LENS_SEL);

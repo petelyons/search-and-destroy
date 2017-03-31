@@ -14,6 +14,7 @@ import com.developingstorm.games.sad.types.Fighter;
 import com.developingstorm.games.sad.types.Infantry;
 import com.developingstorm.games.sad.types.Submarine;
 import com.developingstorm.games.sad.types.Transport;
+import com.developingstorm.games.sad.util.Log;
 
 public class General {
 
@@ -135,6 +136,11 @@ public class General {
     case Type.BATTLESHIP_ID:
       order = plan((Battleship) u);
       break;
+    }
+    
+    if (order == null) {
+      Log.warn("COULD NOT FIND VALID ORDER!");
+      return u.newSkipTurn();
     }
     
     return order;

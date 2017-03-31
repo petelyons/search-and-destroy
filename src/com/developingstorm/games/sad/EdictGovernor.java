@@ -148,4 +148,9 @@ public class EdictGovernor {
     
   }
 
+  public Object toJson() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
 }

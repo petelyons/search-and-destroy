@@ -76,7 +76,8 @@ public class Enum {
     _id = id;
     _class.add(id, this);
   }
-
+  
+ 
   /**
    * Get the debug displayable name of this enumeration object
    * 
@@ -98,10 +99,19 @@ public class Enum {
   /**
    * Get the raw name of the enum
    */
-  String getName() {
+  public String getName() {
     return _name;
   }
+
   
+  /**
+   * Get the raw name of the enum
+   */
+  public Object toJsonLink() {
+    return _name;
+  }
+
+   
   @Override
   public int hashCode() {
     final int prime = 31;

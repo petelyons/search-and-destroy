@@ -10,7 +10,7 @@ public interface AStarState {
    * @param state
    * @return
    */
-  boolean equals(AStarState state);
+  boolean equals(Object state);
 
   /**
    * Weight the move to the goal state. Higher values are

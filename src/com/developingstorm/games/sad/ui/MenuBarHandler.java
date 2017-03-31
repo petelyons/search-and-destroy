@@ -18,6 +18,6 @@ public interface MenuBarHandler {
   void onDebugDump();
   
   void onGameMode();
-  void onPathsMode();
+  void onExploreMode();
  
 }

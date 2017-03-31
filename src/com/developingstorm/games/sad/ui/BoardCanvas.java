@@ -341,6 +341,9 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
     case PATHS:
       drawPathsBoard(z, g);
       break;
+    case EXPLORE:
+      drawGameBoard(z, g);
+      break;
     }  
   }
   

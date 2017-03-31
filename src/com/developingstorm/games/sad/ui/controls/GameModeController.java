@@ -9,6 +9,7 @@ import java.awt.event.MouseMotionListener;
 import com.developingstorm.games.hexboard.BoardHex;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.ui.SaDFrame;
+import com.developingstorm.games.sad.util.Log;
 
 /**
  * 
@@ -182,7 +183,7 @@ public class GameModeController extends BaseController {
   
       @Override
       public void hexMousePressed(MouseEvent e, BoardHex hex) {
-     
+        Log.info("GAME MOUSE DOWN *******************************************");
         if (_commander.isWaiting() == false) {
           return;
         }
@@ -196,6 +197,8 @@ public class GameModeController extends BaseController {
 
       @Override
       public void hexMouseReleased(MouseEvent e, BoardHex hex) {
+        Log.info("GAME MOUSE UP ***********************************************");
+
         if (_commander.isWaiting() == false) {
           return;
         }

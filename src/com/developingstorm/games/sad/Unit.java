@@ -586,9 +586,6 @@ public abstract class Unit {
 
 
   public void clearOrders() {
-    if (_order != null && _order.getType().equals(OrderType.SKIPTURN)) {
-       Log.stack("Clearing skip turn");
-    }
     _order = null;
   }
 
@@ -618,6 +615,9 @@ public abstract class Unit {
         return loc;
       }
       Path p = getPath(loc);
+      if (p == null) {
+        continue;
+      }
       int pLen = p.length();
       int tLen = _loc.distance(loc);
       if (pLen == tLen) {

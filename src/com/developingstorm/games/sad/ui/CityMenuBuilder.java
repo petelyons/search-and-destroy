@@ -19,6 +19,7 @@ import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.UnitStats;
 import com.developingstorm.games.sad.ui.controls.GameCommander;
 
 /**
@@ -70,6 +71,18 @@ public class CityMenuBuilder {
 
   private final SaDFrame _frame;
  
+  
+  private String formatName(Type type, UnitStats stats) {
+    StringBuffer sb = new StringBuffer();
+    String name = type.getName();
+    sb.append(name);
+    sb.append(" (");
+    sb.append(stats.getCount(type));
+    sb.append('/');
+    sb.append(stats.getProduction(type));
+    sb.append(')');
+    return sb.toString();
+  }
 
   public CityMenuBuilder(SaDFrame frame, Game g, City c, GameCommander commander) {
     
@@ -78,58 +91,73 @@ public class CityMenuBuilder {
     _c = c;
     _commander = commander;
     
+    
+    
+    UnitStats stats = c.getOwner().unitStats();
+    
     selectProduction(c.getProduction());
+    INFANTRY_SEL.setText(formatName(Type.INFANTRY, stats));
     INFANTRY_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
         _c.produce(Type.INFANTRY);
       }});
-    
+
+    ARMOR_SEL.setText(formatName(Type.ARMOR, stats));
     ARMOR_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
         _c.produce(Type.ARMOR);
       }});
+    BOMBER_SEL.setText(formatName(Type.BOMBER, stats));
     BOMBER_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
         _c.produce(Type.BOMBER);
       }});
+    CARGO_SEL.setText(formatName(Type.CARGO, stats));
     CARGO_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
         _c.produce(Type.CARGO);
       }});
+    FIGHTER_SEL.setText(formatName(Type.FIGHTER, stats));
     FIGHTER_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
         _c.produce(Type.FIGHTER);
       }});
+    TRANSPORT_SEL.setText(formatName(Type.TRANSPORT, stats));
     TRANSPORT_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
         _c.produce(Type.TRANSPORT);
       }});
+    DESTROYER_SEL.setText(formatName(Type.DESTROYER, stats));
     DESTROYER_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
         _c.produce(Type.DESTROYER);
       }});
+    SUBMARINE_SEL.setText(formatName(Type.SUBMARINE, stats));
     SUBMARINE_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
         _c.produce(Type.SUBMARINE);
       }});
+    CRUISER_SEL.setText(formatName(Type.CRUISER, stats));
     CRUISER_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
         _c.produce(Type.CRUISER);
       }});
+    BATTLESHIP_SEL.setText(formatName(Type.BATTLESHIP, stats));
     BATTLESHIP_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
         _c.produce(Type.BATTLESHIP);
       }});
+    AIRCRAFT_CARRIER_SEL.setText(formatName(Type.CARRIER, stats));
     AIRCRAFT_CARRIER_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {

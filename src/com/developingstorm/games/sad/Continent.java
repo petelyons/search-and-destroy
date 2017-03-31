@@ -21,6 +21,9 @@ public class Continent {
   private final Board _board;
   private final Set<Location> _coastWater;
   private final List<City> _cities;
+  private final List<City> _coastalCities;
+  private final List<City> _inlandCities;
+ 
 
   Continent(Board b, int id) {
     _board = b;
@@ -28,6 +31,8 @@ public class Continent {
     _locations = new HashSet<Location>();
     _cities = new ArrayList<City>();
     _coastWater = new HashSet<Location>();
+    _coastalCities = new ArrayList<City>();
+    _inlandCities = new ArrayList<City>();
   }
 
   public void add(Location loc) {
@@ -37,6 +42,7 @@ public class Continent {
   void init() {
     calcCoastalWaters();
     calcCities();
+ 
   }
 
   public Set<Location> getCoastalWaters(int continent) {
@@ -47,11 +53,16 @@ public class Continent {
     return _cities.size();
   }
 
-  public void calcCities() {
+  private void calcCities() {
     for (Location loc : _locations) {
       City c = _board.getCity(loc);
       if (c != null) {
         _cities.add(c);
+        if (c.isCoastal()) {
+          _coastalCities.add(c);
+        } else {
+          _inlandCities.add(c);
+        }
       }
     }
   }
@@ -102,4 +113,26 @@ public class Continent {
     return _coastWater;
     
   }
+
+  public List<City> getCities() {
+    return _cities;
+  }
+  
+  public List<City> getOtherCities(City except) {
+    List<City> cities = new ArrayList<City>(_cities);
+    cities.remove(except);
+    return cities;
+  }
+
+  public List<City> coastalCities() {
+
+    return _coastalCities;
+  }
+  
+  public List<City> inlandCities() {
+
+    return _inlandCities;
+  }
+
+  
 }

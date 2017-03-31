@@ -14,7 +14,6 @@ import com.developingstorm.games.sad.OrderType;
 import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Unit;
-import com.developingstorm.games.sad.ui.BoardCanvas;
 import com.developingstorm.games.sad.ui.CityMenuBuilder;
 import com.developingstorm.games.sad.ui.OrderMenuBuilder;
 import com.developingstorm.games.sad.ui.SaDFrame;
@@ -30,16 +29,13 @@ public class GameCommander extends BaseCommander {
   
   
   
-  private GameCommander(SaDFrame frame, BoardCanvas canvas, Game game, List<Unit> commandedUnits) {
-    super(frame, canvas, game);
-    _frame = frame;
-    _canvas = canvas;
-    _game = game;
+  private GameCommander(SaDFrame frame, Game game, List<Unit> commandedUnits) {
+    super(frame, game);
     _commandedUnits = commandedUnits;
   }
   
-  public GameCommander(SaDFrame frame, BoardCanvas canvas, Game game) {
-    this(frame, canvas, game, null);
+  public GameCommander(SaDFrame frame, Game game) {
+    this(frame, game, null);
   }
   
   /**
@@ -49,7 +45,7 @@ public class GameCommander extends BaseCommander {
    * @return
    */
   public GameCommander commanderForSpecifiedUnits(List<Unit> units) {
-    GameCommander commander = new GameCommander(_frame, _canvas, _game);
+    GameCommander commander = new GameCommander(_frame, _game);
     commander._commandedUnits = units;
     return commander;
   }
@@ -76,6 +72,7 @@ public class GameCommander extends BaseCommander {
   }
 
   public void move(Location from, Location loc) {
+   
     Unit unit = _game.unitAtLocation(from);
     if (unit == null) {
       throw new SaDException("Unit expected at from location of move order");

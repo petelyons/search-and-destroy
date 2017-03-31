@@ -3,6 +3,7 @@ package com.developingstorm.games.sad.ui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FileDialog;
 import java.awt.Image;
@@ -30,6 +31,7 @@ import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Robot;
 import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.ui.NewGameDialog.NewGameValues;
 import com.developingstorm.games.sad.ui.controls.PathsCommander;
 import com.developingstorm.games.sad.ui.controls.UIController;
 import com.developingstorm.games.sad.util.Log;
@@ -59,6 +61,11 @@ public class SaDFrame extends JFrame {
 
     public void run() {
       _g.play();
+    }
+
+    public void endGame() {
+      _g.end();
+      
     }
   }
 
@@ -234,13 +241,12 @@ public class SaDFrame extends JFrame {
     SaDFrame frame = new SaDFrame();
 
   }
+  
+ 
 
   public SaDFrame() {
 
     setTitle("Search And Destroy");
-
-    _map = HexBoardMap.loadMapAsResource(this, "MedMap.sdm");
-    _terrainTypes = _map.getData();
 
     addWindowListener(new WindowAdapter() {
       public void windowClosing(WindowEvent e) {
@@ -249,15 +255,101 @@ public class SaDFrame extends JFrame {
       }
     });
 
-    GameIcons icons = GameIcons.get();
+   
+
+    /*    _tbar = new GameToolbar(null, new ItemListener() {
+
+    @Override
+    public void itemStateChanged(ItemEvent event) {
+      Object source = event.getSource();
+      if (source instanceof JToggleButton) {
+        JToggleButton jt = (JToggleButton) source;
+
+        String cmd = jt.getActionCommand();
+        if (cmd.equals("PLAY") && event.getStateChange() == ItemEvent.SELECTED) {
+          _paused = false;
+          _pauseControls.disable();
+          _playControls.enable();
+          if (_playLocation != null)
+            select(_playLocation);
+          _canvas.requestFocus();
+          _game.continuePlay();
+          _commander.setPlayMode();
+        } else if (cmd.equals("PAUSE")
+            && event.getStateChange() == ItemEvent.SELECTED) {
+          _paused = true;
+          _playControls.disable();
+          _pauseControls.enable();
+          _canvas.requestFocus();
+          _game.pausePlay();
+          _commander.setPauseMode();
+        }
+
+      }}});
+*/
+
+
+
+
+    _paused = false;
+    _scroll = new NoKeyScrollPane();
+    _ubar = new UnitStatusBar();
+    
+    
+    NewGameValues vals = new NewGameValues();
+    
+    vals.gameSize = 1;
+    vals.player1Type = 0;
+    vals.player2Type = 1;
+    vals.player1Name = "Pete";
+    vals.player2Name = "Jayne";
+    
+    startNewGame(vals);
+    
+ 
+
+    Container pane = getContentPane();
+    pane.setLayout(new BorderLayout(0, 0));
+    pane.add(BorderLayout.CENTER, _scroll);
+    pane.add(BorderLayout.SOUTH, _ubar);
+   // pane.add(BorderLayout.NORTH, _tbar);
+
+    setSize(600, 500);
+
+    initMenuBar();
+
+    setVisible(true);
+  }
+  
+  
+ 
+  
+  private Player createPlayer(int type, String name, int id) {
+    if (type == 0) {
+      return new Player(name, id);
+    } else {
+      return new Robot(name, id);
+    }
+  }
+  
+
+  private void startNewGame(NewGameValues vals) {
+    termGame();
+    
+    _map = HexBoardMap.loadMapAsResource(this, "MedMap.sdm");
+    _terrainTypes = _map.getData();
+    
 
     _playLocation = null;
 
     _ctx = new MapContext();
 
     Player[] players = new Player[2];
-    players[0] = new Player("Pete", 1);
-    players[1] = new Robot("Robby", 2);
+    
+    
+    
+    players[0] = createPlayer(vals.player1Type, vals.player1Name, 1);
+    players[1] = createPlayer(vals.player2Type, vals.player2Name, 2);
     
        
     _game = new Game(players, _map, _ctx);
@@ -335,65 +427,25 @@ public class SaDFrame extends JFrame {
       }
     });
 
-/*    _tbar = new GameToolbar(null, new ItemListener() {
 
-      @Override
-      public void itemStateChanged(ItemEvent event) {
-        Object source = event.getSource();
-        if (source instanceof JToggleButton) {
-          JToggleButton jt = (JToggleButton) source;
-
-          String cmd = jt.getActionCommand();
-          if (cmd.equals("PLAY") && event.getStateChange() == ItemEvent.SELECTED) {
-            _paused = false;
-            _pauseControls.disable();
-            _playControls.enable();
-            if (_playLocation != null)
-              select(_playLocation);
-            _canvas.requestFocus();
-            _game.continuePlay();
-            _commander.setPlayMode();
-          } else if (cmd.equals("PAUSE")
-              && event.getStateChange() == ItemEvent.SELECTED) {
-            _paused = true;
-            _playControls.disable();
-            _pauseControls.enable();
-            _canvas.requestFocus();
-            _game.pausePlay();
-            _commander.setPauseMode();
-          }
-
-        }}});
-*/
-    _ubar = new UnitStatusBar();
     _board = _game.getBoard();
     _ubar.setGame(_game);
-
+    GameIcons icons = GameIcons.get();
+    
+    
+    BoardCanvas oldCanvas = _canvas;
     _canvas = new BoardCanvas(_game, icons, _ctx);
 
- 
-    _paused = false;
- 
-    _scroll = new NoKeyScrollPane();
-
     JViewport vp = _scroll.getViewport();
+    if (oldCanvas != null) {
+      vp.remove(oldCanvas);
+    }
     vp.setScrollMode(JViewport.BACKINGSTORE_SCROLL_MODE);
     vp.add(_canvas);
-
-    Container pane = getContentPane();
-    pane.setLayout(new BorderLayout(0, 0));
-    pane.add(BorderLayout.CENTER, _scroll);
-    pane.add(BorderLayout.SOUTH, _ubar);
-   // pane.add(BorderLayout.NORTH, _tbar);
-
-    setSize(600, 500);
-
-    initMenuBar();
-
-    setVisible(true);
-
+    
     initGame();
   }
+
 
   private void selectPlayer(Player p) {
     if (DEBUG_GOD_LENS)
@@ -405,6 +457,11 @@ public class SaDFrame extends JFrame {
   }
 
   public void initGame() {
+    if (_runner != null) {
+      _runner.endGame();
+    }
+    
+    
     _canvas.startAmination();
     _canvas.requestFocus();
     _runner = new GameRunner(_game);
@@ -412,14 +469,39 @@ public class SaDFrame extends JFrame {
     
     
     _controller = new UIController(this, _game);
+    
     _canvas.addMouseListener(_controller.mouseListener());
     _canvas.addMouseMotionListener(_controller.mouseMotionListener());
     _canvas.addKeyListener(_controller.keyListener());
     
   
     _controller.switchMode(UIMode.GAME);
+    
+    _game.postGameAction(new Runnable() {
 
+      @Override
+      public void run() {
+        Unit u = _game.selectedUnit();
+        if (u != null) {
+    //      center(u.getLocation());
+        }
+      }
+      
+    });
+ }
+  
+  
+  public void termGame() {
+    if (_runner != null) {
+      _runner.endGame();
+    }
+    if (_canvas != null) {
+      _canvas.removeMouseListener(_controller.mouseListener());
+      _canvas.removeMouseMotionListener(_controller.mouseMotionListener());
+      _canvas.removeKeyListener(_controller.keyListener());
+    }
   }
+
 
   public void initMenuBar() {
     MenuBarBuilder menus = new MenuBarBuilder(this, new MenuBarHandler() {
@@ -439,8 +521,12 @@ public class SaDFrame extends JFrame {
 
       @Override
       public void onNew() {
-        // TODO Auto-generated method stub
-        
+        NewGameDialog dialog = new NewGameDialog(SaDFrame.this, "New Game", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setVisible(true);
+        NewGameValues vals = dialog.getValues();
+        if (vals.exitButton == 0) {
+          startNewGame(vals);
+        }
       }
 
       @Override
@@ -526,8 +612,8 @@ public class SaDFrame extends JFrame {
       }
 
       @Override
-      public void onPathsMode() {
-        _controller.switchMode(UIMode.PATHS);
+      public void onExploreMode() {
+        _controller.switchMode(UIMode.EXPLORE);
       }
 
       @Override
@@ -677,12 +763,15 @@ public class SaDFrame extends JFrame {
     return _controller.getUIMode() == UIMode.GAME;
   }
 
-  public boolean isPathsMode() {
+  public boolean isExploreMode() {
     if (_controller == null) {
       return false;
     }
-    return _controller.getUIMode() == UIMode.PATHS;
+    return _controller.getUIMode() == UIMode.EXPLORE;
   }
+  
+  
+  
   
   public PathsCommander startPathsMode() {
     _controller.switchMode(UIMode.PATHS);
@@ -690,7 +779,7 @@ public class SaDFrame extends JFrame {
     
   }
   
-  public void endPathsMode() {
+  public void returnGameMode() {
     _controller.switchMode(UIMode.GAME);  
     selectPlayer(_game.currentPlayer());
   }

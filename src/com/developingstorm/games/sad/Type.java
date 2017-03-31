@@ -88,24 +88,29 @@ public class Type extends Enum {
   
   
   
-  String _abr;
-  Travel _travel;
-  int _hits;
-  int _dist;
-  int _cost;
-  Vision _vis;
-  int _vdist;
-  int _max;
-  Type[] _carryTypes;
-  int _carryCount;
-  int _attack;
-  int _iconID;
-  int _weight;
-
-  private Type(String desc) {
-    super(_class, desc);
+  private final String _abr;
+  private final Travel _travel;
+  private final int _hits;
+  private final int _dist;
+  private final int _cost;
+  private final Vision _vis;
+  private final int _vdist;
+  private final int _max;
+  private final Type[] _carryTypes;
+  private final int _carryCount;
+  private final int _attack;
+  private final int _iconID;
+  private final int _weight;
+  
+  public static Type get(String name) {
+    return (Type) _class.get(name);
   }
 
+  
+  public static Type get(int id) {
+    return (Type) _class.get(id);
+  }
+  
   private Type(String desc, String abr, Travel t, int dist, int hits, int cost,
       Vision vis, int vdist, int maxf, Type[] carryTypes, int carryCount,
       int weight, int attack, int iconID) {
@@ -189,6 +194,11 @@ public class Type extends Enum {
     }
     return false;
 
+  }
+  
+  
+  public static int classItems() {
+    return _class.items();
   }
 
 }

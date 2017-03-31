@@ -5,6 +5,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.ui.BoardCanvas;
@@ -16,73 +18,84 @@ import com.developingstorm.games.sad.ui.UIMode;
  */
 public class UIController {
 
-  private UIMode _mode;
-  private GameCommander _gameCommander;
-  private PathsCommander _pathsCommander;
+  
 
-  private GameModeController _gameControls;
-  private PathsModeController _pathsControls;
+  static class Mode {
+    public BaseCommander commander;
+    public BaseController controller;
+  }
+  
+  static class GameMode extends Mode {
+    GameMode(SaDFrame frame, Game game) {
+      commander =  new GameCommander(frame, game);
+      controller = new GameModeController(frame, (GameCommander) commander);
+    }
+  }
+
+  static class PathsMode extends Mode {
+    PathsMode(SaDFrame frame, Game game) {
+      commander =  new PathsCommander(frame, game);
+      controller = new PathsModeController(frame, (PathsCommander) commander);
+    }
+  }
+
+  static class ExploreMode extends Mode {
+    ExploreMode(SaDFrame frame, Game game) {
+      commander =  new ExploreCommander(frame, game);
+      controller = new ExploreModeController(frame, (ExploreCommander) commander);
+    }
+  }
+
+  
+  private UIMode _modeMode;
+  private Mode _mode;
   private SaDFrame _frame;
   private Game _game;
   private BoardCanvas _canvas;
   private MouseListener _mouseListener;
   private MouseMotionListener _mouseMotionListener;
   private KeyListener _keyboardListener;
-  
-  private BaseController[] _controlers;
+  private Map<UIMode, Mode> _modes;
   
   
   public UIController(SaDFrame frame, Game game) {
     
+    _modes = new HashMap<UIMode, Mode>();
     
     _frame = frame;
     _game = game;
     _canvas = _frame.getCanvas();
-    
-    _gameCommander = new GameCommander(_frame, _canvas, _game);
-    _pathsCommander = new PathsCommander(_frame, _canvas, _game);
-
-    _gameControls = new GameModeController(_frame, _gameCommander);
-    _pathsControls = new PathsModeController(_frame, _pathsCommander);
+    _modes.put(UIMode.GAME, new GameMode(_frame, _game));
+    _modes.put(UIMode.PATHS, new PathsMode(_frame, _game));
+    _modes.put(UIMode.EXPLORE, new ExploreMode(_frame, _game));
    
-    int max = 0;
-    for (UIMode mode : UIMode.values()) {
-      if (mode.ordinal() > max) {
-        max = mode.ordinal();
-      }
-    }
-    
-    _controlers = new BaseController[max + 1];
-    _controlers[UIMode.GAME.ordinal()] = _gameControls;
-    _controlers[UIMode.PATHS.ordinal()] = _pathsControls;
-  
     switchMode(UIMode.GAME);
    
     _mouseListener = new MouseListener() {
 
       @Override
       public void mouseClicked(MouseEvent e) {
-        _controlers[_mode.ordinal()].mouseListener().mouseClicked(e);
+        _mode.controller.mouseListener().mouseClicked(e);
       }
 
       @Override
       public void mouseEntered(MouseEvent e) {
-        _controlers[_mode.ordinal()].mouseListener().mouseEntered(e);  
+        _mode.controller.mouseListener().mouseEntered(e);  
       }
 
       @Override
       public void mouseExited(MouseEvent e) {
-        _controlers[_mode.ordinal()].mouseListener().mouseExited(e);
+        _mode.controller.mouseListener().mouseExited(e);
       }
 
       @Override
       public void mousePressed(MouseEvent e) {
-        _controlers[_mode.ordinal()].mouseListener().mousePressed(e);
+        _mode.controller.mouseListener().mousePressed(e);
       }
 
       @Override
       public void mouseReleased(MouseEvent e) {
-        _controlers[_mode.ordinal()].mouseListener().mouseReleased(e);
+        _mode.controller.mouseListener().mouseReleased(e);
       }
       
     };
@@ -91,12 +104,12 @@ public class UIController {
 
       @Override
       public void mouseDragged(MouseEvent e) {
-        _controlers[_mode.ordinal()].mouseMotionListener().mouseDragged(e);
+        _mode.controller.mouseMotionListener().mouseDragged(e);
       }
 
       @Override
       public void mouseMoved(MouseEvent e) {
-        _controlers[_mode.ordinal()].mouseMotionListener().mouseMoved(e);
+        _mode.controller.mouseMotionListener().mouseMoved(e);
       }
       
     };
@@ -105,29 +118,31 @@ public class UIController {
 
       @Override
       public void keyPressed(KeyEvent e) {
-        _controlers[_mode.ordinal()].keyListener().keyPressed(e);    
+        _mode.controller.keyListener().keyPressed(e);    
       }
 
       @Override
       public void keyReleased(KeyEvent e) {
-        _controlers[_mode.ordinal()].keyListener().keyReleased(e); 
+        _mode.controller.keyListener().keyReleased(e); 
       }
 
       @Override
       public void keyTyped(KeyEvent e) {
-        _controlers[_mode.ordinal()].keyListener().keyTyped(e); 
+        _mode.controller.keyListener().keyTyped(e); 
       }
       
     };
   }
   
-  public void switchMode(UIMode mode) {
+  
+  public void switchMode(UIMode modeMode) {
     
-    if (mode == _mode) {
+    if (modeMode == _modeMode) {
       return;
     }  
-    _mode = mode;  
-    _canvas.setUIMode(mode);
+    _modeMode = modeMode;  
+    _mode = _modes.get(_modeMode);
+    _canvas.setUIMode(_modeMode);
   }
   
 
@@ -145,10 +160,11 @@ public class UIController {
   }
 
   public UIMode getUIMode() {
-    return _mode;  
+    return _modeMode;  
   }
 
   public PathsCommander getPathsCommander() {
-    return _pathsCommander;
+    Mode mode = _modes.get(UIMode.PATHS);
+    return (PathsCommander) mode.commander;
   }
 }

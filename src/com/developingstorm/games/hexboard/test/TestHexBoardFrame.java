@@ -30,6 +30,7 @@ import com.developingstorm.games.hexboard.HexBoard;
 import com.developingstorm.games.hexboard.HexBoardContext;
 import com.developingstorm.games.hexboard.HexCanvas;
 import com.developingstorm.games.hexboard.Location;
+import com.developingstorm.games.hexboard.LocationMap;
 
 /**
  * Class information
@@ -66,6 +67,8 @@ public class TestHexBoardFrame extends JFrame implements MouseListener,
     _oldFocus = null;
 
     TestContext ctx = new TestContext();
+    
+    LocationMap.init(ctx.getWidth(), ctx.getHeight());
     _board = new HexBoard(ctx);
 
     _scroll = new JScrollPane();
