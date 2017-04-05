@@ -1,14 +1,18 @@
 package com.developingstorm.games.sad.brain;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.City;
+import com.developingstorm.games.sad.Continent;
 import com.developingstorm.games.sad.Order;
 import com.developingstorm.games.sad.Path;
 import com.developingstorm.games.sad.Player;
+import com.developingstorm.games.sad.SaDException;
+import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.util.Log;
@@ -71,7 +75,31 @@ public abstract class UnitCaptain<T extends Unit>  {
    * @return null if the order could not be constructed 
    */
   protected Order goToLoadingPoint(Unit u) {
-    Location loc = u.getClosestLocation(_plan.getLoadingPoints());
+    Set<Location> loadingPoints = _plan.getLoadingPoints();
+    Set<Location> validLoadingPoints = loadingPoints;
+    
+    if (u.isCarried()) {
+      return null;
+    }
+    
+    
+    if (u.getTravel().equals(Travel.LAND)) {
+      
+      validLoadingPoints = new HashSet<Location>();
+      Continent cont = u.getContinent();
+      if (cont == null) {
+        throw new SaDException("Land units must be on a continent! " + u.getLocation());
+      }
+      for (Location loc : loadingPoints) {
+        Continent cont2 = _plan.getBoard().getContinent(loc);
+        if (cont.equals(cont2)) {
+          validLoadingPoints.add(loc);
+        }
+      }
+    } 
+    
+    
+    Location loc = u.getClosestLocation(validLoadingPoints);
     if (loc != null) {
       Log.info(u, "Going to load point");
       return u.newMoveOrder(loc);

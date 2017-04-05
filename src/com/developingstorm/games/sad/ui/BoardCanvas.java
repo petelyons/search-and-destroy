@@ -9,10 +9,12 @@ import java.awt.Point;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import com.developingstorm.games.astar.AStarNode;
 import com.developingstorm.games.astar.AStarPosition;
 import com.developingstorm.games.astar.AStarState;
 import com.developingstorm.games.astar.AStarWatcher;
@@ -39,17 +41,53 @@ import com.developingstorm.games.sad.ui.sprites.ExplosionSprite;
  * A BoardCanvas draws a games state atop a HexCanvas.  It derives from the HexCanvas class.
  * 
  */
-public class BoardCanvas extends HexCanvas implements AStarWatcher {
+public class BoardCanvas extends HexCanvas {
+  
+
+  static final class PathError {
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((end == null) ? 0 : end.hashCode());
+      result = prime * result + ((start == null) ? 0 : start.hashCode());
+      return result;
+    }
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj)
+        return true;
+      if (obj == null)
+        return false;
+      if (getClass() != obj.getClass())
+        return false;
+      PathError other = (PathError) obj;
+      if (end == null) {
+        if (other.end != null)
+          return false;
+      } else if (!end.equals(other.end))
+        return false;
+      if (start == null) {
+        if (other.start != null)
+          return false;
+      } else if (!start.equals(other.start))
+        return false;
+      return true;
+    }
+    Location start;
+    Location end;
+  }
   
   
-  /**
-   * 
-   */
   private static final long serialVersionUID = 7394548177221258018L;
 
   static final boolean USE_BACKING_BUFFER = false;
   
   public static boolean SHOW_CONTINENT_NUMBERS = false;
+
+  public static boolean SHOW_LOCATIONS = false;
+
+  public static boolean SHOW_PATH_ERRORS = false;
 
   private Board _board;
 //  private int _width;
@@ -66,8 +104,10 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
   private List<Sprite> _seaPaths;
   private List<Sprite> _airPaths;
   private List<Sprite> _groundPaths;
+  
+  Set<PathError> _pathErrors;
 
-  private List<?> _astarStates;
+  private List<AStarState> _astarStates;
 
   public BoardCanvas(Game game, GameIcons icons, SaDBoardContext ctx) {
 
@@ -83,6 +123,8 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
     _seaPaths = null;
     _airPaths = null;
     _groundPaths = null;
+    
+    _pathErrors = new HashSet<PathError>();
 
   }
 
@@ -200,7 +242,7 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
   }
   
   
-  private static void drawContinentNumber(int num, Graphics2D g, BoardHex bh, Location loc, Point center) {
+  private static void drawContinentNumber(int num, Graphics2D g, Point center) {
     Color oldColor = g.getColor();
     g.setColor(Color.LIGHT_GRAY);
     Font f = g.getFont();
@@ -210,6 +252,21 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
     int w = (int) rd.getWidth();
     int h = (int) rd.getHeight();
     g.drawString(val, center.x - (w / 2), (center.y - h ) + (h / 2));
+    g.setColor(oldColor);
+  
+  }
+  
+  
+  private static void drawLocation(Graphics2D g, Location loc, Point center) {
+    Color oldColor = g.getColor();
+    g.setColor(Color.LIGHT_GRAY);
+    Font f = g.getFont();
+    FontRenderContext frc = g.getFontRenderContext();
+    String val = loc.toString();
+    Rectangle2D rd = f.getStringBounds(val, frc);
+    int w = (int) rd.getWidth();
+    int h = (int) rd.getHeight();
+    g.drawString(val, center.x - (w / 2), (center.y + h ) + (h / 2));
     g.setColor(oldColor);
   
   }
@@ -232,6 +289,19 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
       g.drawLine(x, y, x, y + h);
     }
   }
+  
+  private void drawPathError(Graphics g, PathError pe) {
+    g.setColor(Color.RED);
+
+    BoardHex hex1 = _board.get(pe.start);
+    BoardHex hex2 = _board.get(pe.end);
+
+    Point p1 = hex1.center();
+    Point p2 = hex2.center();
+ 
+    g.drawLine(p1.x, p1.y, p2.x, p2.y);
+  }
+
 
   private Image getUnitImage(Unit u) {
 
@@ -348,6 +418,8 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
   }
   
   
+  
+  
   private void drawContinentNumbers(Graphics2D g) {
     for (Continent c : _board.getContinents()) {
       Set<Location> locations = c.getLocations();
@@ -356,7 +428,7 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
         Hex h = hex.getHex();
         Point center = h.getCenter();
         if (_lens != null && _lens.isExplored(loc)) {
-          drawContinentNumber(c.getID(), g, hex, loc, center);
+          drawContinentNumber(c.getID(), g, center);
         }
       }
     }
@@ -433,12 +505,9 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
       }
     } else if (z == 2) {
       if (_astarStates != null) {
-        Iterator<?> itr = _astarStates.iterator();
-
-        while (itr.hasNext()) {
-          AStarState s = (AStarState) itr.next();
+        for (AStarState s : _astarStates) {
+          
           AStarPosition pos = s.pos();
-
           BoardHex hex = _board.get(pos.getX(), pos.getY());
           Point p = hex.center();
 
@@ -447,7 +516,29 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
         }
       }
 
+      if (SHOW_PATH_ERRORS) {
+        for (PathError pe : _pathErrors) {
+          drawPathError(g, pe);
+        }
+      }
+      
+      if (SHOW_LOCATIONS) {
+        drawLocationLabels(g);
+      }
     }
+  }
+
+  private void drawLocationLabels(Graphics2D g) {
+    int w = _board.getWidth();
+    int h = _board.getHeight();
+    for (int x = 0; x < w; x++) {
+      for (int y = 0; y < h; y++) {
+        Location loc = Location.get(x, y);
+        BoardHex hex = _board.get(loc);
+        drawLocation(g, loc, hex.center());
+      }
+    }
+    
   }
 
   public void addExplosion(Location loc) {
@@ -459,18 +550,35 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
     addSprite(es);
   }
 
-  /**
-    *
-    */
-
-  public void watch(List<AStarState> states) {
-    _astarStates = states;
-    try {
-      Thread.sleep(100);
-    } catch (Exception e) {
-    }
+ 
+  public AStarWatcher getAStarWatcher() {
+    
+    return new AStarWatcher() {
+      public void watch(List<AStarState> states) {
+        if (SaDFrame.DEBUG_ASTAR) {
+          _astarStates = states;
+          try {
+            Thread.sleep(100);
+          } catch (Exception e) {
+          }
+        }
+      }
+      
+      private Location getLocation(AStarNode node) {
+        int x = node.state.pos().getX();
+        int y = node.state.pos().getY();
+        return Location.get(x, y);
+      }
+      
+      
+      public void displayError(AStarNode start, AStarNode end) {
+        PathError pe = new PathError();
+        pe.start = getLocation(start);
+        pe.end = getLocation(end);
+        _pathErrors.add(pe);
+      }
+    };
   }
-  
   
   public void setUIMode(UIMode mode) {
     _uiMode = mode;
@@ -491,5 +599,7 @@ public class BoardCanvas extends HexCanvas implements AStarWatcher {
   public void clearArrow() {
     setArrow(null, null);
   }
+
+
   
 }

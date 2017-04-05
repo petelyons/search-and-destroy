@@ -24,9 +24,9 @@ public class AStar {
   // private long _startTime; // Timing variables
   // private long _endTime; //
 
-  boolean[][] _closed;
+  private boolean[][] _closed;
 
-  List<AStarWatcher> _watchers;
+  private List<AStarWatcher> _watchers;
 
   public AStar(AStarNode initial, AStarNode goal, int width, int height,
       AStarWatcher w) {
@@ -62,10 +62,17 @@ public class AStar {
 
   private void notifyWatchers(ArrayList<AStarState> stateList) {
     if (_watchers != null) {
-      Iterator<AStarWatcher> itrx = _watchers.iterator();
-      while (itrx.hasNext()) {
-        AStarWatcher w = (AStarWatcher) itrx.next();
-        w.watch(stateList);
+      for(AStarWatcher watcher : _watchers) {
+        watcher.watch(stateList);
+      }
+    }
+  }
+
+  
+  private void notifyErrorWatchers(AStarNode start, AStarNode end) {
+    if (_watchers != null) {
+      for(AStarWatcher watcher : _watchers) {
+        watcher.displayError(start, end);;
       }
     }
   }
@@ -101,6 +108,8 @@ public class AStar {
       // Check if OPEN is empty, exit if this is the case
       if (_openNodes.size() == 0) {
         Log.error("No open nodes in A* search:" + count);
+        notifyErrorWatchers(_initialnode, _goalnode);
+        
        // solve(true);
         notifyWatchers(null);
         return null;

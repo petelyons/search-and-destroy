@@ -849,4 +849,8 @@ public abstract class Unit {
   public boolean isBattleship() {
     return _type == Type.BATTLESHIP;
   }
+
+  public Continent getContinent() {
+    return _board.getContinent(_loc);
+  }
 }

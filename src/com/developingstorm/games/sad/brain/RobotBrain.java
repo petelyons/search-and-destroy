@@ -24,7 +24,13 @@ public class RobotBrain implements IBrain {
   public void startNewTurn() {
    
     _battleplan = new Battleplan(_owner.getGame(), _owner);
+    
+    Log.info(_battleplan.toString());
+    
     _general = new General(_battleplan);
+    
+    
+    
     _owner.forEachUnit((u) -> {u.assignOrder(_general.getOrders(u));});
     
     for (City c : _owner.getCities()) {

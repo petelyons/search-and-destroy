@@ -63,7 +63,64 @@ public class Battleplan {
     _unloadingPoints = calcUnloadingLocations();
     
   }
+  
+  private static final String CRLF = "\r\n";
+  
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append(CRLF);
+    sb.append("BATTLEPLAN:");
+    sb.append(CRLF);
+    sb.append("----------------------------------------");
+    sb.append(CRLF);
+    sb.append("Secure continents:");
+    listContinents(sb, _secureContinents);  
+    sb.append("Target continents:");
+    listContinents(sb, _targetContinents);  
+    sb.append("Defense continents:");
+    listContinents(sb, _defenseContinents);  
+    sb.append("BZone continents:");
+    listContinents(sb, _battlezoneContinents);  
+    sb.append("Loading Points");
+    listLocations(sb, _loadingPoints);
+    sb.append("Unloading Points");
+    listLocations(sb, _unloadingPoints);
+    return sb.toString();
+  }
 
+  private void listContinents(StringBuilder sb, Set<Continent> continents) {
+    sb.append(CRLF);
+    int counter = 0;
+    if (continents != null) {
+      for (Continent cont : continents) {
+        if (counter > 0) {
+          sb.append(", ");
+        }
+        sb.append(cont);
+        counter++;
+      }
+    }
+    sb.append(CRLF);
+
+  }
+
+  private void listLocations(StringBuilder sb, Set<Location> locations) {
+    sb.append(CRLF);
+    int counter = 0;
+    if (locations != null) {
+      for (Location loc : locations) {
+        if (counter > 0) {
+          sb.append(", ");
+        }
+        sb.append(loc);
+        counter++;
+      }
+    }
+    sb.append(CRLF);
+
+  }
+  
+  
   private HashSet<Continent> calcSecureContinents(Set<Continent> colonized) {
     HashSet<Continent> set = new HashSet<Continent>();
     for (Continent cont : colonized) {
@@ -106,7 +163,8 @@ public class Battleplan {
     Set<Location> loadingPoints = new HashSet<Location>();
     for (City c : _player.getCities()) {
       if (c.isCoastal() && c.getProduction().equals(Type.TRANSPORT)) {
-        loadingPoints.add(c.getLocation());
+        Location loc = c.getLocation();
+        loadingPoints.add(loc);
       }
     }
     return loadingPoints;
@@ -246,5 +304,17 @@ public class Battleplan {
     return Type.INFANTRY;
   }
   
+  
+  Game getGame() {
+    return _game;
+  }
+  
+  Board getBoard() {
+    return _board;
+  }
+  
+  Robot getPlayer() {
+    return _player;
+  }
       
 }

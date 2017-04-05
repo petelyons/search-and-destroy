@@ -74,7 +74,7 @@ public class ExploreModeController  extends BaseController {
             
       @Override
       public void hexMousePressed(MouseEvent e, BoardHex hex) {
-        Log.info("EXPLORE MOUSE DOWN *******************************************");
+        //Log.info("EXPLORE MOUSE DOWN *******************************************");
         int button = e.getButton();
         Location loc = hex.getLocation();
         if (button == MouseEvent.BUTTON1) {
@@ -87,7 +87,7 @@ public class ExploreModeController  extends BaseController {
 
       @Override
       public void hexMouseReleased(MouseEvent e, BoardHex hex) {
-        Log.info("EXPLORE MOUSE UP *******************************************");
+        //Log.info("EXPLORE MOUSE UP *******************************************");
 
       }
 

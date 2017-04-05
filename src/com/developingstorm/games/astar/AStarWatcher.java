@@ -10,4 +10,5 @@ import java.util.List;
  */
 public interface AStarWatcher {
   void watch(List<AStarState> states);
+  void displayError(AStarNode start, AStarNode end);
 }

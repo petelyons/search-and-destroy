@@ -11,6 +11,7 @@ import com.developingstorm.games.hexboard.HexBoard;
 import com.developingstorm.games.hexboard.HexBoardContext;
 import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.Location;
+import com.developingstorm.games.sad.util.Log;
 
 
 
@@ -60,9 +61,24 @@ public class Board extends HexBoard {
     for (Continent cont : _continents) {
       cont.init();
     }
+
     isInitialized = true;
+    validateBoard();
   }
   
+  private void validateBoard() {
+    for (City c : _cities) {
+      Continent cont = c.getContinent();
+      if (cont == null) {
+        throw new SaDException("City not on continent: " + c + " T=" + getTerrain(c.getLocation()));
+      }
+    }
+    Continent cont = this.getContinent(Location.get(12, 35));
+    if (cont == null) {
+      throw new SaDException("Location 12/35 should be a continent");
+    }
+  }
+
   private synchronized boolean isInitialized() {
     return isInitialized;
   }
@@ -118,6 +134,10 @@ public class Board extends HexBoard {
 
       } while (again);
 
+      
+      if (loc == null) {
+        throw new SaDException("A city cannot be placed at a null location!");
+      }
       City nc = new City(loc, _game);
       _cities.add(nc);
       _ctoks.put(loc, nc);
@@ -192,7 +212,9 @@ public class Board extends HexBoard {
   }
 
   private void markContinent(Location loc, int c, Continent cont) {
-
+  
+    _contData[loc.x][loc.y] = c;
+    cont.add(loc);
     List<BoardHex> ring = getRing(loc, 1);
    
     for (BoardHex hex : ring) {
@@ -215,13 +237,17 @@ public class Board extends HexBoard {
       for (int y = 0; y < _map.getHeight(); y++) {
         int md = _mapData[x][y];
         int contd = _contData[x][y];
+        
+        if (x == 12 && y == 35) {
+          Log.info("Running test for 12/35");
+        }
 
         if (md > 0 && contd == 0) {
           count++;
           Continent cont = new Continent(this, count);
           _continents.add(cont);
           Location loc = Location.get(x, y);
-          cont.add(loc);
+
           markContinent(loc, count, cont);
         }
       }

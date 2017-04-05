@@ -14,10 +14,12 @@ public interface MenuBarHandler {
   void onDebugExplore(boolean v);
   void onDebugGodLens(boolean v);
   void onDebugContinentNumbers(boolean selected);
-  
+  void onDebugLocations(boolean selected);
+  void onDebugPathErrors(boolean selected);
   void onDebugDump();
   
   void onGameMode();
   void onExploreMode();
+
  
 }

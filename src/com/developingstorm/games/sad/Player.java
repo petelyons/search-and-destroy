@@ -727,7 +727,9 @@ public class Player implements UnitLens, LocationLens {
       for (int y = 0; y < height; y++) {
         Location loc = Location.get(x, y);
         Continent cont = _board.getContinent(loc);
-        set.add(cont);
+        if (cont != null) {
+          set.add(cont);
+        }
       }
     }
     return set;
@@ -1002,7 +1004,7 @@ public class Player implements UnitLens, LocationLens {
   public List<Unit> unplayedUnits() {
     ArrayList<Unit> units = new ArrayList<Unit>();
     
-    forEachUnit((Unit u)->{Log.info(u, (u.life().hasMoves() ? "HAS MOVES" : "NO MOVES")); });
+ //   forEachUnit((Unit u)->{Log.info(u, (u.life().hasMoves() ? "HAS MOVES" : "NO MOVES")); });
     
     forEachUnit((Unit u)->{if (u.life().hasMoves()) {units.add(u);} });
     

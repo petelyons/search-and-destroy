@@ -37,6 +37,8 @@ public class MenuBarBuilder {
   private final JCheckBoxMenuItem DEBUG_EXPLORE = new JCheckBoxMenuItem("Explore");
   private final JCheckBoxMenuItem DEBUG_LENS_SEL = new JCheckBoxMenuItem("God Lens");
   private final JCheckBoxMenuItem DEBUG_CONTINENT_NUMBERS_SEL = new JCheckBoxMenuItem("Continent Numbers");
+  private final JCheckBoxMenuItem DEBUG_LOCATIONS_SEL = new JCheckBoxMenuItem("Locations");
+  private final JCheckBoxMenuItem DEBUG_PATH_ERRORS_SEL = new JCheckBoxMenuItem("Path Errors");
   
   private final JMenuItem DEBUG_DUMP = new JMenuItem("Dump State");
 
@@ -123,6 +125,16 @@ public class MenuBarBuilder {
       public void actionPerformed(ActionEvent e) {
         _handler.onDebugContinentNumbers(DEBUG_CONTINENT_NUMBERS_SEL.isSelected());
       }});
+    DEBUG_LOCATIONS_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _handler.onDebugLocations(DEBUG_LOCATIONS_SEL.isSelected());
+      }});
+    DEBUG_PATH_ERRORS_SEL.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        _handler.onDebugPathErrors(DEBUG_PATH_ERRORS_SEL.isSelected());
+      }});
     DEBUG_DUMP.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
@@ -197,8 +209,9 @@ public class MenuBarBuilder {
 
     DEBUG.add(DEBUG_ASTAR_SEL);
     DEBUG.add(DEBUG_LENS_SEL);
-    DEBUG.add(DEBUG_EXPLORE);
     DEBUG.add(DEBUG_CONTINENT_NUMBERS_SEL);
+    DEBUG.add(DEBUG_LOCATIONS_SEL);
+    DEBUG.add(DEBUG_PATH_ERRORS_SEL);
     DEBUG.addSeparator();
     DEBUG.add(DEBUG_DUMP);
 

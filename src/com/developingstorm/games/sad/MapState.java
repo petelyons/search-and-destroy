@@ -52,19 +52,21 @@ public class MapState implements AStarState {
     _units = units;
     _player = player;
   }
-
+  
+  
   public static MapState getUntested(Location loc) {
-    if (_player.isExplored(loc)) {
-      if (_travel == Travel.SEA) {
-        if (_b.isWater(loc) || isPlayersCity(loc)) {
-          return new MapState(loc);
-        }
-      } else if (_travel == Travel.LAND) {
-        return new MapState(loc);
-      }
-    }
     return new MapState(loc);
+  }
 
+  public static MapState getTerrainTested(Location loc) {
+    if (_travel == Travel.SEA && (_b.isWater(loc) || isPlayersCity(loc))) {
+        return new MapState(loc);
+    } else if (_travel == Travel.LAND && (_b.isLand(loc))) {
+        return new MapState(loc);
+    } else if (_travel == Travel.AIR) {
+      return new MapState(loc);
+    } 
+    return null;
   }
 
   public static MapState get(Location loc) {

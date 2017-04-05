@@ -68,45 +68,53 @@ public class Game implements UnitLens, LocationLens {
 
   @SuppressWarnings("unchecked")
   public Game(Player[] players, HexBoardMap grid, HexBoardContext ctx) {
-    _ctx = ctx;
-    _gameListener = null;
-    _players = players;
-    _allUnits = new ArrayList<Unit>();
-    _pendingActions = new LinkedList<Runnable>();
     
-    _turn = 0;
-    _selectedUnit = null;
-    _gridMap = grid;
-    
-    
-    initGameTrace();
-    
-    Location.test();
-
-    _waiting = false;
-
-    
-    _board = new Board(this, _gridMap, _ctx);
-
-    for (int x = 0; x < _players.length; x++) {
-      if (_players[x] != null)
-        _players[x].setGame(this);
-    }
-
-    _currentPlayer = _players[0];
-
+    try {
+      _ctx = ctx;
+      _gameListener = null;
+      _players = players;
+      _allUnits = new ArrayList<Unit>();
+      _pendingActions = new LinkedList<Runnable>();
+      
+      _turn = 0;
+      _selectedUnit = null;
+      _gridMap = grid;
+      
+      
+      initGameTrace();
+      
+      Location.test();
   
-    _board.init();
-    assignCities();
+      _waiting = false;
   
-    int w = _gridMap.getWidth();
-    int h = _gridMap.getWidth();
-    _locations = (Set<Unit>[][]) new Set[w][h];
-    for (int i = 0; i < w; i++) {
-      for (int j = 0; j < h; j++) {
-        _locations[i][j] = Collections
-            .synchronizedSet(new HashSet<Unit>());
+      
+      _board = new Board(this, _gridMap, _ctx);
+  
+      for (int x = 0; x < _players.length; x++) {
+        if (_players[x] != null)
+          _players[x].setGame(this);
       }
+  
+      _currentPlayer = _players[0];
+  
+    
+      _board.init();
+      assignCities();
+    
+      int w = _gridMap.getWidth();
+      int h = _gridMap.getWidth();
+      _locations = (Set<Unit>[][]) new Set[w][h];
+      for (int i = 0; i < w; i++) {
+        for (int j = 0; j < h; j++) {
+          _locations[i][j] = Collections
+              .synchronizedSet(new HashSet<Unit>());
+        }
+      }
+    }
+    catch(Exception e) {
+
+      Log.error("Could not create new game.");
+      throw e;
     }
 
   }
@@ -151,9 +159,12 @@ public class Game implements UnitLens, LocationLens {
     MapState.start(this, _board, travel, player, to, checkBlocked, canExplore);
 
     MapState start = MapState.getUntested(from);
-    MapState goal = MapState.getUntested(to);
+    MapState goal = MapState.getTerrainTested(to);
     if (start == null || goal == null) {
-      throw new SaDException("Invalid path end points");
+      if (goal == null) {
+        Log.error("The path's goal is not reachable. Travel is " + travel + " loc==" + to + " " + _board.getTerrain(to) );
+      }
+      return null;
     }
 
     AStarNode s = new AStarNode(start, 1);
@@ -735,11 +746,6 @@ public class Game implements UnitLens, LocationLens {
       }
       playerChange();
       
-      //DEBUG
-      Path debugPath = calcTravelPath(_currentPlayer, Location.get(23,41), Location.get(18, 42), Travel.AIR, false, false);
-      Log.debug(debugPath, "Found this PATH");
-      //DEBUG
-
       do {
         uc = _currentPlayer.unitCount();
         cc = _currentPlayer.cityCount();

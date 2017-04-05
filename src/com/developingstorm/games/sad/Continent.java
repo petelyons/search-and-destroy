@@ -34,6 +34,11 @@ public class Continent {
     _coastalCities = new ArrayList<City>();
     _inlandCities = new ArrayList<City>();
   }
+  
+  
+  public String toString() {
+    return "Ct-" + _id;
+  }
 
   public void add(Location loc) {
     _locations.add(loc);

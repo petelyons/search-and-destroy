@@ -23,7 +23,6 @@ import com.developingstorm.games.hexboard.Hex;
 import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.Board;
-import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Debug;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.GameListener;
@@ -157,20 +156,6 @@ public class SaDFrame extends JFrame {
     }
   }
 
-  private final static int iARID = 3;
-
-  private final static int iFOREST = 4;
-
-  private final static int iLAND = 1;
-
-  private final static int iMOUNTAIN = 5;
-
-  private final static int iSAND = 2;
-
-  private final static int iWATER = 0;
-
-  private final static int iSWAMP = 6;
-
   private final static String MAP_EXT = ".sdm";
 
   private HexBoardMap _map;
@@ -183,13 +168,7 @@ public class SaDFrame extends JFrame {
 
   private String _fileName = "MedMap" + MAP_EXT;
 
-   private JScrollPane _scroll;
-
-  private int _terrainType = iLAND;
-
-  private City _currentCity = null;
-
-  private int[][] _terrainTypes;
+  private JScrollPane _scroll;
 
   private MapContext _ctx;
 
@@ -337,19 +316,16 @@ public class SaDFrame extends JFrame {
     termGame();
     
     _map = HexBoardMap.loadMapAsResource(this, "MedMap.sdm");
-    _terrainTypes = _map.getData();
-    
-
     _playLocation = null;
-
     _ctx = new MapContext();
 
-    Player[] players = new Player[2];
-    
-    
-    
+    Player[] players = new Player[2];    
     players[0] = createPlayer(vals.player1Type, vals.player1Name, 1);
     players[1] = createPlayer(vals.player2Type, vals.player2Name, 2);
+    
+    if (vals.player1Type == 1 && vals.player2Type == 1) {
+      DEBUG_GOD_LENS = true;
+    }
     
        
     _game = new Game(players, _map, _ctx);
@@ -397,10 +373,7 @@ public class SaDFrame extends JFrame {
     
       @Override
       public AStarWatcher getWatcher() {
-        if (DEBUG_ASTAR)
-          return _canvas;
-        else
-          return null;
+        return _canvas.getAStarWatcher();
       }
 
       @Override
@@ -619,6 +592,18 @@ public class SaDFrame extends JFrame {
       @Override
       public void onDebugContinentNumbers(boolean selected) {
         BoardCanvas.SHOW_CONTINENT_NUMBERS = selected;
+        _canvas.validate();
+      }
+
+      @Override
+      public void onDebugLocations(boolean selected) {
+        BoardCanvas.SHOW_LOCATIONS = selected;
+        _canvas.validate();
+      }
+
+      @Override
+      public void onDebugPathErrors(boolean selected) {
+        BoardCanvas.SHOW_PATH_ERRORS = selected;
         _canvas.validate();
       }
       
