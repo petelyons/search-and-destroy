@@ -156,14 +156,8 @@ public class Player implements UnitLens, LocationLens {
   }
 
   private Path pathToCity(Unit u, City c) {
-
-    Location start;
-    Location end;
-
-    start = u.getLocation();
-    end = c.getLocation();
-
-    return _game.calcAbsolutePath(this, start, end, u.getTravel());
+    PathFinder finder = new PathFinder(u, c.getLocation());
+    return finder.getPath();
   }
 
   public City getClosestHome(Unit u) {
@@ -423,42 +417,6 @@ public class Player implements UnitLens, LocationLens {
 
  
 
-  public Path getTravelPath(Travel travel, Location from, Location to) {
-
-    if (travel == Travel.SEA) {
-      return getWaterPath(from, to);
-    } else if (travel == Travel.LAND) {
-      return getLandPath(from, to);
-    } else {
-      return getAirPath(from, to);
-    }
-  }
-
-  public Path getAirPath(Location from, Location to) {
-
-    return calcPath(from, to, Travel.AIR);
-  }
-
-  public Path getWaterPath(Location from, Location to) {
-
-    if (isExplored(to) && !(_board.isCity(to) || _board.isWater(to))) {
-      return null;
-    }
-    return calcPath(from, to, Travel.SEA);
-  }
-
-  public Path getLandPath(Location from, Location to) {
-
-    if (isExplored(to) && !_board.isLand(to)) {
-      return null;
-    }
-    return calcPath(from, to, Travel.LAND);
-  }
-
-  private Path calcPath(Location from, Location to, Travel travel) {
-
-    return _game.calcPath(this, from, to, travel);
-  }
 
   public static Path getDirectPath(Location from, Location to) {
 
@@ -815,7 +773,7 @@ public class Player implements UnitLens, LocationLens {
       _game.selectUnit(unplayed.get(0));
     }
     
-    _game.waitUser();
+    _game.pause();
   }
   
 
@@ -1110,6 +1068,15 @@ public class Player implements UnitLens, LocationLens {
     List<Unit> units = getUnitsOnContinent(cont);
     UnitStats stats = new UnitStats(units, cities);
     return stats;
+  }
+
+  public boolean hasUnitsThatCaptureACity() {
+    for (Unit u : _units) {
+      if (u.getType().equals(Type.ARMOR) || u.getType().equals(Type.INFANTRY)) {
+        return true;
+      }
+    }
+    return false;
   }
 
 }

@@ -9,6 +9,13 @@ import java.util.List;
  *         Window - Preferences - Java - Code Style - Code Templates
  */
 public interface AStarWatcher {
-  void watch(List<AStarState> states);
+  public static class AStarRequestState {
+    public List<AStarState> states;
+    public AStarNode start;
+    public AStarNode end;
+  }
+  
+  
+  void watch(boolean knownError, AStarRequestState states);
   void displayError(AStarNode start, AStarNode end);
 }

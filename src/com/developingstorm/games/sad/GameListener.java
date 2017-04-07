@@ -25,4 +25,6 @@ public interface GameListener {
   AStarWatcher getWatcher();
 
   void newTurn(int t);
+
+  void gameOver(Player winner);
 }

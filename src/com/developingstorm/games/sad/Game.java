@@ -13,6 +13,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import javax.swing.JOptionPane;
+
 import com.developingstorm.games.astar.AStar;
 import com.developingstorm.games.astar.AStarNode;
 import com.developingstorm.games.astar.AStarState;
@@ -54,7 +56,7 @@ public class Game implements UnitLens, LocationLens {
 
   private volatile int _turn;
 
-  private volatile boolean _waiting;
+  private volatile boolean _paused;
 
   private volatile Set<Unit>[][] _locations;
 
@@ -85,7 +87,7 @@ public class Game implements UnitLens, LocationLens {
       
       Location.test();
   
-      _waiting = false;
+      _paused = false;
   
       
       _board = new Board(this, _gridMap, _ctx);
@@ -126,9 +128,10 @@ public class Game implements UnitLens, LocationLens {
     String gameDate = dateFormater.format(today);
 
     StringBuilder sb = new StringBuilder();
-    sb.append("SaD-");
-    sb.append(gameDate);
-    sb.append(".log");
+//    sb.append("SaD-");
+//    sb.append(gameDate);
+//    sb.append(".log");
+    sb.append("SaD.log");
     
     try {
       PrintStream ps = new PrintStream(sb.toString());
@@ -138,22 +141,22 @@ public class Game implements UnitLens, LocationLens {
     } catch (IOException e) {
       e.printStackTrace();
     }
+    
+    Log.info("Game Date:" + gameDate);
   }
 
   public Path calcPath(Player player, Location from, Location to, Travel travel) {
-    Path p = calcTravelPath(player, from, to, travel, true, true);
-    if (p == null || p.isEmpty()) {
-      p = calcTravelPath(player, from, to, travel, false, true);
-    }
+//    Path p = calcTravelPath(player, from, to, travel, true, true);
+ //   if (p == null || p.isEmpty()) {
+//      p = calcTravelPath(player, from, to, travel, false, true);
+//    }
+    Path p = calcTravelPath(player, from, to, travel, false, true);
+
     return p;
   }
 
-  public Path calcAbsolutePath(Player player, Location from, Location to,
-      Travel travel) {
-    return calcTravelPath(player, from, to, travel, true, false);
-  }
-
-  private Path calcTravelPath(Player player, Location from, Location to,
+ 
+  public Path calcTravelPath(Player player, Location from, Location to,
       Travel travel, boolean checkBlocked, boolean canExplore) {
 
     MapState.start(this, _board, travel, player, to, checkBlocked, canExplore);
@@ -199,8 +202,8 @@ public class Game implements UnitLens, LocationLens {
     return path;
   }
 
-  public boolean isWaiting() {
-    return _waiting;
+  public boolean isPaused() {
+    return _paused;
   }
 
   public void setGameListener(GameListener gameListener) {
@@ -601,9 +604,14 @@ public class Game implements UnitLens, LocationLens {
 
     Player blocker = blocking.getOwner();
     if (blocker.equals(u.getOwner())) {
+      if (!u.turn().isKnownObstruction(dest)) {
+        u.turn().addObstruction(dest);
+        return ResponseCode.YIELD_PASS;
+      }
+      
       if (blocking.turn().isDone()) {
         Log.debug(u, "Destination blocked by unit that has already moved. Cancelling:" + blocking);
-        return ResponseCode.TURN_COMPLETE;
+        return ResponseCode.TURN_COMPLETE; 
       } else {
         blocker.pushPendingPlay(blocking);
         Log.debug(u, "Destination blocked by unit that has yet to move. Yielding:" + blocking);
@@ -646,8 +654,8 @@ public class Game implements UnitLens, LocationLens {
 
   private void signalGameThread() {
     synchronized (this) {
-      if (_waiting) {
-        _waiting = false;
+      if (_paused) {
+        _paused = false;
         notify();
       }
     }
@@ -674,7 +682,7 @@ public class Game implements UnitLens, LocationLens {
     return "Game";
   }
 
-  public void waitUser() {
+  public void pause() {
 
     while (true) {
       try {
@@ -685,7 +693,7 @@ public class Game implements UnitLens, LocationLens {
         trackUnit(u);
         synchronized (this) {
           Log.debug(u, "Waiting for order...");
-          _waiting = true;
+          _paused = true;
           Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -693,7 +701,6 @@ public class Game implements UnitLens, LocationLens {
             }});
           t.start();
           wait();
-          
           processPostedGameActions();
           return;
         }
@@ -704,8 +711,13 @@ public class Game implements UnitLens, LocationLens {
     }
   }
   
-  
   public void postGameAction(Runnable runnable) {
+    synchronized(_pendingActions) {
+      _pendingActions.offer(runnable);
+    }
+  }
+  
+  public void postAndRunGameAction(Runnable runnable) {
     synchronized(_pendingActions) {
       _pendingActions.offer(runnable);
     }
@@ -733,7 +745,8 @@ public class Game implements UnitLens, LocationLens {
       _selectedUnit = u;
       _gameListener.selectUnit(u);
   }
-
+  
+  
   public void play() {
     int uc;
     int cc;
@@ -749,16 +762,28 @@ public class Game implements UnitLens, LocationLens {
       do {
         uc = _currentPlayer.unitCount();
         cc = _currentPlayer.cityCount();
+        if (cc == 0 && uc == 0) {
+         
+          _gameListener.gameOver(nextPlayer());
+        } else if (cc == 0) {
+          if (!_currentPlayer.hasUnitsThatCaptureACity()) {
+            _gameListener.gameOver(nextPlayer());
+          }
+        }
+  
+        
         if (!(uc == 0 && cc == 0)) {
           _currentPlayer.play();
         }
         _currentPlayer = nextPlayer();
+        
         if (_currentPlayer == _players[0]) {
           Log.debug(this, "Starting turn: " + _turn);
           _turn++;
           _gameListener.newTurn(_turn);
           
         }
+        processPostedGameActions();
         playerChange();
       } while (true);
     } catch (Throwable t) {
@@ -766,6 +791,8 @@ public class Game implements UnitLens, LocationLens {
       _gameListener.abort();
     }
   }
+
+
 
   public synchronized int getTurn() {
     return _turn;

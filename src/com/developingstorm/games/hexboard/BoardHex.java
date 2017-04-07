@@ -1,8 +1,6 @@
 package com.developingstorm.games.hexboard;
 
 import java.awt.Point;
-import java.awt.Polygon;
-import java.awt.Shape;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;

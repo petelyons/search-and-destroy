@@ -13,5 +13,4 @@ public class InfantryCaptain extends UnitCaptain<Infantry> {
   public Order plan(Infantry u) {
     return occupyLandStrategy(u);
   }
-
 }

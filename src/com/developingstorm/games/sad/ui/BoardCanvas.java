@@ -10,7 +10,6 @@ import java.awt.font.FontRenderContext;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -106,6 +105,8 @@ public class BoardCanvas extends HexCanvas {
   private List<Sprite> _groundPaths;
   
   Set<PathError> _pathErrors;
+  
+  PathError _specificPathAnimationLine;
 
   private List<AStarState> _astarStates;
 
@@ -290,8 +291,8 @@ public class BoardCanvas extends HexCanvas {
     }
   }
   
-  private void drawPathError(Graphics g, PathError pe) {
-    g.setColor(Color.RED);
+  private void drawPathError(Graphics g, PathError pe, Color color) {
+    g.setColor(color);
 
     BoardHex hex1 = _board.get(pe.start);
     BoardHex hex2 = _board.get(pe.end);
@@ -416,10 +417,7 @@ public class BoardCanvas extends HexCanvas {
       break;
     }  
   }
-  
-  
-  
-  
+    
   private void drawContinentNumbers(Graphics2D g) {
     for (Continent c : _board.getContinents()) {
       Set<Location> locations = c.getLocations();
@@ -518,8 +516,12 @@ public class BoardCanvas extends HexCanvas {
 
       if (SHOW_PATH_ERRORS) {
         for (PathError pe : _pathErrors) {
-          drawPathError(g, pe);
+          drawPathError(g, pe, Color.RED);
         }
+      }
+      
+      if (_specificPathAnimationLine != null) {
+        drawPathError(g, _specificPathAnimationLine, Color.ORANGE);
       }
       
       if (SHOW_LOCATIONS) {
@@ -554,12 +556,26 @@ public class BoardCanvas extends HexCanvas {
   public AStarWatcher getAStarWatcher() {
     
     return new AStarWatcher() {
-      public void watch(List<AStarState> states) {
-        if (SaDFrame.DEBUG_ASTAR) {
-          _astarStates = states;
-          try {
-            Thread.sleep(100);
-          } catch (Exception e) {
+      public void watch(boolean knownError, AStarWatcher.AStarRequestState states) {
+        if ((SaDFrame.DEBUG_ASTAR || knownError) && SaDFrame.DEBUG_PATH_TOGGLE) { //Use F5 to toggle the path display
+          if (states != null) {
+            _astarStates = states.states;
+            if (_astarStates != null) {
+              _specificPathAnimationLine = new PathError();
+              _specificPathAnimationLine.start = getLocation(states.start);
+              _specificPathAnimationLine.end = getLocation(states.end);
+            }
+          }
+          else {
+            _astarStates = null;
+            _specificPathAnimationLine = null;
+          }
+          
+          if (_astarStates != null) {
+            try {
+              Thread.sleep(200);
+            } catch (Exception e) {
+            }
           }
         }
       }

@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
+import com.developingstorm.games.astar.AStarWatcher.AStarRequestState;
 import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.util.Log;
 
@@ -18,28 +19,31 @@ public class AStar {
 
   // public ArrayList _openNodes; // Node containers
   public ArrayList<AStarNode> _nextNodes; //
-
   public HashMap<AStarPosition, AStarNode> _openNodes;
 
   // private long _startTime; // Timing variables
   // private long _endTime; //
 
   private boolean[][] _closed;
+  int _width;
+  int _height;
 
   private List<AStarWatcher> _watchers;
 
   public AStar(AStarNode initial, AStarNode goal, int width, int height,
       AStarWatcher w) {
     _initialnode = initial;
+    _width = width;
+    _height = height;
     _goalnode = goal;
-    _closed = new boolean[width][height];
+    
     // Trace.println("Watcher:" + w);
     if (w != null) {
       _watchers = new ArrayList<AStarWatcher>();
       _watchers.add(w);
     }
   }
-
+  
   // public AStar(Node initial, Node goal, int width, int height) {
   // _initialnode = initial;
   // _goalnode = goal;
@@ -60,14 +64,13 @@ public class AStar {
     return list;
   }
 
-  private void notifyWatchers(ArrayList<AStarState> stateList) {
+  private void notifyWatchers(boolean knowError, AStarRequestState stateList) {
     if (_watchers != null) {
       for(AStarWatcher watcher : _watchers) {
-        watcher.watch(stateList);
+        watcher.watch(knowError, stateList);
       }
     }
   }
-
   
   private void notifyErrorWatchers(AStarNode start, AStarNode end) {
     if (_watchers != null) {
@@ -78,11 +81,15 @@ public class AStar {
   }
 
   public List<AStarState> solve() {
-    return solve(false);
+    List<AStarState> stateList = solve(false);
+    if (stateList == null) {      
+      solve(true);
+    }
+    return stateList;
   }
   
   private List<AStarState> solve(boolean debug) {
-
+    _closed = new boolean[_width][_height];
     // _startTime = System.currentTimeMillis();
 
     // Initializing the initial node
@@ -111,7 +118,7 @@ public class AStar {
         notifyErrorWatchers(_initialnode, _goalnode);
         
        // solve(true);
-        notifyWatchers(null);
+        notifyWatchers(false, null);
         return null;
       }
 
@@ -136,14 +143,18 @@ public class AStar {
 
       if (_watchers != null) {
         ArrayList<AStarState> stateList = buildStateList(_workingNode);
-        notifyWatchers(stateList);
+        AStarRequestState stateReq = new AStarRequestState();
+        stateReq.states = stateList;
+        stateReq.start = _initialnode;
+        stateReq.end = _goalnode;
+        notifyWatchers(debug, stateReq);
       }
 
       // Successful exit if n proves to be the goal node
       if (_workingNode.equals(_goalnode)) {
         // _endTime = System.currentTimeMillis();
         // printStatistics(n);
-        notifyWatchers(null);
+        notifyWatchers(false, null);
         return buildStateList(_workingNode);
       }
 

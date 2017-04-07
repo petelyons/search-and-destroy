@@ -62,9 +62,27 @@ public class GameCommander extends BaseCommander {
     return commanderForSpecifiedUnits(list);
   }
 
-  public boolean isWaiting() {
-    return _game.isWaiting();
+  public boolean isPaused() {
+    return _game.isPaused();
   }
+  
+  public void pause() {
+    if (!isPaused()) {
+      _game.postGameAction(new Runnable() {
+        @Override
+        public void run() {
+          _game.pause();
+        }
+      });
+     
+    }
+  }
+  public void resume() {
+    if (isPaused()) {
+      _game.resume(null);
+    }
+  }
+
 
   public void move(Location loc) {
     issueOrders(OrderType.MOVE, loc);
@@ -91,7 +109,7 @@ public class GameCommander extends BaseCommander {
 
   private void issueOrders(OrderType order, Location moveTo) {
     
-    _game.postGameAction(()->{
+    _game.postAndRunGameAction(()->{
       if (_commandedUnits != null) {
         for(Unit u : _commandedUnits) {
           Log.debug("UI", "Issuing Order:" + order + " to special context:" + u);

@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.FileDialog;
 import java.awt.Image;
 import java.awt.Point;
@@ -13,6 +14,7 @@ import java.awt.event.WindowEvent;
 import java.util.List;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
 import javax.swing.UIManager;
@@ -199,6 +201,8 @@ public class SaDFrame extends JFrame {
   public static boolean DEBUG_EXPLORE = false;
   public static boolean DEBUG_GOD_LENS = false;
 
+  public static boolean DEBUG_PATH_TOGGLE = true;
+
   static void exit() {
 
     System.exit(0); // close the application
@@ -342,32 +346,36 @@ public class SaDFrame extends JFrame {
 
       @Override
       public void trackUnit(Unit u) {
-        _unitTracked = u;
-        _ubar.setUnit(u);
+        EventQueue.invokeLater(()-> {
+          _unitTracked = u;
+          _ubar.setUnit(u);
+        });
       }
       @Override
       public void selectUnit(Unit u) {
-        _unitChanged = u;
-        _ubar.setUnit(u);
-        _board.clearSelected();
-       
-        if (Debug.getDebugExplore()) {
-          List<Location> list = Debug.getDebugLocations();
-          if (list != null) {
-            _board.setLocationsSelected(list, true);
+        EventQueue.invokeLater(()-> {
+          _unitChanged = u;
+          _ubar.setUnit(u);
+          _board.clearSelected();
+         
+          if (Debug.getDebugExplore()) {
+            List<Location> list = Debug.getDebugLocations();
+            if (list != null) {
+              _board.setLocationsSelected(list, true);
+            }
           }
-        }
+        });
       }
       
       @Override
       public void killUnit(Unit u, boolean showDeath) {
         if (showDeath) {
-          _canvas.addExplosion(u.getLocation());
+          EventQueue.invokeLater(()-> {_canvas.addExplosion(u.getLocation());});
         }
       }
       @Override
       public void hitLocation(Location loc) {
-        _canvas.addExplosion(loc);
+        EventQueue.invokeLater(()-> {_canvas.addExplosion(loc);});
       }
 
     
@@ -378,7 +386,7 @@ public class SaDFrame extends JFrame {
 
       @Override
       public void selectPlayer(Player p) {
-        SaDFrame.this.selectPlayer(p);
+        EventQueue.invokeLater(()-> {SaDFrame.this.selectPlayer(p);});
       }
 
       @Override
@@ -397,6 +405,15 @@ public class SaDFrame extends JFrame {
         else {
           throw new SaDException("No UNIT");
         }
+      }
+
+      @Override
+      public void gameOver(Player winner) {
+        EventQueue.invokeLater(()-> {JOptionPane.showMessageDialog(SaDFrame.this,
+                "GAME OVER.",
+                "We have a winner!",
+                JOptionPane.WARNING_MESSAGE);
+          });
       }
     });
 
@@ -450,7 +467,7 @@ public class SaDFrame extends JFrame {
   
     _controller.switchMode(UIMode.GAME);
     
-    _game.postGameAction(new Runnable() {
+    _game.postAndRunGameAction(new Runnable() {
 
       @Override
       public void run() {

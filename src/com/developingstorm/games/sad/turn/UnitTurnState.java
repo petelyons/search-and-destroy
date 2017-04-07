@@ -1,9 +1,12 @@
 package com.developingstorm.games.sad.turn;
 
+import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Order;
 import com.developingstorm.games.sad.OrderResponse;
 import com.developingstorm.games.sad.OrderType;
+import com.developingstorm.games.sad.Path;
+import com.developingstorm.games.sad.PathFinder;
 import com.developingstorm.games.sad.ResponseCode;
 import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Unit;
@@ -16,6 +19,7 @@ public class UnitTurnState {
   private OrderState _orderState;
   private final Unit _unit;
   private int _attemptCounter;
+  private PathFinder _pathFinder;
 
   
   public UnitTurnState(Game g, Unit u) {
@@ -26,24 +30,9 @@ public class UnitTurnState {
   }
   
   
-
-  
-  public boolean attemptTurn() {
-    Unit u = _unit;
-    
-    _attemptCounter++;
-    if (_attemptCounter > 10) {
-      Log.warn(u, "***ATTEMPT COUNTER EXCEEEDED****");
-      u.turn().completeTurn();
-    }
-    if (u.isDead()) {
-      Log.error(u, "Unit is dead.  Cannot be played!");
-      throw new SaDException("DEAD UNIT!" );
-    }
-    Log.debug(this, "playing unit: " + u + " with order " + u.getOrder());
-
-    //_game.selectUnit(u);
-    OrderResponse response = u.execOrder();
+  private boolean executeOrder(Unit u, Order alt) {
+    boolean blocked = false;
+    OrderResponse response = u.execOrder(alt);
     if (response == null) {
       throw new SaDException("NO RESPONSE FROM UNIT!");
     }
@@ -66,18 +55,48 @@ public class UnitTurnState {
       u.turn().completeTurn();
     } else if (code == ResponseCode.BLOCKED) {
       Log.warn("Unit blocked");
+      blocked = true;
     } else {
       Log.debug(this, "****Unhandled response code:" + code);
     }
     u.getOwner().adjustVisibility(u);
+    return blocked;
+  }
 
+  
+  public boolean attemptTurn() {
+    Unit u = _unit;
+    Order alternate = null;
+    _attemptCounter++;
+    
+    if (_attemptCounter > 2) {
+      alternate = u.newRandomMoveOrder();
+    }
+    
+    if (_attemptCounter > 5) {
+      //u.getOrder();
+      Log.warn(u, "***ATTEMPT COUNTER EXCEEEDED****");
+      u.turn().completeTurn();
+    }
+    if (u.isDead()) {
+      Log.error(u, "Unit is dead.  Cannot be played!");
+      throw new SaDException("DEAD UNIT!" );
+    }
+    Log.debug(this, "playing unit: " + u + " with order " + u.getOrder());
+
+    if (!u.turn().isDone()) {
+      if (executeOrder(u, alternate)) {
+        executeOrder(u, u.newRandomMoveOrder());
+      }
+
+    }
     return true;
   }
 
   
   public void beginTurn() {
     _attemptCounter = 0;
-    
+    _pathFinder = null;
     _unit.life().resetForTurn();
   
     Order order = _unit.getOrder();
@@ -115,6 +134,20 @@ public class UnitTurnState {
   }
   
   
+  public Path getPath(Location dest) {
+    if (_pathFinder != null && _pathFinder.getDest().equals(dest)) {
+      ;
+    } else {
+      _pathFinder = new PathFinder(_unit, dest);
+    }
+    return _pathFinder.getPath();
+  }
+  
+  public void addObstruction(Location dest) {
+    if (_pathFinder != null) {
+      _pathFinder.addObstruction(dest);
+    }
+  }
   
   private void updateOrderState() {
     if (_unit.hasOrders()) {
@@ -134,5 +167,12 @@ public class UnitTurnState {
 
   public void setReady() {
     _orderState = OrderState.READY;
+  }
+
+  public boolean isKnownObstruction(Location dest) {
+    if (_pathFinder != null) {
+      return _pathFinder.isKnownObstruction(dest);
+    }
+    return false;
   }
 }

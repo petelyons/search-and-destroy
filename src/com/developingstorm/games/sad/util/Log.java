@@ -24,12 +24,12 @@ public class Log {
       sb.append('>');
       sb.append(':');
     }
-    if (context != null) {
-      sb.append('[');
-      sb.append(Thread.currentThread().getId());
-      sb.append(']');
-      sb.append(':');
-    }
+
+    sb.append('[');
+    sb.append(Thread.currentThread().getId());
+    sb.append(']');
+    sb.append(':');
+    
     sb.append(desc);
     Tracer.INSTANCE.println(sb.toString());
   }

@@ -205,7 +205,7 @@ public class CityMenuBuilder {
       @Override
       public void actionPerformed(ActionEvent e) {
         // TODO Move to Commander - all the postGameAction calls
-        _game.postGameAction(()->{
+        _game.postAndRunGameAction(()->{
           _c.getGovernor().clearSeaPath();
         });
       }});
@@ -213,14 +213,14 @@ public class CityMenuBuilder {
     CLEAR_AIR_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        _game.postGameAction(()->{
+        _game.postAndRunGameAction(()->{
           _c.getGovernor().clearAirPath();
         });
       }});
     CLEAR_LAND_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        _game.postGameAction(()->{
+        _game.postAndRunGameAction(()->{
           _c.getGovernor().clearLandPath();
         });
       }});
@@ -229,7 +229,7 @@ public class CityMenuBuilder {
     AIR_PATROL_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        _game.postGameAction(()->{
+        _game.postAndRunGameAction(()->{
           if (_c.getGovernor().hasAirPatrol()) {
             _c.getGovernor().clearAirPatrol();
           } else {
@@ -241,7 +241,7 @@ public class CityMenuBuilder {
     AUTO_SENTRY_SEL.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        _game.postGameAction(()->{
+        _game.postAndRunGameAction(()->{
 
           if (_c.getGovernor().hasAutoSentry()) {
             _c.getGovernor().clearAutoSenty();

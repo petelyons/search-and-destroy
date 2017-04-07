@@ -147,7 +147,12 @@ public class MapState implements AStarState {
   }
 
   public static boolean isBlocked(Location loc) {
-    if (_checkedBlocked) {
+    return isBlocked(loc, false);
+  }
+  
+  
+  public static boolean isBlocked(Location loc, boolean force) {
+    if (force || _checkedBlocked) {
       if (isPlayersCity(loc)) {
         return false;
       }

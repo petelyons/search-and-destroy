@@ -89,7 +89,7 @@ public class Explore extends Order {
       }
 
       if (resp == ResponseCode.YIELD_PASS && blockedLocations.contains(dest)) {
-        return new OrderResponse(resp, this, null);
+        return new OrderResponse(ResponseCode.TURN_COMPLETE, this, null);
       }
       else if (resp == ResponseCode.YIELD_PASS) {
         blockedLocations.add(dest);

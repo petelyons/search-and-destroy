@@ -24,7 +24,4 @@ public class SubmarineCaptain extends UnitCaptain<Submarine> {
   public Order plan(Submarine u) {
     return attackShipStrategy(u, PrimaryTargets, SecondaryTargets);
   }
-
-
-
 }

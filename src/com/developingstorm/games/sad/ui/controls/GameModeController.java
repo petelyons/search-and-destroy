@@ -9,11 +9,14 @@ import java.awt.event.MouseMotionListener;
 import com.developingstorm.games.hexboard.BoardHex;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.ui.SaDFrame;
+import com.developingstorm.games.sad.util.Log;
 
 /**
  * 
  */
 public class GameModeController extends BaseController {
+  
+  
 
   private final int _boardMiddle;
   private final GameCommander _commander;
@@ -36,7 +39,19 @@ public class GameModeController extends BaseController {
       
       @Override
       public void keyPressed(KeyEvent ke) {
-        if (_commander.isWaiting() == false) {
+        int code = ke.getKeyCode();
+        if (code == KeyEvent.VK_F5) {
+          SaDFrame.DEBUG_PATH_TOGGLE = !SaDFrame.DEBUG_PATH_TOGGLE; 
+        } else if (code == KeyEvent.VK_F8) {
+          if (_commander.isPaused()) {
+            _commander.resume();
+          } else {
+            _commander.pause();
+          }
+        }
+        
+        
+        if (_commander.isPaused() == false) {
           return;
         }
 
@@ -148,7 +163,7 @@ public class GameModeController extends BaseController {
 
       @Override
       public void keyReleased(KeyEvent ke) {
-        if (_commander.isWaiting() == false) {
+        if (_commander.isPaused() == false) {
           return;
         }
 
@@ -165,7 +180,7 @@ public class GameModeController extends BaseController {
 
       @Override
       public void keyTyped(KeyEvent ke) {
-        if (_commander.isWaiting() == false) {
+        if (_commander.isPaused() == false) {
           return;
         }
 
@@ -183,7 +198,7 @@ public class GameModeController extends BaseController {
       @Override
       public void hexMousePressed(MouseEvent e, BoardHex hex) {
         //Log.info("GAME MOUSE DOWN *******************************************");
-        if (_commander.isWaiting() == false) {
+        if (_commander.isPaused() == false) {
           return;
         }
         int button = e.getButton();
@@ -198,7 +213,7 @@ public class GameModeController extends BaseController {
       public void hexMouseReleased(MouseEvent e, BoardHex hex) {
         //Log.info("GAME MOUSE UP ***********************************************");
 
-        if (_commander.isWaiting() == false) {
+        if (_commander.isPaused() == false) {
           return;
         }
         int button = e.getButton();
@@ -242,7 +257,7 @@ public class GameModeController extends BaseController {
     
       @Override
       public void hexMouseDragged(MouseEvent e, BoardHex hex) {
-        if (_commander.isWaiting() == false) {
+        if (_commander.isPaused() == false) {
           return;
         }
         if (_mouseDown != null) {

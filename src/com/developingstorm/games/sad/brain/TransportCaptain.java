@@ -29,9 +29,4 @@ public class TransportCaptain extends UnitCaptain<Transport> {
     }
     return order;
   }
-
- 
-
-
-
 }

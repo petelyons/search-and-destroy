@@ -17,13 +17,12 @@ import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.CollectionUtil;
-
-
+import com.developingstorm.util.RandomUtil;
 
 
 /**
  * The UnitCaptain is a base class for type specific 'captains'.  The Captain 
- * must analyze the context of the game provided in the BattlePlan and issue a recomendation
+ * must analyze the context of the game provided in the BattlePlan and issue a recommendation
  * for the order to assign to the unit.
  * 
  *@param <T>
@@ -111,7 +110,10 @@ public abstract class UnitCaptain<T extends Unit>  {
   
   protected Order patrol(Unit u) {
     Location loc;
-    List<Location> ring = u.getLocation().getRing(u.getMaxTravel());
+    
+    int patrolDist = u.getType().getDist();
+
+    List<Location> ring = u.getLocation().getRing(patrolDist);
     List<Location> rando = CollectionUtil.shuffle(ring);
     Location choice = null;
     do {
@@ -168,7 +170,7 @@ public abstract class UnitCaptain<T extends Unit>  {
    * @return
    */
   protected Order goToUnloadingPoint(Unit u) {
-    Location loc = u.getClosestLocation(_plan.getUnloadingPoints());
+    Location loc = u.getClosestLocation(_general.getUnloadingZone());
     if (loc != null) {
       Log.info(u, "Going to unloading point");
       return u.newMoveOrder(loc);
@@ -204,7 +206,8 @@ public abstract class UnitCaptain<T extends Unit>  {
    * @return
    */
   protected boolean atUnloadPoint(Unit u) {
-    return _plan.getUnloadingPoints().contains(u.getLocation());
+    return _plan.getDefenseUnloadingPoints().contains(u.getLocation()) || 
+        _plan.getExpandUnloadingPoints().contains(u.getLocation());
   }
   
   /**
@@ -213,7 +216,7 @@ public abstract class UnitCaptain<T extends Unit>  {
    * @return
    */
   protected Order patrolUnloadingZones(Unit u) {
-    Location loc = u.getClosestLocation(_plan.getUnloadingPoints());
+    Location loc = u.getClosestLocation(_plan.getDefenseUnloadingPoints());
     if (loc == null) {
       return null;
     }
@@ -274,18 +277,25 @@ public abstract class UnitCaptain<T extends Unit>  {
       order = planAttack(u, secondary);
     }
     
-    if (order == null) {
-      order = patrolUnloadingZones(u);
+    List<Order> list = new ArrayList<Order>();
+    order = patrolUnloadingZones(u);
+    if (order != null) {
+      list.add(order);
     }
-    
-    if (order == null) {
-      order = explore(u);
+    order = explore(u);
+    if (order != null) {
+      list.add(order);
+    }
+    order = patrol(u);
+    if (order != null) {
+      list.add(order);
     }
 
-    if (order == null) {
-      order = patrol(u);
+    if (list.isEmpty()) {
+      return null;
     }
     
+    order = RandomUtil.randomValue(list);
     return order;
   }
   

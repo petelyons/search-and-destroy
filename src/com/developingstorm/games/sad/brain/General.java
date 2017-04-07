@@ -1,5 +1,8 @@
 package com.developingstorm.games.sad.brain;
 
+import java.util.Set;
+
+import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.Order;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
@@ -15,6 +18,7 @@ import com.developingstorm.games.sad.types.Infantry;
 import com.developingstorm.games.sad.types.Submarine;
 import com.developingstorm.games.sad.types.Transport;
 import com.developingstorm.games.sad.util.Log;
+import com.developingstorm.util.RandomUtil;
 
 public class General {
 
@@ -30,7 +34,14 @@ public class General {
   private final FighterCaptain _fighter;
   private final CarrierCaptain _carrier;
   
+  
+  private int _defendVsExplore = 50;
+  
+  private Battleplan _plan;
+  
   public General(Battleplan plan) {
+    _plan = plan;
+    
     _armor = new ArmorCaptain(this, plan);
     _battleship = new BattleshipCaptain(this, plan);
     _bomber = new BomberCaptain(this, plan);
@@ -143,12 +154,33 @@ public class General {
       return u.newSkipTurn();
     }
     
-    return order;
-    
+    return order; 
   }
 
 
+  boolean shouldDefend() {
+    return (RandomUtil.getInt(100) <= _defendVsExplore);
+  }
+  
   
 
 
+  Set<Location> getUnloadingZone() {
+    Set<Location> def = _plan.getDefenseUnloadingPoints();
+    Set<Location> exp = _plan.getExpandUnloadingPoints();
+    
+    if (def.isEmpty() && exp.isEmpty()) {
+      return def;
+    } else if (def.isEmpty() && !exp.isEmpty()) {
+      return exp;
+    } else if (!def.isEmpty() && exp.isEmpty()) {
+      return def;
+    } else {
+      if (shouldDefend()) {
+        return def;
+      } else {
+        return exp;
+      }
+    }
+  }
 }

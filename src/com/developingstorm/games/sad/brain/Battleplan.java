@@ -37,9 +37,11 @@ public class Battleplan {
 
   private final Set<Continent> _defenseContinents;
 
-  private Set<Location> _unloadingPoints;
+  private Set<Location> _defenseUnloadingPoints;
 
   private UnitStats _us;
+
+  private Set<Location> _expandUnloadingPoints;
   
   
   public Battleplan(final Game game, final Robot p) {
@@ -60,7 +62,8 @@ public class Battleplan {
     _defenseContinents = CollectionUtil.intersect(colonized, _battlezoneContinents);
     
     _loadingPoints = calcLoadingLocations();
-    _unloadingPoints = calcUnloadingLocations();
+    _defenseUnloadingPoints = calcDefenseUnloadingLocations();
+    _expandUnloadingPoints = calcExpandUnloadingLocations();
     
   }
   
@@ -83,8 +86,10 @@ public class Battleplan {
     listContinents(sb, _battlezoneContinents);  
     sb.append("Loading Points");
     listLocations(sb, _loadingPoints);
-    sb.append("Unloading Points");
-    listLocations(sb, _unloadingPoints);
+    sb.append("Defense Unloading Points");
+    listLocations(sb, _defenseUnloadingPoints);
+    sb.append("Expland Unloading Points");
+    listLocations(sb, _expandUnloadingPoints);
     return sb.toString();
   }
 
@@ -178,11 +183,17 @@ public class Battleplan {
     return points;
   }
   
-  private Set<Location> calcUnloadingLocations() {
+  private Set<Location> calcDefenseUnloadingLocations() {
     Set<Location> unloadingPoints = new HashSet<Location>();
     if (!_defenseContinents.isEmpty()) {
       return coastline(_defenseContinents);
-    } else if (_targetContinents.isEmpty()) {
+    } 
+    return unloadingPoints;
+  }
+  
+  private Set<Location> calcExpandUnloadingLocations() {
+    Set<Location> unloadingPoints = new HashSet<Location>();
+    if (!_targetContinents.isEmpty()) {
       return coastline(_targetContinents);
     }
     return unloadingPoints;
@@ -204,11 +215,16 @@ public class Battleplan {
    * @param enemies
    * @return
    */
-  public Set<Location> getUnloadingPoints() {
+  public Set<Location> getDefenseUnloadingPoints() {
     
-    return _unloadingPoints;
+    return _defenseUnloadingPoints;
   }
   
+  
+  public Set<Location> getExpandUnloadingPoints() {
+    
+    return _expandUnloadingPoints;
+  }
   
   
 
@@ -255,7 +271,7 @@ public class Battleplan {
   }
 
   private Type coastalProductionChoice(City c) {
-    Continent cont = c.getContinent();
+
     UnitStats stats = c.getContinentStats();
     Type currrentProduction = c.getProduction();
     stats.decrementProduction(currrentProduction);
@@ -276,7 +292,9 @@ public class Battleplan {
       return Type.TRANSPORT;
     }
     
-    return percentageCoastalChoice(c);
+    Type t = percentageCoastalChoice(c);
+    _us.incrementProduction(t);
+    return t;
   }
 
   private Type percentageCoastalChoice(City c) {

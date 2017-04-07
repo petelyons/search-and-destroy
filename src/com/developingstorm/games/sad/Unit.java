@@ -21,6 +21,7 @@ import com.developingstorm.games.sad.orders.SkipTurn;
 import com.developingstorm.games.sad.orders.Unload;
 import com.developingstorm.games.sad.turn.UnitTurnState;
 import com.developingstorm.games.sad.util.Log;
+import com.developingstorm.util.RandomUtil;
 
 
 /**
@@ -394,7 +395,8 @@ public abstract class Unit {
   }
 
   public Path getPath(Location loc) {
-    Path p = _owner.getTravelPath(_travel, _loc, loc);
+    
+    Path p = _turn.getPath(loc);
     if (p != null && p.isEmpty()) {
       return null;
     }
@@ -614,6 +616,11 @@ public abstract class Unit {
       if (_loc.equals(loc)) {
         return loc;
       }
+
+      if (_turn.isKnownObstruction(loc)) {
+        continue;
+      }
+      
       Path p = getPath(loc);
       if (p == null) {
         continue;
@@ -697,6 +704,22 @@ public abstract class Unit {
       throw new SaDException("Cannot move to NULL location");
     }
     return new Move(_game, this, loc);
+  }
+  
+  public Move newRandomMoveOrder() {
+    List<Location> ring = _loc.getRing(1);
+    List<Location> reachable = new ArrayList();
+    for (Location loc: ring) {
+      if (!MapState.isBlocked(loc, true)) {
+        reachable.add(loc);
+      }
+    }
+    
+    if (!reachable.isEmpty()) {
+      Location loc = RandomUtil.randomValue(reachable);
+      return new Move(_game, this, loc);
+    }
+    return null;
   }
   
   public Sentry newSentryOrder() {
@@ -785,7 +808,7 @@ public abstract class Unit {
   }
 
   
-  public OrderResponse execOrder() {
+  public OrderResponse execOrder(Order alternate) {
 
     OrderResponse lastOrderResponse = null;
     if (isDead()) {
@@ -793,7 +816,11 @@ public abstract class Unit {
     }
 
     Log.debug(this, "Getting units orders");
-    Order order = getOrder();
+    
+    Order order = alternate;
+    if (order == null) {
+      order = getOrder();
+    }
     if (order == null) {
       throw new SaDException("Attempting to play unit with no order!");
     }
