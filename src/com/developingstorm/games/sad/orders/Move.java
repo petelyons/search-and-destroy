@@ -61,7 +61,7 @@ public class Move extends Order {
         }
       }
      
-      while (_unit.life().movesLeft() > 0){
+      while (_unit.life().movesLeft() > 0  && !_unit.isDead()){
         dest = _lastPath.next(_unit.getLocation());
         if (dest == null) {
           int finalMove = _unit.getLocation().distance(_loc);
@@ -104,7 +104,7 @@ public class Move extends Order {
       resp = _game.resolveMove(_unit, dest);
       if (resp == ResponseCode.TURN_COMPLETE) {
         Log.info(_unit, "Unit reports turn complete");
-      } else if (resp != ResponseCode.DIED) {
+      } else if (resp == ResponseCode.DIED) {
         Log.info(_unit, "DIED DURING MOVE!");
       } else if (resp != ResponseCode.STEP_COMPLETE) {
         Log.info(_unit, "Bad move:" + resp);

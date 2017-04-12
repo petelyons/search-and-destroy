@@ -86,7 +86,7 @@ public abstract class Unit {
     public void move() {
       _moves--;
       
-      if ( _type.getFuel() == 0) {
+      if (_type.getFuel() != 0 && !atCity()) {
         _fuel--;
       }
     }
@@ -120,10 +120,10 @@ public abstract class Unit {
     }
    
     public boolean hasFuel() {
-      if ( _type.getFuel() == 0) {
+      if (_travel != Travel.AIR) {
         return true;
       }
-      return _fuel <= 0;
+      return _fuel > 0;
     }
  
     public boolean hasMoves() {
@@ -198,6 +198,10 @@ public abstract class Unit {
     public void kill() {
       _hits = 0;
     }
+
+    public int remainingFuel() {
+      return _fuel;
+    }
   }
   
   protected Unit(Type t, Player owner, Location loc, Game game) {
@@ -218,6 +222,11 @@ public abstract class Unit {
     }
     // A unit needs an ID before it can be placed!
     _game.placeUnitOnBoard(this);
+  }
+  
+  
+  public boolean atCity() {
+    return _game.isCity(_loc);
   }
     
   private synchronized void changeLoc(Location loc) {
@@ -321,7 +330,7 @@ public abstract class Unit {
     }
     
     if (!_life.hasMoves()) {
-      return;
+      throw new SaDException("This unit shouldn't be moving! " + this);
     }
 
     _life.move();
@@ -562,6 +571,14 @@ public abstract class Unit {
   }
   
   
+  public void repairAndRefuel() {
+    if (_game.isCity(_loc)) {
+      _life.repair();
+      _life.fuel();
+    }
+  }
+  
+    
   public void autoLoad() {
     if (_game.isCity(_loc)) {
       if (carriableWeight() > 0  && carriedWeight() < carriableWeight()) {
@@ -876,8 +893,14 @@ public abstract class Unit {
   public boolean isBattleship() {
     return _type == Type.BATTLESHIP;
   }
+  
+  public boolean isCarrier() {
+    return _type == Type.CARRIER;
+  }
 
   public Continent getContinent() {
     return _board.getContinent(_loc);
   }
+
+
 }

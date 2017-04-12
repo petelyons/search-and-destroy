@@ -346,15 +346,15 @@ public class SaDFrame extends JFrame {
 
       @Override
       public void trackUnit(Unit u) {
+        _unitTracked = u;
         EventQueue.invokeLater(()-> {
-          _unitTracked = u;
-          _ubar.setUnit(u);
-        });
+          _ubar.setUnit(u);        });
       }
       @Override
       public void selectUnit(Unit u) {
+        _unitChanged = u;
+
         EventQueue.invokeLater(()-> {
-          _unitChanged = u;
           _ubar.setUnit(u);
           _board.clearSelected();
          

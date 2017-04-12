@@ -40,6 +40,8 @@ public class Explore extends Order {
         if (response.getCode() == ResponseCode.ORDER_COMPLETE) {
           return new OrderResponse(ResponseCode.TURN_COMPLETE, this, null);
         }
+        resp = response.getCode();
+        continue;
       }
       if (frontierLocations.isEmpty()) {
         Log.debug(_unit, "no reachable frontier to explore!");
@@ -103,7 +105,7 @@ public class Explore extends Order {
       }
       
  
-    } while (_unit.life().movesLeft() > 0);
+    } while (_unit.life().movesLeft() > 0  && !_unit.isDead());
 
     if (resp == ResponseCode.ORDER_AND_TURN_COMPLETE || resp == ResponseCode.STEP_COMPLETE) {
       resp = ResponseCode.TURN_COMPLETE;

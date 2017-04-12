@@ -584,7 +584,17 @@ public class Game implements UnitLens, LocationLens {
 
     Unit blocking = unitAtLocation(dest);
     if (blocking == null || blocking.equals(u)) {
+      int pre = u.life().movesLeft();
+      if (u.getLocation().equals(dest)) {
+        throw new SaDException("Unit not actually moving!");
+        
+      }
+      
       u.move(dest);
+      int post = u.life().movesLeft();
+      if (post >= pre) {
+        throw new SaDException("Unit didn't move!");
+      }
       if (u.life().movesLeft() > 0) {
         Log.debug(u, "Moved - step complete");
         return ResponseCode.STEP_COMPLETE;
@@ -765,9 +775,11 @@ public class Game implements UnitLens, LocationLens {
         if (cc == 0 && uc == 0) {
          
           _gameListener.gameOver(nextPlayer());
+          return;
         } else if (cc == 0) {
           if (!_currentPlayer.hasUnitsThatCaptureACity()) {
             _gameListener.gameOver(nextPlayer());
+            return;
           }
         }
   

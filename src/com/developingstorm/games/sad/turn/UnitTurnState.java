@@ -69,11 +69,12 @@ public class UnitTurnState {
     Order alternate = null;
     _attemptCounter++;
     
-    if (_attemptCounter > 2) {
+    if (_attemptCounter > 2 && u.getOwner().isRobot()) {
+      Log.warn("**** RANDOM MOVE ****");
       alternate = u.newRandomMoveOrder();
     }
     
-    if (_attemptCounter > 5) {
+    if (_attemptCounter > 5 &&  u.getOwner().isRobot()) {
       //u.getOrder();
       Log.warn(u, "***ATTEMPT COUNTER EXCEEEDED****");
       u.turn().completeTurn();
@@ -85,7 +86,8 @@ public class UnitTurnState {
     Log.debug(this, "playing unit: " + u + " with order " + u.getOrder());
 
     if (!u.turn().isDone()) {
-      if (executeOrder(u, alternate)) {
+      if (executeOrder(u, alternate) && u.getOwner().isRobot()) {
+        Log.warn("**** RANDOM MOVE2 ****");
         executeOrder(u, u.newRandomMoveOrder());
       }
 
@@ -95,10 +97,15 @@ public class UnitTurnState {
 
   
   public void beginTurn() {
+
+
     _attemptCounter = 0;
     _pathFinder = null;
     _unit.life().resetForTurn();
-  
+
+    _unit.repairAndRefuel();
+
+    
     Order order = _unit.getOrder();
     if (order != null && order.getType() == OrderType.SKIPTURN) {
       _unit.clearOrders();
