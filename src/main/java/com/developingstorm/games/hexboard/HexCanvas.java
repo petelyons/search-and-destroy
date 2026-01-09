@@ -22,83 +22,83 @@ import com.developingstorm.games.hexboard.sprites.SpriteEngine;
 public class HexCanvas extends JComponent implements HexBoardView {
 
   private static final long serialVersionUID = -8867069101522503660L;
-  private HexBoardContext _ctx;
-  private HexBoard _board;
-  private Dimension _size;
-  private SpriteEngine _sprites;
-  private Image[] _images;
-  private int _iconHeight;
-  private int _iconWidth;
-  private int _zs;
-  private CursorSprite _cursor;
-  private ArrowSprite _arrow;
-  private Image _background;
-  private boolean _cacheLevel0;
-  protected LocationLens _lens;
+  private HexBoardContext ctx;
+  private HexBoard board;
+  private Dimension size;
+  private SpriteEngine sprites;
+  private Image[] images;
+  private int iconHeight;
+  private int iconWidth;
+  private int zs;
+  private CursorSprite cursor;
+  private ArrowSprite arrow;
+  private Image background;
+  private boolean cacheLevel0;
+  protected LocationLens lens;
 
   public HexCanvas(HexBoardContext ctx, HexBoard board) {
 
-    _ctx = ctx;
-    _zs = ctx.getZs();
-    _board = board;
-    _images = ctx.getImages();
-    _sprites = new SpriteEngine(this, _images, _zs);
-    _iconWidth = _images[ctx.getPrototypeHex()].getWidth(null);
-    _iconHeight = _images[ctx.getPrototypeHex()].getHeight(null);
+    this.ctx = ctx;
+    zs = ctx.getZs();
+    this.board = board;
+    images = ctx.getImages();
+    sprites = new SpriteEngine(this, this.images, this.zs);
+    iconWidth = this.images[ctx.getPrototypeHex()].getWidth(null);
+    iconHeight = this.images[ctx.getPrototypeHex()].getHeight(null);
 
     Dimension iconSize = getIconDimension();
 
-    int w = _board.getWidth() * iconSize.width + (iconSize.width / 2);
-    int y2 = (_board.getHeight() / 2);
-    int h = (y2 * iconSize.height) + (y2 * (_ctx.getHexSide() + 1));
-    _size = new Dimension(w, h);
-    _cacheLevel0 = true;
-    _cursor = new CursorSprite();
-    _arrow = new ArrowSprite();
-    _sprites.add(_arrow);
-    _sprites.add(_cursor);
-    _board.addHexBoardView(this);
-    _lens = null;
+    int w = this.board.getWidth() * iconSize.width + (iconSize.width / 2);
+    int y2 = (this.board.getHeight() / 2);
+    int h = (y2 * iconSize.height) + (y2 * (this.ctx.getHexSide() + 1));
+    size = new Dimension(w, h);
+    cacheLevel0 = true;
+    cursor = new CursorSprite();
+    arrow = new ArrowSprite();
+    this.sprites.add(this.arrow);
+    this.sprites.add(this.cursor);
+    this.board.addHexBoardView(this);
+    lens = null;
   }
 
   public void setLens(LocationLens lens) {
-    _lens = lens;
+    this.lens = lens;
   }
 
   public void setLevelZeroCache(boolean b) {
-    _cacheLevel0 = b;
+    cacheLevel0 = b;
   }
 
   public void removeNotify() {
 
-    _sprites.stop();
+    this.sprites.stop();
   }
 
   public Dimension getIconDimension() {
 
-    return new Dimension(_iconWidth, _iconHeight);
+    return new Dimension(this.iconWidth, this.iconHeight);
   }
 
   public Dimension getPreferredSize() {
 
-    if (_size == null) {
+    if (size == null) {
       return new Dimension(100, 100);
     }
-    return _size;
+    return size;
   }
 
   private void initBackground() {
 
-    Graphics2D g2 = (Graphics2D) _background.getGraphics();
+    Graphics2D g2 = (Graphics2D) this.background.getGraphics();
     drawBoard(0, g2, false);
   }
 
   public void addSprite(Sprite s) {
-    _sprites.add(s);
+    this.sprites.add(s);
   }
 
   public void removeSprite(Sprite s) {
-    _sprites.remove(s);
+    this.sprites.remove(s);
   }
 
   public void removeSprites(List<Sprite> list) {
@@ -123,26 +123,26 @@ public class HexCanvas extends JComponent implements HexBoardView {
 
     try {
 
-      if (_background == null && _cacheLevel0 == true) {
+      if (background == null && cacheLevel0 == true) {
         try {
-          _background = createImage(_size.width, _size.height);
+          background = createImage(this.size.width, this.size.height);
           initBackground();
         } catch (OutOfMemoryError me) {
-          _background = null;
-          _cacheLevel0 = false;
+          background = null;
+          cacheLevel0 = false;
         }
       }
 
-      _sprites.beginDraw((Graphics2D) g);
-      for (int z = 0; z < _zs; z++) {
-        if (z == 0 && _background != null) {
-          g.drawImage(_background, 0, 0, null);
+      this.sprites.beginDraw((Graphics2D) g);
+      for (int z = 0; z < zs; z++) {
+        if (z == 0 && this.background != null) {
+          g.drawImage(this.background, 0, 0, null);
         } else {
           drawBoard(z, (Graphics2D) g);
         }
-        _sprites.draw(z);
+        this.sprites.draw(z);
       }
-      _sprites.endDraw();
+      this.sprites.endDraw();
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -154,16 +154,16 @@ public class HexCanvas extends JComponent implements HexBoardView {
 
   public void focusSet(BoardHex h) {
 
-    _cursor.setHex(h.getHex());
+    this.cursor.setHex(h.getHex());
   }
 
   private void drawBoard(int z, Graphics2D g, boolean useLens) {
 
-    int w = _ctx.getWidth();
-    int h = _ctx.getHeight();
+    int w = this.ctx.getWidth();
+    int h = this.ctx.getHeight();
     for (int x = 0; x < w; x++) {
       for (int y = 0; y < h; y++) {
-        BoardHex bh = _board.get(x, y);
+        BoardHex bh = this.board.get(x, y);
         drawBoardHex(bh, z, g, useLens);
       }
     }
@@ -175,12 +175,12 @@ public class HexCanvas extends JComponent implements HexBoardView {
 
   public void stopAmination() {
 
-    _sprites.stop();
+    this.sprites.stop();
   }
 
   public void startAmination() {
 
-    _sprites.start();
+    this.sprites.start();
   }
 
   private void drawBoardHex(BoardHex bh, int z, Graphics g, boolean useLens) {
@@ -189,27 +189,27 @@ public class HexCanvas extends JComponent implements HexBoardView {
     Point origin = hex.getOrigin();
     Location loc = bh.getLocation();
 
-    if (useLens && _lens != null && _lens.isExplored(loc) == false) {
-      g.drawImage(_images[_ctx.getUnexploredImageSelector()], origin.x,
-          origin.y, _iconWidth, _iconHeight, null);
+    if (useLens && this.lens != null && this.lens.isExplored(loc) == false) {
+      g.drawImage(this.images[this.ctx.getUnexploredImageSelector()], origin.x,
+          origin.y, this.iconWidth, this.iconHeight, null);
     } else {
       if (z == 0) {
-        g.drawImage(_images[bh.getImageSelector()], origin.x, origin.y,
-            _iconWidth, _iconHeight, null);
-        if (_ctx.showBorder()) {
-          g.setColor(_ctx.getBorderColor());
+        g.drawImage(this.images[bh.getImageSelector()], origin.x, origin.y,
+            this.iconWidth, this.iconHeight, null);
+        if (this.ctx.showBorder()) {
+          g.setColor(this.ctx.getBorderColor());
           g.drawPolygon(hex);
         }
       } else if (z == 1) {
-        Color xcol = _ctx.getXorColor();
+        Color xcol = this.ctx.getXorColor();
         if (bh.isFocus() && xcol != null) {
           g.setXORMode(xcol);
-          g.drawImage(_images[bh.getImageSelector()], origin.x, origin.y,
-              _iconWidth, _iconHeight, null);
+          g.drawImage(this.images[bh.getImageSelector()], origin.x, origin.y,
+              this.iconWidth, this.iconHeight, null);
           g.setPaintMode();
         }
         if (bh.isSelected()) {
-          g.setColor(_ctx.getSelectionColor());
+          g.setColor(this.ctx.getSelectionColor());
           g.drawPolygon(hex);
         }
       }
@@ -218,7 +218,7 @@ public class HexCanvas extends JComponent implements HexBoardView {
 
   public void setArrow(Point tail, Point head) {
 
-    _arrow.setArrow(tail, head);
+    this.arrow.setArrow(tail, head);
   }
 
 }

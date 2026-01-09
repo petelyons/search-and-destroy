@@ -4,20 +4,20 @@ package com.developingstorm.games.hexboard;
  * A HexFactory builds hexes of a certain size
  */
 public class HexFactory {
-  private double _hexHalfWidth;
-  private double _hexPeak;
-  private double _hexSide;
-  private double _hexWidth;
+  private double hexHalfWidth;
+  private double hexPeak;
+  private double hexSide;
+  private double hexWidth;
 
   public HexFactory(int hexSide) {
-    _hexSide = hexSide;
-    _hexWidth = (_hexSide * 1.7320508);
-    _hexHalfWidth = (_hexWidth / 2.0);
-    _hexPeak = (_hexSide / 2.0);
+    this.hexSide = hexSide;
+    hexWidth = (this.hexSide * 1.7320508);
+    hexHalfWidth = (this.hexWidth / 2.0);
+    hexPeak = (this.hexSide / 2.0);
   }
 
   public int getHexSide() {
-    return (int) _hexSide;
+    return (int) hexSide;
   }
 
   public Hex newHex(Location loc) {
@@ -33,22 +33,22 @@ public class HexFactory {
     double y2;
 
     if (y % 2 != 0)
-      x2 = _hexHalfWidth;
+      x2 = hexHalfWidth;
     else
       x2 = 0;
 
-    y2 = y * (_hexPeak + _hexSide) + _hexPeak;
+    y2 = y * (this.hexPeak + this.hexSide) + hexPeak;
 
-    xCoord[3] = x2 + x * _hexWidth;
+    xCoord[3] = x2 + x * hexWidth;
     yCoord[3] = y2;
-    xCoord[2] = xCoord[3] + _hexHalfWidth;
-    yCoord[2] = yCoord[3] - _hexPeak;
-    xCoord[1] = xCoord[3] + _hexWidth;
+    xCoord[2] = xCoord[3] + hexHalfWidth;
+    yCoord[2] = yCoord[3] - hexPeak;
+    xCoord[1] = xCoord[3] + hexWidth;
     yCoord[1] = yCoord[3];
     xCoord[0] = xCoord[1];
-    yCoord[0] = yCoord[1] + _hexSide;
+    yCoord[0] = yCoord[1] + hexSide;
     xCoord[5] = xCoord[2];
-    yCoord[5] = yCoord[3] + _hexSide + _hexPeak;
+    yCoord[5] = yCoord[3] + this.hexSide + hexPeak;
     xCoord[4] = xCoord[3];
     yCoord[4] = yCoord[0];
 

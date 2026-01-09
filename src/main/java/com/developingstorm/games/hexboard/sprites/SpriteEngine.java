@@ -1,158 +1,151 @@
 package com.developingstorm.games.hexboard.sprites;
 
+import com.developingstorm.games.hexboard.HexCanvas;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import com.developingstorm.games.hexboard.HexCanvas;
-
 /**
 
- * 
+ *
  */
 public class SpriteEngine {
 
-  private Image[] _images;
-  private List<Sprite>[] _sprites;
-  private HexCanvas _canvas;
-  private long _time;
-  private Graphics2D _g2;
-  private int _numZ;
-  private AnimationThread _thread;
+    private Image[] images;
+    private List<Sprite>[] sprites;
+    private HexCanvas canvas;
+    private long time;
+    private Graphics2D g2;
+    private int numZ;
+    private AnimationThread thread;
 
-  private class AnimationThread extends Thread {
+    private class AnimationThread extends Thread {
 
-    private boolean _stop;
-    //private HexCanvas _canvas;
-    private long _frameRate;
+        private boolean stop;
+        //private HexCanvas canvas;
+        private long frameRate;
 
-    AnimationThread() {
-      setDaemon(true);
-      _stop = false;
-//      /_canvas = c;
-      _frameRate = 100;
-    }
+        AnimationThread() {
+            setDaemon(true);
+            stop = false;
+            //      /canvas = c;
+            frameRate = 100;
+        }
 
-
-    public void requestStop() {
-      _stop = true;
-      try {
-        join();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    }
-
-    public void run() {
-
-      while (_stop == false) {
-        boolean repaint;
-
-        repaint = false;
-        try {
-          Thread.sleep(_frameRate);
-          long time = System.currentTimeMillis();
-
-          for (int z = 0; z < _numZ; z++) {
-            if (!_sprites[z].isEmpty()) {
-              Iterator<Sprite> itr = _sprites[z].iterator();
-              while (itr.hasNext()) {
-                Sprite s = (Sprite) itr.next();
-                if (s.check(time)) {
-                  repaint = true;
-                  break;
-                }
-              }
+        public void requestStop() {
+            stop = true;
+            try {
+                join();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-          }
-        } catch (Throwable e) {
-          e.printStackTrace();
         }
-        if (repaint) {
-          _canvas.repaint();
 
+        public void run() {
+            while (stop == false) {
+                boolean repaint;
+
+                repaint = false;
+                try {
+                    Thread.sleep(this.frameRate);
+                    long time = System.currentTimeMillis();
+
+                    for (int z = 0; z < numZ; z++) {
+                        if (!SpriteEngine.this.sprites[z].isEmpty()) {
+                            Iterator<Sprite> itr =
+                                SpriteEngine.this.sprites[z].iterator();
+                            while (itr.hasNext()) {
+                                Sprite s = (Sprite) itr.next();
+                                if (s.check(time)) {
+                                    repaint = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+                if (repaint) {
+                    SpriteEngine.this.canvas.repaint();
+                }
+            }
         }
-      }
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  public SpriteEngine(HexCanvas canvas, Image[] images, int numZ) {
-
-    _images = images;
-    _canvas = canvas;
-    _time = 0;
-    _g2 = null;
-    _numZ = numZ;
-    _sprites = (List<Sprite>[]) new List<?>[_numZ];
-    for (int i = 0; i < _numZ; i++) {
-      _sprites[i] = new ArrayList<Sprite>();
     }
 
-    _thread = null;
-  }
+    @SuppressWarnings("unchecked")
+    public SpriteEngine(HexCanvas canvas, Image[] images, int numZ) {
+        images = images;
+        this.canvas = canvas;
+        time = 0;
+        g2 = null;
+        this.numZ = numZ;
+        sprites = (List<Sprite>[]) new List<?>[this.numZ];
+        for (int i = 0; i < numZ; i++) {
+            this.sprites[i] = new ArrayList<Sprite>();
+        }
 
-  public void stop() {
-    if (_thread != null) {
-      _thread.requestStop();
-      _thread = null;
-    }
-  }
-
-  public void start() {
-
-    if (_thread != null) {
-      stop();
-
-    }
-    _thread = new AnimationThread();
-    _thread.start();
-
-  }
-
-  public synchronized void add(Sprite s) {
-    _sprites[s.getZPos()].add(s);
-  }
-
-  public synchronized void remove(Sprite s) {
-    _sprites[s.getZPos()].remove(s);
-  }
-
-  public boolean contains(Sprite s) {
-    return _sprites[s.getZPos()].contains(s);
-  }
-
-  public synchronized void beginDraw(Graphics2D g) {
-    _time = System.currentTimeMillis();
-    _g2 = g;
-  }
-
-  public synchronized void endDraw() {
-    _time = 0;
-    _g2 = null;
-  }
-
-  public synchronized void draw(int z) {
-
-    if (_time == 0) {
-      throw new IllegalStateException(
-          "beginDraw() must be called before draw()");
+        thread = null;
     }
 
-    if (_sprites[z].isEmpty()) {
-      return;
+    public void stop() {
+        if (this.thread != null) {
+            this.thread.requestStop();
+            thread = null;
+        }
     }
-    List<Sprite> newList = new ArrayList<Sprite>();
-    Iterator<Sprite> itr = _sprites[z].iterator();
-    while (itr.hasNext()) {
-      Sprite s = itr.next();
-      s.draw(_time, _images, _g2);
-      if (!s.done()) {
-        newList.add(s);
-      }
+
+    public void start() {
+        if (this.thread != null) {
+            stop();
+        }
+        thread = new AnimationThread();
+        this.thread.start();
     }
-    _sprites[z] = newList;
-  }
+
+    public synchronized void add(Sprite s) {
+        this.sprites[s.getZPos()].add(s);
+    }
+
+    public synchronized void remove(Sprite s) {
+        this.sprites[s.getZPos()].remove(s);
+    }
+
+    public boolean contains(Sprite s) {
+        return this.sprites[s.getZPos()].contains(s);
+    }
+
+    public synchronized void beginDraw(Graphics2D g) {
+        time = System.currentTimeMillis();
+        g2 = g;
+    }
+
+    public synchronized void endDraw() {
+        time = 0;
+        g2 = null;
+    }
+
+    public synchronized void draw(int z) {
+        if (time == 0) {
+            throw new IllegalStateException(
+                "beginDraw() must be called before draw()"
+            );
+        }
+
+        if (this.sprites[z].isEmpty()) {
+            return;
+        }
+        List<Sprite> newList = new ArrayList<Sprite>();
+        Iterator<Sprite> itr = this.sprites[z].iterator();
+        while (itr.hasNext()) {
+            Sprite s = itr.next();
+            s.draw(this.time, this.images, this.g2);
+            if (!s.done()) {
+                newList.add(s);
+            }
+        }
+        this.sprites[z] = newList;
+    }
 }

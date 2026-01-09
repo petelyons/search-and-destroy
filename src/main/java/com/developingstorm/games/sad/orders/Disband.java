@@ -18,7 +18,7 @@ public class Disband extends Order {
   }
 
   public OrderResponse executeInternal() {
-    _game.killUnit(_unit);
+    this.game.killUnit(this.unit);
     return new OrderResponse(ResponseCode.TURN_COMPLETE, this, null);
   }
 }

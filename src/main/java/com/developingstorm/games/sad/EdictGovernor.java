@@ -1,156 +1,149 @@
 package com.developingstorm.games.sad;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.developingstorm.games.sad.edicts.AirPatrol;
 import com.developingstorm.games.sad.edicts.AutoSentry;
 import com.developingstorm.games.sad.edicts.SendAirUnits;
 import com.developingstorm.games.sad.edicts.SendLandUnits;
 import com.developingstorm.games.sad.edicts.SendSeaUnits;
-
-
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Each city has an EdictGovernor that executes its assigned edicts.
  */
 public class EdictGovernor {
-  
-  
-  private final City _c;
-  private final Player _player;
-  private volatile SendAirUnits _airPath;
-  private volatile SendLandUnits _landPath;
-  private volatile SendSeaUnits _seaPath;
-  private volatile AirPatrol _airPatrol;
-  private volatile AutoSentry _autoSentry;
-  
-  private final Game _game;
 
-  EdictGovernor(Player player, City c) {
-    _c = c;
-    _player = player;
-    _game = _c.getGame();
-  }
-  
-  public void setAirPathDest(City c) {
-    _airPath = _player.edictFactory().sendAirUnits(_c, c);
-    _airPath.execute(_game);
-  }
+    private final City c;
+    private final Player player;
+    private volatile SendAirUnits airPath;
+    private volatile SendLandUnits landPath;
+    private volatile SendSeaUnits seaPath;
+    private volatile AirPatrol airPatrol;
+    private volatile AutoSentry autoSentry;
 
-  public void setLandPathDest(City c) {
-    _landPath = _player.edictFactory().sendLandUnits(_c, c);
-    _landPath.execute(_game);
-  }
+    private final Game game;
 
-  public void setSeaPathDest(City c) {
-    _seaPath = _player.edictFactory().sendSeaUnits(_c, c);
-    _seaPath.execute(_game);
-  }
-
-  public void setAirPatrol() {
-    _airPatrol = _player.edictFactory().airPatrol(_c);
-    _airPatrol.execute(_game);
-  }
-  public void setAutoSentry() {
-    _autoSentry = _player.edictFactory().autoSentry(_c);
-    _autoSentry.execute(_game);
-  }
-
-  public City getAirPathDest() {
-    if (_airPath != null) {
-      return _airPath.destination();
+    EdictGovernor(Player player, City c) {
+        this.c = c;
+        this.player = player;
+        game = this.c.getGame();
     }
-    return null;
-  }
 
-  public City getLandPathDest() {
-    if (_landPath != null) {
-      return _landPath.destination();
+    public void setAirPathDest(City c) {
+        airPath = this.player.edictFactory().sendAirUnits(this.c, c);
+        this.airPath.execute(this.game);
     }
-    return null;
-  }
-  public City getSeaPathDest() {
-    if (_seaPath != null) {
-      return _seaPath.destination();
+
+    public void setLandPathDest(City c) {
+        landPath = this.player.edictFactory().sendLandUnits(this.c, c);
+        this.landPath.execute(this.game);
     }
-    return null;
-  }
-  
-  public boolean hastAirPath() {
-    return (_airPath != null);
-  }
 
-  public boolean hasLandPath() {
-    return(_landPath != null);
-  }
-  public boolean hasSeaPath() {
-    return (_seaPath != null);
-  }
-  
-  public boolean hasAirPatrol() {
-    return _airPatrol != null;
-  }
-    
-  public boolean hasAutoSentry() {
-    return _autoSentry != null;
-  }
-  
-  private List<Edict> getEdicts() {
-    List<Edict> edicts = new ArrayList<Edict>();
-    if (_airPatrol != null) {
-      edicts.add(_airPatrol);
+    public void setSeaPathDest(City c) {
+        seaPath = this.player.edictFactory().sendSeaUnits(this.c, c);
+        this.seaPath.execute(this.game);
     }
-    if (_autoSentry != null) {
-      edicts.add(_autoSentry);
+
+    public void setAirPatrol() {
+        airPatrol = this.player.edictFactory().airPatrol(this.c);
+        this.airPatrol.execute(this.game);
     }
-    if (_seaPath != null) {
-      edicts.add(_seaPath);
+
+    public void setAutoSentry() {
+        autoSentry = this.player.edictFactory().autoSentry(this.c);
+        this.autoSentry.execute(this.game);
     }
-    if (_landPath != null) {
-      edicts.add(_landPath);
+
+    public City getAirPathDest() {
+        if (this.airPath != null) {
+            return this.airPath.destination();
+        }
+        return null;
     }
-    if (_airPath != null) {
-      edicts.add(_airPath);
+
+    public City getLandPathDest() {
+        if (this.landPath != null) {
+            return this.landPath.destination();
+        }
+        return null;
     }
-    return edicts;
-  }
 
-  public void execute() {
-    List<Edict> edicts = getEdicts();
-    for (Edict e : edicts) {
-      e.execute(_game);
+    public City getSeaPathDest() {
+        if (this.seaPath != null) {
+            return this.seaPath.destination();
+        }
+        return null;
     }
-  }
 
-  public void clearSeaPath() {
-    _seaPath = null;
-    
-  }
+    public boolean hastAirPath() {
+        return (this.airPath != null);
+    }
 
-  public void clearAirPath() {
-    _airPath = null;
-    
-  }
+    public boolean hasLandPath() {
+        return (this.landPath != null);
+    }
 
-  public void clearLandPath() {
-    _landPath = null;
-    
-  }
+    public boolean hasSeaPath() {
+        return (this.seaPath != null);
+    }
 
-  public void clearAirPatrol() {
-    _airPatrol = null;
-    
-  }
+    public boolean hasAirPatrol() {
+        return this.airPatrol != null;
+    }
 
-  public void clearAutoSenty() {
-    _autoSentry = null;
-    
-  }
+    public boolean hasAutoSentry() {
+        return this.autoSentry != null;
+    }
 
-  public Object toJson() {
-    // TODO Auto-generated method stub
-    return null;
-  }
+    private List<Edict> getEdicts() {
+        List<Edict> edicts = new ArrayList<Edict>();
+        if (this.airPatrol != null) {
+            edicts.add(this.airPatrol);
+        }
+        if (this.autoSentry != null) {
+            edicts.add(this.autoSentry);
+        }
+        if (this.seaPath != null) {
+            edicts.add(this.seaPath);
+        }
+        if (this.landPath != null) {
+            edicts.add(this.landPath);
+        }
+        if (this.airPath != null) {
+            edicts.add(this.airPath);
+        }
+        return edicts;
+    }
 
+    public void execute() {
+        List<Edict> edicts = getEdicts();
+        for (Edict e : edicts) {
+            e.execute(this.game);
+        }
+    }
+
+    public void clearSeaPath() {
+        seaPath = null;
+    }
+
+    public void clearAirPath() {
+        airPath = null;
+    }
+
+    public void clearLandPath() {
+        landPath = null;
+    }
+
+    public void clearAirPatrol() {
+        airPatrol = null;
+    }
+
+    public void clearAutoSenty() {
+        autoSentry = null;
+    }
+
+    public Object toJson() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

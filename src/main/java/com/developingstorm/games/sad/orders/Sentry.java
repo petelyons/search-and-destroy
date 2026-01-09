@@ -21,7 +21,7 @@ public class Sentry extends Order {
   }
 
   public OrderResponse executeInternal() {
-    if (_unit.canCarry()) {
+    if (this.unit.canCarry()) {
       return executeTransport();
     }
     else {
@@ -31,21 +31,21 @@ public class Sentry extends Order {
   
   
   private OrderResponse executeTransport() {
-    _unit.life().sleep();
-    if (_unit.carriableWeight() > 0
-        && _unit.carriedWeight() < _unit.carriableWeight()) {
+    this.unit.life().sleep();
+    if (this.unit.carriableWeight() > 0
+        && this.unit.carriedWeight() < this.unit.carriableWeight()) {
 
-      Location loc = _unit.getLocation();
-      List<Unit> ul = _game.unitsBorderingLocation(loc);
+      Location loc = this.unit.getLocation();
+      List<Unit> ul = this.game.unitsBorderingLocation(loc);
       for (Unit u : ul) {
         if (u.isCarried() == false) {
-          if (_unit.canCarry(u)) {
-            _unit.addCarried(u);
+          if (this.unit.canCarry(u)) {
+            this.unit.addCarried(u);
           }
         }
       }
     }
-    if (_unit.carriedWeight() < _unit.carriableWeight()) {
+    if (this.unit.carriedWeight() < this.unit.carriableWeight()) {
       return new OrderResponse(ResponseCode.TURN_COMPLETE, this, null);
     } else {
       return new OrderResponse(ResponseCode.ORDER_COMPLETE, this, null);
@@ -54,17 +54,17 @@ public class Sentry extends Order {
   
   
   private OrderResponse executeNonTransport() {
-    _unit.life().sleep();
+    this.unit.life().sleep();
     return new OrderResponse(ResponseCode.TURN_COMPLETE, this, null);
   }
 
 //  public boolean complete() {
-//    return !(_unit.carriableWeight() == 0 || _unit.carriedWeight() < _unit
+//    return !(this.unit.carriableWeight() == 0 || this.unit.carriedWeight() < this.unit
 //        .carriableWeight());
 //  }
 //
 //  public boolean isYielding() {
-//    return (_unit.carriableWeight() == 0 || _unit.carriedWeight() < _unit
+//    return (this.unit.carriableWeight() == 0 || this.unit.carriedWeight() < this.unit
 //        .carriableWeight());
 //
 //  }

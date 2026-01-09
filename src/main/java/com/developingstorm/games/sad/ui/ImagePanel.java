@@ -12,17 +12,17 @@ import javax.swing.JPanel;
  */
 public class ImagePanel extends JPanel implements ImageObserver {
 
-  Image _image;
+  Image image;
 
   public void setImageURL(String file) {
     Toolkit tk = Toolkit.getDefaultToolkit();
-    _image = tk.getImage(file);
+    image = tk.getImage(file);
     setVisible(true);
   }
 
   public void paint(Graphics g) {
 
-    g.drawImage(_image, 0, 0, this);
+    g.drawImage(this.image, 0, 0, this);
     Rectangle r = getBounds();
     g.drawRect(0, 0, r.width, r.height);
   }
@@ -30,7 +30,7 @@ public class ImagePanel extends JPanel implements ImageObserver {
   public boolean imageUpdate(Image img, int infoflags, int x, int y, int width,
       int height) {
     if ((infoflags & ImageObserver.ALLBITS) != 0) {
-      if (img == _image)
+      if (img == this.image)
         repaint();
     }
     return true;

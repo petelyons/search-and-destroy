@@ -15,17 +15,17 @@ import com.developingstorm.games.sad.util.Log;
  * 
  */
 public class DirectionalMove extends Order {
-  private Direction _dir;
+  private Direction dir;
   public DirectionalMove(Game g, Unit u, OrderType type, Direction dir) {
     super(g, u, type);
-    _dir = dir;
+    this.dir = dir;
   }
   public OrderResponse executeInternal() {
-    Log.info(_unit, "Moving " + _dir.toString());
+    Log.info(this.unit, "Moving " + this.dir.toString());
     ResponseCode resp;
-    Location ul = _unit.getLocation();
-    Location dest = ul.relative(_dir);
-    resp = _game.resolveMove(_unit, dest);
+    Location ul = this.unit.getLocation();
+    Location dest = ul.relative(this.dir);
+    resp = this.game.resolveMove(this.unit, dest);
     if (resp == ResponseCode.TURN_COMPLETE) {
       resp = ResponseCode.ORDER_AND_TURN_COMPLETE;
     }

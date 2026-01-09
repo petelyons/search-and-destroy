@@ -20,8 +20,8 @@ public class Location implements AStarPosition {
 
   public final int x;
   public final int y;
-  private List<Location> _neighbors;
-  private Map<Direction, Location> _directionMap;
+  private List<Location> neighbors;
+  private Map<Direction, Location> directionMap;
   
   
   
@@ -43,18 +43,18 @@ public class Location implements AStarPosition {
   }
 
   public Location relative(Direction dir) {
-    Location loc = _directionMap.get(dir);
+    Location loc = this.directionMap.get(dir);
     if (loc == null) {
       if (dir == Direction.NORTH_EAST) {
-        return _directionMap.get(Direction.NORTH_WEST);
+        return this.directionMap.get(Direction.NORTH_WEST);
       } else if (dir == Direction.NORTH_WEST) {
-        return _directionMap.get(Direction.NORTH_EAST);
+        return this.directionMap.get(Direction.NORTH_EAST);
         
       }
       if (dir == Direction.SOUTH_EAST) {
-        return _directionMap.get(Direction.SOUTH_WEST);
+        return this.directionMap.get(Direction.SOUTH_WEST);
       } else if (dir == Direction.SOUTH_WEST) {
-        return _directionMap.get(Direction.SOUTH_EAST);
+        return this.directionMap.get(Direction.SOUTH_EAST);
         
       }
     }
@@ -331,7 +331,7 @@ public class Location implements AStarPosition {
     if (loc.y == y && loc.x == x) {
       return 0;
     }
-    if (_neighbors.contains(loc)) {
+    if (this.neighbors.contains(loc)) {
       return 1;
     }
     
@@ -360,12 +360,12 @@ public class Location implements AStarPosition {
   
   void addNeighbor(Location loc) {
     if (loc != null)
-      _neighbors.add(loc);
+      this.neighbors.add(loc);
   }
 
   void addDir(Direction dir, Location loc) {
     if (loc != null)
-      _directionMap.put(dir, loc);
+      this.directionMap.put(dir, loc);
   }
 
   void initNeighbors() {
@@ -375,14 +375,14 @@ public class Location implements AStarPosition {
     LocStruct se = internalRelative(Direction.SOUTH_EAST);
     LocStruct sw = internalRelative(Direction.SOUTH_WEST);
     LocStruct w = internalRelative(Direction.WEST);
-    _neighbors = new ArrayList<Location>();
+    neighbors = new ArrayList<Location>();
     addNeighbor(get(nw));
     addNeighbor(get(ne));
     addNeighbor(get(e));
     addNeighbor(get(se));
     addNeighbor(get(sw));
     addNeighbor(get(w));
-    _directionMap = new HashMap<Direction, Location>();
+    directionMap = new HashMap<Direction, Location>();
     
     addDir(Direction.NORTH_WEST, get(nw));
     addDir(Direction.NORTH_EAST, get(ne));

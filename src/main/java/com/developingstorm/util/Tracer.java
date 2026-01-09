@@ -5,7 +5,7 @@ import java.io.*;
 public class Tracer {
 
   public static final Tracer INSTANCE = new Tracer();
-  private PrintStream _log = null;
+  private PrintStream log = null;
   
   public Tracer() {
   }
@@ -16,22 +16,22 @@ public class Tracer {
   }
 
   public void setLogStream(PrintStream ps) throws IOException {
-    _log = ps;
+    log = ps;
   }
 
   public void logln(Object s) {
-    if (_log != null)
-      _log.println(s);
+    if (this.log != null)
+      this.log.println(s);
   }
   
   public void log(Object s) {
-    if (_log != null)
-      _log.print(s);
+    if (this.log != null)
+      this.log.print(s);
   }
 
   public void term() {
-    if (_log != null) {
-      _log.close();
+    if (this.log != null) {
+      this.log.close();
     }
   }
 

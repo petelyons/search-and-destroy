@@ -18,42 +18,42 @@ import com.developingstorm.games.sad.util.Log;
  */
 public class Move extends Order {
 
-  protected Path _lastPath = null;
-  protected Location _loc;
+  protected Path lastPath = null;
+  protected Location loc;
   
   public Move(Game g, Unit u, Location loc) {
     super(g, u, OrderType.MOVE);
-    _loc = loc;
+    this.loc = loc;
   }
 
   protected Move(Game g, Unit u,  OrderType t, Location loc) {
     super(g, u, t);
-    _loc = loc;
+    this.loc = loc;
   }
 
   public OrderResponse executeInternal() {
     ResponseCode resp = ResponseCode.CANCEL_ORDER;
    
-    if (_loc == null) {
+    if (loc == null) {
       throw new SaDException("No Move Order");
     }
    
-    Location dest = _loc;
+    Location dest = loc;
     
-    if (_unit.getLocation().equals(dest)) {
+    if (this.unit.getLocation().equals(dest)) {
       return new OrderResponse(ResponseCode.ORDER_COMPLETE, this, null);
     }
 
-    if (_unit.getLocation().distance(_loc) > 1) {
-      if (_lastPath == null) {
-        _lastPath = _unit.getPath(_loc);
-        if (_lastPath == null || _lastPath.isEmpty()) {
+    if (this.unit.getLocation().distance(this.loc) > 1) {
+      if (lastPath == null) {
+        lastPath = this.unit.getPath(this.loc);
+        if (lastPath == null || this.lastPath.isEmpty()) {
           Log.error("No path available!!!");
           
-          if (MapState.isBlocked(_loc)) {
+          if (MapState.isBlocked(this.loc)) {
             Log.error("The destination is blocked. Invalid move!");
           }
-          else if (MapState.isBlocked(_unit.getLocation())) {
+          else if (MapState.isBlocked(this.unit.getLocation())) {
             Log.error("The starting location is blocked. Invalid move!");
           }
           resp = ResponseCode.CANCEL_ORDER;
@@ -61,19 +61,19 @@ public class Move extends Order {
         }
       }
      
-      while (_unit.life().movesLeft() > 0  && !_unit.isDead()){
-        dest = _lastPath.next(_unit.getLocation());
+      while (this.unit.life().movesLeft() > 0  && !this.unit.isDead()){
+        dest = this.lastPath.next(this.unit.getLocation());
         if (dest == null) {
-          int finalMove = _unit.getLocation().distance(_loc);
+          int finalMove = this.unit.getLocation().distance(this.loc);
           if (finalMove == 1) {
-            dest = _loc;
+            dest = loc;
           } else {
-            Log.error(_unit, "Cannot find next move");
+            Log.error(this.unit, "Cannot find next move");
             return new OrderResponse(ResponseCode.CANCEL_ORDER, this, null);
           }
         }
-        Log.info(this, " Attempting move from " + _unit.getLocation() + " to " + dest + " along path " + _lastPath + " to " + _loc);
-        resp = _game.resolveMove(_unit, dest);
+        Log.info(this, " Attempting move from " + this.unit.getLocation() + " to " + dest + " along path " + this.lastPath + " to " + this.loc);
+        resp = this.game.resolveMove(this.unit, dest);
         if (resp == ResponseCode.STEP_COMPLETE) {
           continue;
         } else if (resp == ResponseCode.TURN_COMPLETE) {
@@ -89,7 +89,7 @@ public class Move extends Order {
         }
       } 
       
-      if (dest == _loc) {
+      if (dest == this.loc) {
         resp = ResponseCode.ORDER_AND_TURN_COMPLETE;
       }
       else {
@@ -100,16 +100,16 @@ public class Move extends Order {
     else {
       
 
-      Log.info(_unit, "Attempting move from " + _unit.getLocation() + " to " + dest);
-      resp = _game.resolveMove(_unit, dest);
+      Log.info(this.unit, "Attempting move from " + this.unit.getLocation() + " to " + dest);
+      resp = this.game.resolveMove(this.unit, dest);
       if (resp == ResponseCode.TURN_COMPLETE) {
-        Log.info(_unit, "Unit reports turn complete");
+        Log.info(this.unit, "Unit reports turn complete");
       } else if (resp == ResponseCode.DIED) {
-        Log.info(_unit, "DIED DURING MOVE!");
+        Log.info(this.unit, "DIED DURING MOVE!");
       } else if (resp != ResponseCode.STEP_COMPLETE) {
-        Log.info(_unit, "Bad move:" + resp);
+        Log.info(this.unit, "Bad move:" + resp);
       }
-      if (_unit.life().movesLeft() > 0) {
+      if (this.unit.life().movesLeft() > 0) {
         resp = ResponseCode.ORDER_COMPLETE;
       } else {
         resp = ResponseCode.ORDER_AND_TURN_COMPLETE;
@@ -122,7 +122,7 @@ public class Move extends Order {
   }
 
 //  public boolean complete() {
-//    return _unit.getLocation().equals(_loc);
+//    return this.unit.getLocation().equals(this.loc);
 //  }
 
 }

@@ -13,21 +13,21 @@ import com.developingstorm.games.sad.util.Log;
  */
 public class ExploreCommander extends BaseCommander {
  
-  private City _selectedCity;
-  private Travel _selectedTravel;
+  private City selectedCity;
+  private Travel selectedTravel;
   
   public ExploreCommander(SaDFrame frame, Game game) {
     super(frame, game);
   }
   
   public void setPathOrigin(City c, Travel travel) {
-    _selectedCity = c;
-    _selectedTravel = travel;
+    selectedCity = c;
+    selectedTravel = travel;
   }
   
   public Location getCurrentLocation() {
-    if (_selectedCity != null) {
-      return _selectedCity.getLocation();
+    if (this.selectedCity != null) {
+      return this.selectedCity.getLocation();
     } else {
       return null;
     }
@@ -41,10 +41,10 @@ public class ExploreCommander extends BaseCommander {
   }
 
   public Location autoDraggingLocation() {
-    if (_selectedCity == null) {
+    if (selectedCity == null) {
       return null;
     }
-    return _selectedCity.getLocation();
+    return this.selectedCity.getLocation();
   }
 
   public boolean isValidDestination(BoardHex hex) {
@@ -57,8 +57,8 @@ public class ExploreCommander extends BaseCommander {
   }
 
   public void endExploreMode() {
-    _canvas.clearArrow();
-    _frame.returnGameMode();
+    this.canvas.clearArrow();
+    this.frame.returnGameMode();
     
   }
 

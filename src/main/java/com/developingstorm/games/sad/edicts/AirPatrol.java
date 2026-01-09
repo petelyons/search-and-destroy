@@ -27,7 +27,7 @@ public class AirPatrol extends Edict {
     if (!units.isEmpty()) {
       
       for (Unit u : units) {
-        List<Location> locs = _city.getLocation().getCircle(u.life().turnAroundDist());
+        List<Location> locs = this.city.getLocation().getCircle(u.life().turnAroundDist());
         Location loc = RandomUtil.randomValue(locs);
         u.orderMove(loc);
         Log.debug(u, "Applying air patrol. " + loc);

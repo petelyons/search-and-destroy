@@ -13,8 +13,8 @@ import com.developingstorm.games.sad.ui.GameIcons;
  */
 public class ExplosionSprite extends ImageSprite {
 
-  protected int[] _imageSelectors;
-  private Point _point;
+  protected int[] imageSelectors;
+  private Point point;
 
   public ExplosionSprite() {
     int[] imgs = new int[5];
@@ -28,7 +28,7 @@ public class ExplosionSprite extends ImageSprite {
   }
 
   protected void handleDraw(long time, Image[] images, Graphics2D g) {
-    g.drawImage(images[_imageSelectors[_current]], _point.x, _point.y, null);
+    g.drawImage(images[this.imageSelectors[this.current]], this.point.x, this.point.y, null);
   }
 
   /**
@@ -37,12 +37,12 @@ public class ExplosionSprite extends ImageSprite {
    */
   public void setImageSelectors(int[] imageSelectors) {
 
-    _imageSelectors = imageSelectors;
-    setFrames(_imageSelectors.length);
+    imageSelectors = imageSelectors;
+    setFrames(this.imageSelectors.length);
   }
 
   public void setPoint(Point p) {
-    _point = p;
+    point = p;
   }
 
 }

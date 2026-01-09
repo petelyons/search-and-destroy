@@ -21,57 +21,57 @@ public class HexBoard {
 
   private static Random s_rand = new Random(System.currentTimeMillis());
 
-  private int _width;
-  private int _height;
-  private BoardHex[][] _hexes;
-  private HexBoardContext _ctx;
-  private BoardHex _focus;
-  private List<HexBoardView> _views;
+  private int width;
+  private int height;
+  private BoardHex[][] hexes;
+  private HexBoardContext ctx;
+  private BoardHex focus;
+  private List<HexBoardView> views;
 
   public HexBoard(HexBoardContext ctx) {
-    _ctx = ctx;
-    _focus = null;
-    _views = new ArrayList<HexBoardView>();
+    this.ctx = ctx;
+    focus = null;
+    views = new ArrayList<HexBoardView>();
 
-    _width = ctx.getWidth();
-    _height = ctx.getHeight();
+    width = ctx.getWidth();
+    height = ctx.getHeight();
 
-    if (_width > 999 || _height > 999) {
+    if (this.width > 999 || this.height > 999) {
       throw new ConfigException("board too big");
     }
 
     HexFactory fac = new HexFactory(ctx.getHexSide());
 
-    _hexes = new BoardHex[_width][_height];
-    for (int x = 0; x < _width; x++) {
-      for (int y = 0; y < _height; y++) {
+    hexes = new BoardHex[this.width][this.height];
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
         Hex h = fac.newHex(x, y);
-        _hexes[x][y] = new BoardHex(this, x, y, h);
-        _hexes[x][y].setImageSelector(ctx.getTerrainImageSelector(x, y));
+        this.hexes[x][y] = new BoardHex(this, x, y, h);
+        this.hexes[x][y].setImageSelector(ctx.getTerrainImageSelector(x, y));
       }
     }
   }
 
   public void resetImages() {
-    for (int x = 0; x < _width; x++) {
-      for (int y = 0; y < _height; y++) {
-        _hexes[x][y].setImageSelector(_ctx.getTerrainImageSelector(x, y));
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        this.hexes[x][y].setImageSelector(this.ctx.getTerrainImageSelector(x, y));
       }
     }
   }
 
   HexBoardContext config() {
-    return _ctx;
+    return ctx;
   }
 
   public void addHexBoardView(HexBoardView view) {
-    _views.add(view);
+    this.views.add(view);
   }
 
   private void notifyFocusLost(BoardHex h) {
 
-    if (_views.isEmpty() == false) {
-      Iterator<HexBoardView> itr = _views.iterator();
+    if (this.views.isEmpty() == false) {
+      Iterator<HexBoardView> itr = this.views.iterator();
       while (itr.hasNext()) {
         HexBoardView v = (HexBoardView) itr.next();
         v.focusLost(h);
@@ -81,8 +81,8 @@ public class HexBoard {
   }
 
   private void notifyFocusSet(BoardHex h) {
-    if (_views.isEmpty() == false) {
-      Iterator<HexBoardView> itr = _views.iterator();
+    if (this.views.isEmpty() == false) {
+      Iterator<HexBoardView> itr = this.views.iterator();
       while (itr.hasNext()) {
         HexBoardView v = (HexBoardView) itr.next();
         v.focusSet(h);
@@ -91,28 +91,28 @@ public class HexBoard {
   }
 
   public BoardHex getFocus() {
-    return _focus;
+    return focus;
   }
 
   public BoardHex setFocus(BoardHex h) {
-    BoardHex old = _focus;
+    BoardHex old = focus;
     if (old != null) {
       old.setFocus(false);
       notifyFocusLost(old);
     }
 
-    _focus = h;
+    focus = h;
     if (h != null) {
-      _focus.setFocus(true);
-      notifyFocusSet(_focus);
+      this.focus.setFocus(true);
+      notifyFocusSet(this.focus);
     }
     return old;
   }
 
   public void clearSelected() {
-    for (int x = 0; x < _width; x++) {
-      for (int y = 0; y < _height; y++) {
-        BoardHex h = _hexes[x][y];
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        BoardHex h = this.hexes[x][y];
         h.setSelected(false);
       }
     }
@@ -136,15 +136,15 @@ public class HexBoard {
   }
 
   public boolean onBoard(Location location) {
-    return !(location.x < 0 || location.y < 0 || location.x >= _width || location.y >= _height);
+    return !(location.x < 0 || location.y < 0 || location.x >= this.width || location.y >= this.height);
   }
 
   public int getWidth() {
-    return _width;
+    return width;
   }
 
   public int getHeight() {
-    return _height;
+    return height;
   }
 
   public List<BoardHex> getRing(Location location, int dist) {
@@ -154,10 +154,10 @@ public class HexBoard {
 
   public BoardHex get(Point p) {
 
-    for (int x = 0; x < _width; x++) {
-      for (int y = 0; y < _height; y++) {
-        if (_hexes[x][y].contains(p)) {
-          return _hexes[x][y];
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        if (this.hexes[x][y].contains(p)) {
+          return this.hexes[x][y];
         }
       }
     }
@@ -166,17 +166,17 @@ public class HexBoard {
 
   public BoardHex get(Location loc) {
 
-    return _hexes[loc.x][loc.y];
+    return this.hexes[loc.x][loc.y];
   }
 
   public BoardHex get(int x, int y) {
 
-    return _hexes[x][y];
+    return this.hexes[x][y];
   }
 
   public BoardHex random() {
-    int x = Math.abs(s_rand.nextInt() % _width);
-    int y = Math.abs(s_rand.nextInt() % _height);
+    int x = Math.abs(s_rand.nextInt() % this.width);
+    int y = Math.abs(s_rand.nextInt() % this.height);
     return get(x, y);
   }
 

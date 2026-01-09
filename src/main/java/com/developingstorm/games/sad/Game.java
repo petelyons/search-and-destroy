@@ -40,44 +40,44 @@ import javax.swing.JOptionPane;
  */
 public class Game implements UnitLens, LocationLens {
 
-    private volatile HexBoardMap _gridMap;
+    private volatile HexBoardMap gridMap;
 
-    private volatile Player[] _players;
+    private volatile Player[] players;
 
-    private volatile Player _currentPlayer;
+    public volatile Player currentPlayer;
 
-    private volatile Board _board;
+    private volatile Board board;
 
     private final UnitManager unitManager;
     private final CombatResolver combatResolver;
     private final CityManager cityManager;
     private final MovementResolver movementResolver;
 
-    private volatile GameListener _gameListener;
+    private volatile GameListener gameListener;
 
-    private volatile int _turn;
+    public volatile int turn;
 
-    private volatile boolean _paused;
+    private volatile boolean paused;
 
-    private volatile HexBoardContext _ctx;
+    private volatile HexBoardContext ctx;
 
-    private volatile Unit _selectedUnit;
+    private volatile Unit selectedUnit;
 
-    private LinkedList<Runnable> _pendingActions;
+    private LinkedList<Runnable> pendingActions;
 
-    private volatile boolean _endPlay;
+    private volatile boolean endPlay;
 
     @SuppressWarnings("unchecked")
     public Game(Player[] players, HexBoardMap grid, HexBoardContext ctx) {
         try {
-            _ctx = ctx;
-            _gameListener = null;
-            _players = players;
-            _pendingActions = new LinkedList<Runnable>();
+            this.ctx = ctx;
+            this.gameListener = null;
+            this.players = players;
+            this.pendingActions = new LinkedList<Runnable>();
 
-            _turn = 0;
-            _selectedUnit = null;
-            _gridMap = grid;
+            this.turn = 0;
+            this.selectedUnit = null;
+            this.gridMap = grid;
 
             // Initialize unit manager
             unitManager = new UnitManager(this, grid);
@@ -89,22 +89,22 @@ public class Game implements UnitLens, LocationLens {
 
             Location.test();
 
-            _paused = false;
+            paused = false;
 
-            _board = new Board(this, _gridMap, _ctx);
+            board = new Board(this, this.gridMap, this.ctx);
 
-            for (int x = 0; x < _players.length; x++) {
-                if (_players[x] != null) _players[x].setGame(this);
+            for (int x = 0; x < this.players.length; x++) {
+                if (this.players[x] != null) this.players[x].setGame(this);
             }
 
-            _currentPlayer = _players[0];
+            currentPlayer = this.players[0];
 
-            _board.init();
+            this.board.init();
 
             // Initialize city manager after board is initialized
             cityManager = new CityManager(
                 this,
-                _board,
+                this.board,
                 combatResolver,
                 unitManager
             );
@@ -112,7 +112,7 @@ public class Game implements UnitLens, LocationLens {
             // Initialize movement resolver after all other managers
             movementResolver = new MovementResolver(
                 this,
-                _board,
+                this.board,
                 cityManager,
                 combatResolver,
                 unitManager
@@ -159,8 +159,8 @@ public class Game implements UnitLens, LocationLens {
     ) {
         return PathCalculator.calcPath(
             this,
-            _board,
-            _gameListener,
+            this.board,
+            this.gameListener,
             player,
             from,
             to,
@@ -178,8 +178,8 @@ public class Game implements UnitLens, LocationLens {
     ) {
         return PathCalculator.calcTravelPath(
             this,
-            _board,
-            _gameListener,
+            this.board,
+            this.gameListener,
             player,
             from,
             to,
@@ -190,31 +190,31 @@ public class Game implements UnitLens, LocationLens {
     }
 
     public boolean isPaused() {
-        return _paused;
+        return paused;
     }
 
     public void setGameListener(GameListener gameListener) {
-        _gameListener = gameListener;
+        this.gameListener = gameListener;
     }
 
     GameListener getGameListener() {
-        return _gameListener;
+        return gameListener;
     }
 
     public void trackUnit(Unit u) {
-        if (_gameListener != null && u != null) {
-            _gameListener.trackUnit(u);
+        if (this.gameListener != null && u != null) {
+            this.gameListener.trackUnit(u);
         } else {
             Log.debug(this, "Tracking null unit");
         }
     }
 
     public Board getBoard() {
-        return _board;
+        return board;
     }
 
-    Player[] getPlayers() {
-        return _players;
+    public Player[] getPlayers() {
+        return players;
     }
 
     public synchronized Unit createUnit(
@@ -250,14 +250,14 @@ public class Game implements UnitLens, LocationLens {
     }
 
     public synchronized Unit unitAtLocation(Location loc) {
-        if (!_board.onBoard(loc)) {
+        if (!this.board.onBoard(loc)) {
             return null;
         }
 
-        if (_selectedUnit != null) {
-            if (_selectedUnit.getLocation().equals(loc)) {
-                // Log.debug(_selectedUnit, "Selected as unit @ location");
-                return _selectedUnit;
+        if (this.selectedUnit != null) {
+            if (this.selectedUnit.getLocation().equals(loc)) {
+                // Log.debug(this.selectedUnit, "Selected as unit @ location");
+                return selectedUnit;
             }
         }
 
@@ -286,7 +286,7 @@ public class Game implements UnitLens, LocationLens {
     }
 
     public City cityAtLocation(Location loc) {
-        return cityManager.cityAtLocation(loc, _currentPlayer);
+        return cityManager.cityAtLocation(loc, this.currentPlayer);
     }
 
     public boolean isCity(Location loc) {
@@ -325,37 +325,37 @@ public class Game implements UnitLens, LocationLens {
     }
 
     public Player nextPlayer() {
-        for (int x = 0; x < _players.length; x++) {
-            if (_players[x] == _currentPlayer) {
-                if (x == _players.length - 1) {
+        for (int x = 0; x < this.players.length; x++) {
+            if (this.players[x] == this.currentPlayer) {
+                if (x == this.players.length - 1) {
                     break;
                 } else {
-                    return _players[x + 1];
+                    return this.players[x + 1];
                 }
             }
         }
-        return _players[0];
+        return this.players[0];
     }
 
     public Player currentPlayer() {
-        return _currentPlayer;
+        return currentPlayer;
     }
 
     private void signalGameThread() {
         synchronized (this) {
-            if (_paused) {
-                _paused = false;
+            if (this.paused) {
+                paused = false;
                 notify();
             }
         }
     }
 
     public synchronized Unit selectedUnit() {
-        if (_selectedUnit != null && _selectedUnit.isDead()) {
-            _selectedUnit = null;
+        if (this.selectedUnit != null && this.selectedUnit.isDead()) {
+            selectedUnit = null;
             return null;
         }
-        return _selectedUnit;
+        return selectedUnit;
     }
 
     public void resume(Unit u) {
@@ -380,8 +380,8 @@ public class Game implements UnitLens, LocationLens {
                 trackUnit(u);
                 synchronized (this) {
                     Log.debug(u, "Waiting for order...");
-                    _paused = true;
-                    Thread t = new Thread(() -> _gameListener.notifyWait());
+                    paused = true;
+                    Thread t = new Thread(() -> this.gameListener.notifyWait());
                     t.start();
                     wait();
                     processPostedGameActions();
@@ -395,34 +395,36 @@ public class Game implements UnitLens, LocationLens {
     }
 
     public void postGameAction(Runnable runnable) {
-        synchronized (_pendingActions) {
-            _pendingActions.offer(runnable);
+        synchronized (this.pendingActions) {
+            this.pendingActions.offer(runnable);
         }
     }
 
     public void postAndRunGameAction(Runnable runnable) {
-        synchronized (_pendingActions) {
-            _pendingActions.offer(runnable);
+        synchronized (this.pendingActions) {
+            this.pendingActions.offer(runnable);
         }
         resume(null);
     }
 
     private void processPostedGameActions() {
-        synchronized (_pendingActions) {
-            while (!_pendingActions.isEmpty()) {
-                Runnable r = _pendingActions.pop();
+        synchronized (this.pendingActions) {
+            while (!this.pendingActions.isEmpty()) {
+                Runnable r = this.pendingActions.pop();
                 r.run();
             }
         }
     }
 
     private void playerChange() {
-        if (_gameListener != null) _gameListener.selectPlayer(_currentPlayer);
+        if (this.gameListener != null) this.gameListener.selectPlayer(
+            this.currentPlayer
+        );
     }
 
     public void selectUnit(Unit u) {
-        if (u != null) _selectedUnit = u;
-        _gameListener.selectUnit(u);
+        if (u != null) selectedUnit = u;
+        this.gameListener.selectUnit(u);
     }
 
     public void play() {
@@ -431,46 +433,46 @@ public class Game implements UnitLens, LocationLens {
 
         try {
             synchronized (this) {
-                if (_endPlay) {
+                if (this.endPlay) {
                     return;
                 }
             }
             playerChange();
 
             do {
-                uc = _currentPlayer.unitCount();
-                cc = _currentPlayer.cityCount();
+                uc = this.currentPlayer.unitCount();
+                cc = this.currentPlayer.cityCount();
                 if (cc == 0 && uc == 0) {
-                    _gameListener.gameOver(nextPlayer());
+                    this.gameListener.gameOver(nextPlayer());
                     return;
                 } else if (cc == 0) {
-                    if (!_currentPlayer.hasUnitsThatCaptureACity()) {
-                        _gameListener.gameOver(nextPlayer());
+                    if (!this.currentPlayer.hasUnitsThatCaptureACity()) {
+                        this.gameListener.gameOver(nextPlayer());
                         return;
                     }
                 }
 
                 if (!(uc == 0 && cc == 0)) {
-                    _currentPlayer.play();
+                    this.currentPlayer.play();
                 }
-                _currentPlayer = nextPlayer();
+                currentPlayer = nextPlayer();
 
-                if (_currentPlayer == _players[0]) {
-                    Log.debug(this, "Starting turn: " + _turn);
-                    _turn++;
-                    _gameListener.newTurn(_turn);
+                if (currentPlayer == this.players[0]) {
+                    Log.debug(this, "Starting turn: " + this.turn);
+                    this.turn++;
+                    this.gameListener.newTurn(this.turn);
                 }
                 processPostedGameActions();
                 playerChange();
             } while (true);
         } catch (Throwable t) {
             t.printStackTrace();
-            _gameListener.abort();
+            this.gameListener.abort();
         }
     }
 
     public synchronized int getTurn() {
-        return _turn;
+        return turn;
     }
 
     /**
@@ -505,7 +507,7 @@ public class Game implements UnitLens, LocationLens {
         );
         Log.info("GAME DUMP: " + toString());
 
-        for (Player player : _players) {
+        for (Player player : this.players) {
             Log.info(
                 "-------------------------------------------------------------------------------------------------------"
             );
@@ -523,13 +525,13 @@ public class Game implements UnitLens, LocationLens {
         Log.info(
             "------------------------------------------------------------------------------------------------------"
         );
-        for (City city : _board.getCities()) {
+        for (City city : this.board.getCities()) {
             Log.info(city.toString());
         }
     }
 
     public Player getPlayer(String link) {
-        for (Player p : _players) {
+        for (Player p : this.players) {
             if (p.toJsonLink().equals(link)) {
                 return p;
             }
@@ -538,7 +540,7 @@ public class Game implements UnitLens, LocationLens {
     }
 
     public City getCity(String link) {
-        for (City c : _board.getCities()) {
+        for (City c : this.board.getCities()) {
             if (c.toJsonLink().equals(link)) {
                 return c;
             }
@@ -548,7 +550,7 @@ public class Game implements UnitLens, LocationLens {
 
     public void end() {
         synchronized (this) {
-            _endPlay = true;
+            endPlay = true;
         }
     }
 }

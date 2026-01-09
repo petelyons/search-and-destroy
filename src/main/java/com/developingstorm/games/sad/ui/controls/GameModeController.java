@@ -18,24 +18,24 @@ public class GameModeController extends BaseController {
   
   
 
-  private final int _boardMiddle;
-  private final GameCommander _commander;
-  private final SaDFrame _frame;
-  private UserAction _currentAction;
-  private final KeyListener _keyListener;
-  private final HexMouseListenerAdapter _hexMouseListenerAdapter;
-  private final HexMouseMotionListenerAdapter _hexMouseMotionListenerAdapter;
-  private BoardHex _mouseDown;
+  private final int boardMiddle;
+  private final GameCommander commander;
+  private final SaDFrame frame;
+  private UserAction currentAction;
+  private final KeyListener keyListener;
+  private final HexMouseListenerAdapter hexMouseListenerAdapter;
+  private final HexMouseMotionListenerAdapter hexMouseMotionListenerAdapter;
+  private BoardHex mouseDown;
   
   public GameModeController(SaDFrame frame,  GameCommander commander) {
    
-    _currentAction = null;
-    _frame = frame;
-    _commander = commander;
-    _boardMiddle = (_commander.boardWidth() / 2);
+    currentAction = null;
+    this.frame = frame;
+    this.commander = commander;
+    boardMiddle = (this.commander.boardWidth() / 2);
   
-    _keyListener = new KeyListener() {
-      private boolean _controlSet = false;
+    keyListener = new KeyListener() {
+      private boolean controlSet = false;
       
       @Override
       public void keyPressed(KeyEvent ke) {
@@ -43,136 +43,136 @@ public class GameModeController extends BaseController {
         if (code == KeyEvent.VK_F5) {
           SaDFrame.DEBUG_PATH_TOGGLE = !SaDFrame.DEBUG_PATH_TOGGLE; 
         } else if (code == KeyEvent.VK_F8) {
-          if (_commander.isPaused()) {
-            _commander.resume();
+          if (GameModeController.this.commander.isPaused()) {
+            GameModeController.this.commander.resume();
           } else {
-            _commander.pause();
+            GameModeController.this.commander.pause();
           }
         }
         
         
-        if (_commander.isPaused() == false) {
+        if (GameModeController.this.commander.isPaused() == false) {
           return;
         }
 
-        if (_currentAction != null) {
-          _currentAction.keyPressed(ke);
+        if (GameModeController.this.currentAction != null) {
+          GameModeController.this.currentAction.keyPressed(ke);
           return;
         }
 
         if (ke.getKeyCode() == KeyEvent.VK_CONTROL) {
-          _controlSet = true;
+          controlSet = true;
         }
 
-        Location loc = _commander.getCurrentLocation();
+        Location loc = GameModeController.this.commander.getCurrentLocation();
 
         
         switch (ke.getKeyCode()) {
         case KeyEvent.VK_UP:
-          if (loc.x >= _boardMiddle) {
-            _commander.moveNorthWest();
+          if (loc.x >= GameModeController.this.boardMiddle) {
+            GameModeController.this.commander.moveNorthWest();
           } else {
-            _commander.moveNorthEast();
+            GameModeController.this.commander.moveNorthEast();
           }
           break;
         case KeyEvent.VK_DOWN:
-          if (loc.x >= _boardMiddle) {
-            _commander.moveSouthWest();
+          if (loc.x >= GameModeController.this.boardMiddle) {
+            GameModeController.this.commander.moveSouthWest();
           } else { 
-            _commander.moveSouthWest();
+            GameModeController.this.commander.moveSouthWest();
           }
           break;
         case KeyEvent.VK_LEFT:
-          if (_controlSet) {
+          if (this.controlSet) {
           } else {
-            _commander.moveWest();
+            GameModeController.this.commander.moveWest();
           }
           break;
         case KeyEvent.VK_RIGHT:
-          if (_controlSet) {
+          if (this.controlSet) {
           } else {
-            _commander.moveEast();
+            GameModeController.this.commander.moveEast();
           }
           break;
         case KeyEvent.VK_PAGE_UP:
-          if (_controlSet) {
+          if (this.controlSet) {
           } else {
-            _commander.moveNorthEast();
+            GameModeController.this.commander.moveNorthEast();
           }
           break;
         case KeyEvent.VK_PAGE_DOWN:
-          if (_controlSet) {
+          if (this.controlSet) {
           } else {
-            _commander.moveSouthEast();
+            GameModeController.this.commander.moveSouthEast();
           }
           break;
         case KeyEvent.VK_HOME:
-          if (_controlSet) {
+          if (this.controlSet) {
           } else {
-            _commander.moveNorthWest();
+            GameModeController.this.commander.moveNorthWest();
           }
 
           break;
         case KeyEvent.VK_END:
-          if (_controlSet) {
+          if (this.controlSet) {
           } else {
-            _commander.moveSouthWest();
+            GameModeController.this.commander.moveSouthWest();
           }
           break;
         case KeyEvent.VK_X:
-          if (_controlSet) {
+          if (this.controlSet) {
           } else {
-            _commander.explore();
+            GameModeController.this.commander.explore();
           }
           break;
         case KeyEvent.VK_SPACE:
-          if (_controlSet) {
+          if (this.controlSet) {
           } else {
-            _commander.skipTurn();
+            GameModeController.this.commander.skipTurn();
           }
           break;
 
         case KeyEvent.VK_S:
-          if (_controlSet) {
+          if (this.controlSet) {
           } else {
-            _commander.sentry();
+            GameModeController.this.commander.sentry();
           }
           break;
         case KeyEvent.VK_U:
-          if (_controlSet) {
+          if (this.controlSet) {
           } else {
-            _commander.unload();
+            GameModeController.this.commander.unload();
           }
           break;
         case KeyEvent.VK_T:
-          _currentAction = new MoveController(_commander, GameModeController.this);
+          currentAction = new MoveController(GameModeController.this.commander, GameModeController.this);
           break;
 
         case KeyEvent.VK_H:
-          _commander.headHome();
+          GameModeController.this.commander.headHome();
           break;
 
         case KeyEvent.VK_K:
-          _commander.disband();
+          GameModeController.this.commander.disband();
           break;
 
         case KeyEvent.VK_C:
-          _commander.center();
+          GameModeController.this.commander.center();
         }
       }
 
       @Override
       public void keyReleased(KeyEvent ke) {
-        if (_commander.isPaused() == false) {
+        if (GameModeController.this.commander.isPaused() == false) {
           return;
         }
 
         if (ke.getKeyCode() == KeyEvent.VK_CONTROL) {
-          _controlSet = false;
+          controlSet = false;
         }
 
-        if (_currentAction != null) {
-          _currentAction.keyReleased(ke);
+        if (GameModeController.this.currentAction != null) {
+          GameModeController.this.currentAction.keyReleased(ke);
           return;
         }
 
@@ -180,31 +180,31 @@ public class GameModeController extends BaseController {
 
       @Override
       public void keyTyped(KeyEvent ke) {
-        if (_commander.isPaused() == false) {
+        if (GameModeController.this.commander.isPaused() == false) {
           return;
         }
 
-        if (_currentAction != null) {
-          _currentAction.keyTyped(ke);
+        if (GameModeController.this.currentAction != null) {
+          GameModeController.this.currentAction.keyTyped(ke);
           return;
         }
 
       }
     };
   
-    _hexMouseListenerAdapter = new HexMouseListenerAdapter(commander, new IHexMouseListener() {
+    hexMouseListenerAdapter = new HexMouseListenerAdapter(commander, new IHexMouseListener() {
       
   
       @Override
       public void hexMousePressed(MouseEvent e, BoardHex hex) {
         //Log.info("GAME MOUSE DOWN *******************************************");
-        if (_commander.isPaused() == false) {
+        if (GameModeController.this.commander.isPaused() == false) {
           return;
         }
         int button = e.getButton();
         if (button == MouseEvent.BUTTON1) {
-          if (_commander.isDraggable(hex)) {
-            _mouseDown = hex;
+          if (GameModeController.this.commander.isDraggable(hex)) {
+            mouseDown = hex;
           }
         }
       }
@@ -213,7 +213,7 @@ public class GameModeController extends BaseController {
       public void hexMouseReleased(MouseEvent e, BoardHex hex) {
         //Log.info("GAME MOUSE UP ***********************************************");
 
-        if (_commander.isPaused() == false) {
+        if (GameModeController.this.commander.isPaused() == false) {
           return;
         }
         int button = e.getButton();
@@ -223,17 +223,17 @@ public class GameModeController extends BaseController {
         Location loc = hex.getLocation();
 
         if (button == MouseEvent.BUTTON1 && !e.isPopupTrigger()) {
-          if (_mouseDown != null) {
-            _commander.showLine(null, null);
-            if (!_mouseDown.getLocation().equals(loc)) {
-              _commander.move(_mouseDown.getLocation(), loc);
+          if (GameModeController.this.mouseDown != null) {
+            GameModeController.this.commander.showLine(null, null);
+            if (!GameModeController.this.mouseDown.getLocation().equals(loc)) {
+              GameModeController.this.commander.move(GameModeController.this.mouseDown.getLocation(), loc);
             } else {
-              _commander.activate(hex);
+              GameModeController.this.commander.activate(hex);
             }
-            _mouseDown = null;
+            mouseDown = null;
           }
         }
-        _mouseDown = null;
+        mouseDown = null;
       }
 
       @Override
@@ -253,16 +253,16 @@ public class GameModeController extends BaseController {
     
     
     
-    _hexMouseMotionListenerAdapter = new HexMouseMotionListenerAdapter(commander, new IHexMouseMotionListener() {
+    hexMouseMotionListenerAdapter = new HexMouseMotionListenerAdapter(commander, new IHexMouseMotionListener() {
     
       @Override
       public void hexMouseDragged(MouseEvent e, BoardHex hex) {
-        if (_commander.isPaused() == false) {
+        if (GameModeController.this.commander.isPaused() == false) {
           return;
         }
-        if (_mouseDown != null) {
-          if (hex != null && !hex.equals(_mouseDown)) {
-            _commander.showLine(_mouseDown.getLocation(), hex.getLocation());
+        if (GameModeController.this.mouseDown != null) {
+          if (hex != null && !hex.equals(GameModeController.this.mouseDown)) {
+            GameModeController.this.commander.showLine(GameModeController.this.mouseDown.getLocation(), hex.getLocation());
           }
         }
       }
@@ -276,24 +276,24 @@ public class GameModeController extends BaseController {
   
   @Override
   public MouseListener mouseListener() {
-    return _hexMouseListenerAdapter;
+    return hexMouseListenerAdapter;
   }
 
   @Override
   public MouseMotionListener mouseMotionListener() {
-    return _hexMouseMotionListenerAdapter;
+    return hexMouseMotionListenerAdapter;
   }
 
   @Override
   public KeyListener keyListener() {
-    return _keyListener;
+    return keyListener;
   }
 
 
 
   @Override
   public void clearAction() {
-    _currentAction = null;
+    currentAction = null;
     
   }
   

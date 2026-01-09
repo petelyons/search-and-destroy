@@ -63,66 +63,66 @@ public class MenuBarBuilder {
         "Explore Mode"
     );
 
-    private final MenuBarHandler _handler;
+    private final MenuBarHandler handler;
 
     MenuBarBuilder(SaDFrame frame, MenuBarHandler iMenusHandler) {
-        _handler = iMenusHandler;
+        handler = iMenusHandler;
 
         HELP.add(ABOUT);
 
         NEW.setMnemonic(KeyEvent.VK_N);
-        NEW.addActionListener(e -> _handler.onNew());
+        NEW.addActionListener(e -> this.handler.onNew());
 
         OPEN.setMnemonic(KeyEvent.VK_O);
-        OPEN.addActionListener(e -> _handler.onOpen());
+        OPEN.addActionListener(e -> this.handler.onOpen());
 
         SAVE.setMnemonic(KeyEvent.VK_S);
         SAVE.setAccelerator(
             KeyStroke.getKeyStroke('S', KeyEvent.ALT_DOWN_MASK)
         );
-        SAVE.addActionListener(e -> _handler.onSave());
+        SAVE.addActionListener(e -> this.handler.onSave());
 
         SAVEAS.setMnemonic(KeyEvent.VK_A);
-        SAVEAS.addActionListener(e -> _handler.onSaveAs());
+        SAVEAS.addActionListener(e -> this.handler.onSaveAs());
 
         EXIT.setAccelerator(
             KeyStroke.getKeyStroke('X', KeyEvent.ALT_DOWN_MASK)
         );
         EXIT.setMnemonic(KeyEvent.VK_X);
-        EXIT.addActionListener(e -> _handler.onExit());
+        EXIT.addActionListener(e -> this.handler.onExit());
 
         VIEW_CENTER.setMnemonic(KeyEvent.VK_C);
-        VIEW_CENTER.addActionListener(e -> _handler.onCenter());
+        VIEW_CENTER.addActionListener(e -> this.handler.onCenter());
 
         DEBUG_ASTAR_SEL.addActionListener(e ->
-            _handler.onDebugAstar(DEBUG_ASTAR_SEL.isSelected())
+            this.handler.onDebugAstar(DEBUG_ASTAR_SEL.isSelected())
         );
         DEBUG_LENS_SEL.addActionListener(e ->
-            _handler.onDebugGodLens(DEBUG_LENS_SEL.isSelected())
+            this.handler.onDebugGodLens(DEBUG_LENS_SEL.isSelected())
         );
         DEBUG_EXPLORE.addActionListener(e ->
-            _handler.onDebugExplore(DEBUG_EXPLORE.isSelected())
+            this.handler.onDebugExplore(DEBUG_EXPLORE.isSelected())
         );
         DEBUG_CONTINENT_NUMBERS_SEL.addActionListener(e ->
-            _handler.onDebugContinentNumbers(
+            this.handler.onDebugContinentNumbers(
                 DEBUG_CONTINENT_NUMBERS_SEL.isSelected()
             )
         );
         DEBUG_LOCATIONS_SEL.addActionListener(e ->
-            _handler.onDebugLocations(DEBUG_LOCATIONS_SEL.isSelected())
+            this.handler.onDebugLocations(DEBUG_LOCATIONS_SEL.isSelected())
         );
         DEBUG_PATH_ERRORS_SEL.addActionListener(e ->
-            _handler.onDebugPathErrors(DEBUG_PATH_ERRORS_SEL.isSelected())
+            this.handler.onDebugPathErrors(DEBUG_PATH_ERRORS_SEL.isSelected())
         );
-        DEBUG_DUMP.addActionListener(e -> _handler.onDebugDump());
+        DEBUG_DUMP.addActionListener(e -> this.handler.onDebugDump());
 
-        ABOUT.addActionListener(e -> _handler.onAbout());
+        ABOUT.addActionListener(e -> this.handler.onAbout());
 
         GAME_MODE.setSelected(frame.isGameMode());
-        GAME_MODE.addActionListener(e -> _handler.onGameMode());
+        GAME_MODE.addActionListener(e -> this.handler.onGameMode());
 
         EXPLORE_MODE.setSelected(frame.isExploreMode());
-        EXPLORE_MODE.addActionListener(e -> _handler.onExploreMode());
+        EXPLORE_MODE.addActionListener(e -> this.handler.onExploreMode());
 
         VIEW_SEA_PATHS.setSelected(SaDFrame.SHOW_SEA_PATHS);
         VIEW_SEA_PATHS.addActionListener(e ->

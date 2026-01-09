@@ -13,21 +13,21 @@ import com.developingstorm.games.sad.ui.SaDFrame;
  */
 public class PathsCommander extends BaseCommander {
  
-  private City _selectedCity;
-  private Travel _selectedTravel;
+  private City selectedCity;
+  private Travel selectedTravel;
   
   public PathsCommander(SaDFrame frame, Game game) {
     super(frame, game);
   }
   
   public void setPathOrigin(City c, Travel travel) {
-    _selectedCity = c;
-    _selectedTravel = travel;
+    selectedCity = c;
+    selectedTravel = travel;
   }
   
   public Location getCurrentLocation() {
-    if (_selectedCity != null) {
-      return _selectedCity.getLocation();
+    if (this.selectedCity != null) {
+      return this.selectedCity.getLocation();
     } else {
       return null;
     }
@@ -41,23 +41,23 @@ public class PathsCommander extends BaseCommander {
   }
 
   public Location autoDraggingLocation() {
-    if (_selectedCity == null) {
+    if (selectedCity == null) {
       return null;
     }
-    return _selectedCity.getLocation();
+    return this.selectedCity.getLocation();
   }
 
   public boolean isValidDestination(BoardHex hex) {
-    City city = _game.cityAtLocation(hex.getLocation());
+    City city = this.game.cityAtLocation(hex.getLocation());
     if (city == null) {
       return false;
     }
-    if (_selectedTravel.equals(Travel.SEA)) {
+    if (this.selectedTravel.equals(Travel.SEA)) {
       return city.isCoastal();
     }
     
-    if (_selectedTravel.equals(Travel.LAND)) {
-      return city.shareContinent(_selectedCity);
+    if (this.selectedTravel.equals(Travel.LAND)) {
+      return city.shareContinent(this.selectedCity);
     }
     
     
@@ -65,14 +65,14 @@ public class PathsCommander extends BaseCommander {
   }
 
   public void setDestination(BoardHex hex) {
-    City city = _game.cityAtLocation(hex.getLocation());
-    if (_selectedTravel.equals(Travel.AIR)) {
-      _selectedCity.getGovernor().setAirPathDest(city);
+    City city = this.game.cityAtLocation(hex.getLocation());
+    if (this.selectedTravel.equals(Travel.AIR)) {
+      this.selectedCity.getGovernor().setAirPathDest(city);
       
-    } else if (_selectedTravel.equals(Travel.SEA)) {
-      _selectedCity.getGovernor().setSeaPathDest(city);
-    } else if (_selectedTravel.equals(Travel.LAND)) {
-      _selectedCity.getGovernor().setLandPathDest(city);
+    } else if (this.selectedTravel.equals(Travel.SEA)) {
+      this.selectedCity.getGovernor().setSeaPathDest(city);
+    } else if (this.selectedTravel.equals(Travel.LAND)) {
+      this.selectedCity.getGovernor().setLandPathDest(city);
       
     }
    
@@ -80,8 +80,8 @@ public class PathsCommander extends BaseCommander {
   }
 
   public void endPathsMode() {
-    _canvas.clearArrow();
-    _frame.returnGameMode();
+    this.canvas.clearArrow();
+    this.frame.returnGameMode();
     
   }
 

@@ -16,9 +16,9 @@ import javax.swing.JPopupMenu;
  */
 public class EdictMenuBuilder {
 
-    private City _c;
-    private Game _game;
-    private GameCommander _commander;
+    private City c;
+    private Game game;
+    private GameCommander commander;
 
     private final JMenuItem SEND_SEA_SEL = new JMenuItem("Send Sea Units..");
     private final JMenuItem SEND_AIR_SEL = new JMenuItem("Send Air Units...");
@@ -36,30 +36,30 @@ public class EdictMenuBuilder {
         City c,
         GameCommander commander
     ) {
-        _game = g;
-        _c = c;
-        _commander = commander;
+        game = g;
+        c = c;
+        commander = commander;
 
         select();
-        SEND_SEA_SEL.addActionListener(e -> _commander.setSeaPath(_c));
+        SEND_SEA_SEL.addActionListener(e -> this.commander.setSeaPath(this.c));
 
-        SEND_AIR_SEL.addActionListener(e -> _commander.setAirPath(_c));
-        SEND_LAND_SEL.addActionListener(e -> _commander.setLandPath(_c));
-        AIR_PATROL_SEL.addActionListener(e -> _commander.setAirPatrol(_c));
-        AUTO_SENTRY_SEL.addActionListener(e -> _commander.setAutoSentry(_c));
+        SEND_AIR_SEL.addActionListener(e -> this.commander.setAirPath(this.c));
+        SEND_LAND_SEL.addActionListener(e -> this.commander.setLandPath(this.c));
+        AIR_PATROL_SEL.addActionListener(e -> this.commander.setAirPatrol(this.c));
+        AUTO_SENTRY_SEL.addActionListener(e -> this.commander.setAutoSentry(this.c));
     }
 
     public JPopupMenu build() {
         JPopupMenu edictPopup = new JPopupMenu("Edicts");
 
-        fillMenu(_game, edictPopup, _c);
+        fillMenu(this.game, edictPopup, this.c);
         return edictPopup;
     }
 
     public JMenu getSubmenu() {
         JMenu edictMenu = new JMenu("Edicts");
 
-        fillMenu(_game, edictMenu, _c);
+        fillMenu(this.game, edictMenu, this.c);
         return edictMenu;
     }
 
@@ -83,10 +83,10 @@ public class EdictMenuBuilder {
     }
 
     private void select() {
-        if (_c.getGovernor().hasAirPatrol()) {
+        if (this.c.getGovernor().hasAirPatrol()) {
             AIR_PATROL_SEL.setSelected(true);
         }
-        if (_c.getGovernor().hasAutoSentry()) {
+        if (this.c.getGovernor().hasAutoSentry()) {
             AUTO_SENTRY_SEL.setSelected(true);
         }
     }

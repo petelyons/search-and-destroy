@@ -10,8 +10,8 @@ public class Hex extends Polygon {
 
 
   private static final long serialVersionUID = 5794657692668164331L;
-  private Point _center;
-  private Point _origin;
+  private Point center;
+  private Point origin;
 
   public Hex(int[] xpoints, int[] ypoints) {
     super(xpoints, ypoints, 7);
@@ -34,17 +34,17 @@ public class Hex extends Polygon {
     int centery = (ypoints[0] + ypoints[1] + ypoints[2] + ypoints[3]
         + ypoints[4] + ypoints[5]) / 6;
 
-    _center = new Point(centerx, centery);
-    _origin = new Point(originx, originy);
+    center = new Point(centerx, centery);
+    origin = new Point(originx, originy);
 
   }
 
   public Point getCenter() {
-    return _center;
+    return center;
   }
 
   public Point getOrigin() {
-    return _origin;
+    return origin;
   }
 
 }

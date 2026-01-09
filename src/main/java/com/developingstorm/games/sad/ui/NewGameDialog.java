@@ -36,7 +36,7 @@ public class NewGameDialog extends JDialog {
     private JRadioButton rdbtnSmallMap;
     private JRadioButton rdbtnMediumMap;
     private JRadioButton rdbtnLargeMap;
-    private final NewGameValues _values = new NewGameValues();
+    private final NewGameValues values = new NewGameValues();
 
     /**
      * Launch the application.
@@ -299,20 +299,20 @@ public class NewGameDialog extends JDialog {
                 buttonPane.add(okButton);
                 getRootPane().setDefaultButton(okButton);
                 okButton.addActionListener(e -> {
-                    _values.exitButton = 0;
-                    _values.player1Type = playerType(
+                    this.values.exitButton = 0;
+                    this.values.player1Type = playerType(
                         (String) comboBox1.getSelectedItem()
                     );
-                    _values.player2Type = playerType(
+                    this.values.player2Type = playerType(
                         (String) comboBox2.getSelectedItem()
                     );
 
                     if (rdbtnSmallMap.isSelected()) {
-                        _values.gameSize = 0;
+                        this.values.gameSize = 0;
                     } else if (rdbtnMediumMap.isSelected()) {
-                        _values.gameSize = 1;
+                        this.values.gameSize = 1;
                     } else {
-                        _values.gameSize = 2;
+                        this.values.gameSize = 2;
                     }
 
                     NewGameDialog.this.setVisible(false);
@@ -323,7 +323,7 @@ public class NewGameDialog extends JDialog {
                 cancelButton.setActionCommand("Cancel");
                 buttonPane.add(cancelButton);
                 cancelButton.addActionListener(e -> {
-                    _values.exitButton = 1;
+                    this.values.exitButton = 1;
                     NewGameDialog.this.setVisible(false);
                 });
             }
@@ -331,7 +331,7 @@ public class NewGameDialog extends JDialog {
     }
 
     public NewGameValues getValues() {
-        return _values;
+        return values;
     }
 
     private int playerType(String selectedItem) {

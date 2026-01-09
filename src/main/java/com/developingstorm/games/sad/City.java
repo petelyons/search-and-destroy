@@ -1,234 +1,220 @@
 package com.developingstorm.games.sad;
 
-import java.util.List;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.games.sad.util.json.JsonObj;
+import java.util.List;
 
 public class City {
 
-  private volatile String _name;
-  private volatile Player _owner;
-  private volatile Type _produces;
-  private volatile Location _location;
-  private volatile long _round;
-  private volatile long _productionStart;
-  private volatile Board _board;
-  private volatile Game _game;
-  private volatile boolean _productionCompletedThisTurn;
-  private EdictGovernor _edicts;
-  
+    private volatile String name;
+    private volatile Player owner;
+    private volatile Type produces;
+    private volatile Location location;
+    private volatile long round;
+    private volatile long productionStart;
+    private volatile Board board;
+    private volatile Game game;
+    private volatile boolean productionCompletedThisTurn;
+    private EdictGovernor edicts;
 
-  public City(Location loc, Game game) {
-    _name = GameNames.getName();
-    _owner = null;
-    _produces = null;
-    _location = loc;
-    _round = 0;
-    _productionStart = -1;
-    _game = game;
-    _board = _game.getBoard();
-    _productionCompletedThisTurn = false;
-    
-  }
-  
-  
-  @SuppressWarnings("boxing")
-  public City(Game g, JsonObj json) {
-    _game = g;
-    _board = _game.getBoard();
-    _owner = _game.getPlayer(json.getString("owner"));
-    _produces = Type.get(json.getString("produces"));
-    _location = Location.get(json.getObj("location"));
-    _round = json.getLong("round");
-    _productionStart = json.getLong("ps");
-    _productionCompletedThisTurn = json.getBoolean("prodcomplete");
-  }
-  
-  @SuppressWarnings("boxing")
-  public JsonObj toJson() {
-    JsonObj json = new JsonObj();
-    json.put("name", _name);
-    if (_owner == null) {
-      json.put("owner", null);  
+    public City(Location loc, Game game) {
+        name = GameNames.getName();
+        owner = null;
+        produces = null;
+        location = loc;
+        round = 0;
+        productionStart = -1;
+        this.game = game;
+        board = this.game.getBoard();
+        productionCompletedThisTurn = false;
     }
-    else {
-      json.put("owner", _owner.toJsonLink());
+
+    @SuppressWarnings("boxing")
+    public City(Game g, JsonObj json) {
+        game = g;
+        board = this.game.getBoard();
+        owner = this.game.getPlayer(json.getString("owner"));
+        produces = Type.get(json.getString("produces"));
+        location = Location.get(json.getObj("location"));
+        round = json.getLong("round");
+        productionStart = json.getLong("ps");
+        productionCompletedThisTurn = json.getBoolean("prodcomplete");
     }
-    if (_produces == null) {
-      json.put("produces", null);  
+
+    @SuppressWarnings("boxing")
+    public JsonObj toJson() {
+        JsonObj json = new JsonObj();
+        json.put("name", this.name);
+        if (owner == null) {
+            json.put("owner", null);
+        } else {
+            json.put("owner", this.owner.toJsonLink());
+        }
+        if (produces == null) {
+            json.put("produces", null);
+        } else {
+            json.put("produces", this.produces.toJsonLink());
+        }
+        json.put("location", this.location.toJson());
+        json.put("round", this.round);
+        json.put("ps", this.productionStart);
+        json.put("prodcomplete", this.productionCompletedThisTurn);
+
+        json.put("edicts", this.edicts.toJson());
+        return json;
     }
-    else {
-      json.put("produces", _produces.toJsonLink());
+
+    public Object toJsonLink() {
+        return name;
     }
-    json.put("location", _location.toJson());
-    json.put("round", _round);
-    json.put("ps", _productionStart);
-    json.put("prodcomplete", _productionCompletedThisTurn);
-    
-    json.put("edicts", _edicts.toJson());
-    return json;
-  }
-  
-  public Object toJsonLink() {
-    return _name;
-  }
 
-  public String toString() {
-    if (_owner == null) {
-      return _name + " at " + _location + " unowned";
+    public String toString() {
+        if (owner == null) {
+            return this.name + " at " + this.location + " unowned";
+        }
+        return this.name + " at " + this.location + " owned by:" + owner;
     }
-    return _name + " at " + _location + " owned by:" + _owner;
-  }
 
-  public Location getLocation() {
-    return _location;
-  }
-
-  public void setOwner(Player p) {
-
-    if (_owner != null) {
-      _owner.loseCity(this);
+    public Location getLocation() {
+        return location;
     }
-    _owner = p;
-    _produces = null;
-    _productionStart = -1;
-    _edicts = new EdictGovernor(_owner, this);
-    _owner.captureCity(this);
-    
-  }
 
-  public String getName() {
-    return _name;
-  }
-
-  public EdictGovernor getGovernor() {
-    return _edicts;
-  }
-
-  
-  public Player getOwner() {
-    return _owner;
-  }
-
-  public void produce(Type t) {
-    _produces = t;
-    _productionStart = _round;
-  }
-
-  public Type getProduction() {
-    return _produces;
-  }
-
-  public boolean productionCompleted() {
-    return _productionCompletedThisTurn;
-  }
-
-  public boolean isCoastal() {
-    return _board.isCoast(_location);
-  }
-
-  public Continent getContinent() {
-    return _board.getContinent(_location);
-  }
-
-  public List<Unit> getUnits() {
-    return _game.unitsAtLocation(_location);
-  }
-  
-  public Game getGame() {
-    return _game;
-  }
-  
-
-  public void bombCity() {
-    long d = _round - _productionStart;
-    if (d >= 0) {
-      d = d / 4;
+    public void setOwner(Player p) {
+        if (this.owner != null) {
+            this.owner.loseCity(this);
+        }
+        owner = p;
+        produces = null;
+        productionStart = -1;
+        edicts = new EdictGovernor(this.owner, this);
+        this.owner.captureCity(this);
     }
-    _productionStart += d;
-  }
 
-  public void startNewTurn() {
-    int cost = _produces.getCost();
-    _round++;
-    _productionCompletedThisTurn = false;
-    if (_productionStart != -1 && _productionStart + cost == _round) {
-      Log.info(this, "Creating unit:" + _produces);
-      Unit u = _game.createUnit(_produces, _owner, _location);
-      Log.debug(u, "Created at " + this);
-      _owner.addUnit(u);
-      _productionStart = _round;
-      _productionCompletedThisTurn = true;
+    public String getName() {
+        return name;
     }
-    
-    _edicts.execute();
-  }
-  
-  public boolean isNear(City target, int dist) {
-    
-    return (target.getLocation().isNear(_location, dist));
-    
-  }
 
-  @Override
-  public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + ((_location == null) ? 0 : _location.hashCode());
-    result = prime * result + ((_name == null) ? 0 : _name.hashCode());
-    return result;
-  }
+    public EdictGovernor getGovernor() {
+        return edicts;
+    }
 
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj)
-      return true;
-    if (obj == null)
-      return false;
-    if (getClass() != obj.getClass())
-      return false;
-    City other = (City) obj;
-    if (_location == null) {
-      if (other._location != null)
-        return false;
-    } else if (!_location.equals(other._location))
-      return false;
-    if (_name == null) {
-      if (other._name != null)
-        return false;
-    } else if (!_name.equals(other._name))
-      return false;
-    return true;
-  }
-  
+    public Player getOwner() {
+        return owner;
+    }
 
+    public void produce(Type t) {
+        produces = t;
+        productionStart = round;
+    }
 
+    public Type getProduction() {
+        return produces;
+    }
 
-  public boolean shareContinent(City _selectedCity) {
-    return true;
-  }
-  
-  
-  public UnitStats getContinentStats() {  
-    Continent cont = getContinent();
-    UnitStats stats = _owner.getContinentStats(cont);
+    public boolean productionCompleted() {
+        return productionCompletedThisTurn;
+    }
 
-    return stats;
-  }
-    
+    public boolean isCoastal() {
+        return this.board.isCoast(this.location);
+    }
+
+    public Continent getContinent() {
+        return this.board.getContinent(this.location);
+    }
+
+    public List<Unit> getUnits() {
+        return this.game.unitsAtLocation(this.location);
+    }
+
+    public Game getGame() {
+        return game;
+    }
+
+    public void bombCity() {
+        long d = this.round - productionStart;
+        if (d >= 0) {
+            d = d / 4;
+        }
+        this.productionStart += d;
+    }
+
+    public void startNewTurn() {
+        int cost = this.produces.getCost();
+        this.round++;
+        productionCompletedThisTurn = false;
+        if (
+            this.productionStart != -1 &&
+            this.productionStart + cost == this.round
+        ) {
+            Log.info(this, "Creating unit:" + this.produces);
+            Unit u = this.game.createUnit(
+                this.produces,
+                this.owner,
+                this.location
+            );
+            Log.debug(u, "Created at " + this);
+            this.owner.addUnit(u);
+            productionStart = round;
+            productionCompletedThisTurn = true;
+        }
+
+        this.edicts.execute();
+    }
+
+    public boolean isNear(City target, int dist) {
+        return (target.getLocation().isNear(this.location, dist));
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result =
+            prime * result +
+            ((location == null) ? 0 : this.location.hashCode());
+        result = prime * result + ((name == null) ? 0 : this.name.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        City other = (City) obj;
+        if (location == null) {
+            if (other.location != null) return false;
+        } else if (!this.location.equals(other.location)) return false;
+        if (name == null) {
+            if (other.name != null) return false;
+        } else if (!this.name.equals(other.name)) return false;
+        return true;
+    }
+
+    public boolean shareContinent(City selectedCity) {
+        return true;
+    }
+
+    public UnitStats getContinentStats() {
+        Continent cont = getContinent();
+        UnitStats stats = this.owner.getContinentStats(cont);
+
+        return stats;
+    }
 }
 
 /**
  * STATIC void citini() { int loc,i,j,k;
- * 
+ *
  * for (i = CITMAX; i--;) { memset(&city[i],0,sizeof(City)); city[i].loc =
  * city[i].own = 0; city[i].phs = -1; // no phase } for (i = 0, loc = MAPSIZE;
  * loc--;) if (typ[map[loc]] == X) city[i++].loc = loc; printf("%d cities\n",i);
  * assert(i <= CITMAX);
- * 
+ *
  * // shuffle cities around
- * 
+ *
  * for (i = CITMAX / 2; i--;) { j = random(CITMAX); k = random(CITMAX); loc =
  * city[j].loc; city[j].loc = city[k].loc; city[k].loc = loc; // swap city locs
  * } }

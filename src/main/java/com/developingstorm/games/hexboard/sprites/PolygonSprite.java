@@ -11,14 +11,14 @@ import java.awt.Stroke;
  */
 public class PolygonSprite extends StrokeSprite {
 
-  protected Polygon _poly;
+  protected Polygon poly;
 
   protected PolygonSprite() {
-    _poly = null;
+    poly = null;
   }
 
   public void setPolygon(Polygon p) {
-    _poly = p;
+    poly = p;
   }
 
   protected void handleFrameChange(int old, int current) {
@@ -26,13 +26,13 @@ public class PolygonSprite extends StrokeSprite {
   }
 
   protected void handleDraw(long time, Image[] images, Graphics2D g) {
-    if (_poly != null) {
+    if (this.poly != null) {
       Color c = g.getColor();
       Stroke s = g.getStroke();
 
-      g.setColor(_colors[_current]);
-      g.setStroke(_strokes[_current]);
-      g.drawPolygon(_poly);
+      g.setColor(this.colors[this.current]);
+      g.setStroke(this.strokes[this.current]);
+      g.drawPolygon(this.poly);
 
       g.setColor(c);
       g.setStroke(s);

@@ -10,8 +10,8 @@ import java.awt.Point;
  */
 public abstract class ImageSprite extends Sprite {
 
-  protected int[] _imageSelectors;
-  private Point _point;
+  protected int[] imageSelectors;
+  private Point point;
 
   protected ImageSprite() {
   }
@@ -21,7 +21,7 @@ public abstract class ImageSprite extends Sprite {
   }
 
   protected void handleDraw(long time, Image[] images, Graphics2D g) {
-    g.drawImage(images[_imageSelectors[_current]], _point.x, _point.y, null);
+    g.drawImage(images[this.imageSelectors[this.current]], this.point.x, this.point.y, null);
   }
 
   /**
@@ -30,12 +30,12 @@ public abstract class ImageSprite extends Sprite {
    */
   public void setImageSelectors(int[] imageSelectors) {
 
-    _imageSelectors = imageSelectors;
-    setFrames(_imageSelectors.length);
+    imageSelectors = imageSelectors;
+    setFrames(this.imageSelectors.length);
   }
 
   public void setPoint(Point p) {
-    _point = p;
+    point = p;
   }
 
 }

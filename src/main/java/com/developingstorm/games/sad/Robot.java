@@ -13,7 +13,7 @@ import com.developingstorm.games.sad.util.Log;
  */
 public class Robot extends Player {
 
-  private IBrain _brain;
+  private IBrain brain;
 
 
   public Robot(String name, int id) {
@@ -36,12 +36,12 @@ public class Robot extends Player {
   @Override
   public void setGame(Game g) {
     super.setGame(g);
-    _brain = new RobotBrain(this);
+    brain = new RobotBrain(this);
   }
 
   @Override
   protected void initProduction(City c) {
-    Type t = _brain.getProduction(c);
+    Type t = this.brain.getProduction(c);
     Log.debug(this, "Setting production to: " + t);
     c.produce(t);
 
@@ -57,7 +57,7 @@ public class Robot extends Player {
 
   private List<City> getOwnedCities() {
     List<City> list = new ArrayList<City>();
-    for (City c : _cities) {
+    for (City c : this.cities) {
       if (ownsCity(c)) {
         list.add(c);
       }
@@ -90,7 +90,7 @@ public class Robot extends Player {
 
   public Order getOrders(Unit u) {
 
-    return _brain.getOrders(u);
+    return this.brain.getOrders(u);
   }
 
  
@@ -98,19 +98,19 @@ public class Robot extends Player {
   public void startNewTurn() {
     
     super.startNewTurn();
-    _brain.startNewTurn();
+    this.brain.startNewTurn();
   }
   
   
   @Override
   public String toString() {
-    return "Robot: I=" + _id;
+    return "Robot: I=" + this.id;
   }
 
   
   @Override
   public void unitsNeedOrders() {
-    for (Unit u : _units) {
+    for (Unit u : this.units) {
       if (!u.hasOrders()) {
         u.assignOrder(getOrders(u));
       }

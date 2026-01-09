@@ -17,19 +17,19 @@ import com.developingstorm.games.sad.util.Log;
  */
 public class PathsModeController  extends BaseController {
 
-  private final PathsCommander _commander;
-  private final SaDFrame _frame;
-  private final KeyListener _keyListener;
-  private final HexMouseListenerAdapter _hexMouseListenerAdapter;
-  private final HexMouseMotionListenerAdapter _hexMouseMotionListenerAdapter;
-  private BoardHex _mouseDown;
+  private final PathsCommander commander;
+  private final SaDFrame frame;
+  private final KeyListener keyListener;
+  private final HexMouseListenerAdapter hexMouseListenerAdapter;
+  private final HexMouseMotionListenerAdapter hexMouseMotionListenerAdapter;
+  private BoardHex mouseDown;
   
   public PathsModeController(SaDFrame frame,  PathsCommander commander) {
-    _frame = frame;
-    _commander = commander;
+    this.frame = frame;
+    this.commander = commander;
    
-    _keyListener = new KeyListener() {
-      private boolean _controlSet = false;
+    keyListener = new KeyListener() {
+      private boolean controlSet = false;
       
       @Override
       public void keyPressed(KeyEvent ke) {
@@ -37,7 +37,7 @@ public class PathsModeController  extends BaseController {
          OrderType ot;
 
         if (ke.getKeyCode() == KeyEvent.VK_CONTROL) {
-          _controlSet = true;
+          controlSet = true;
         }
 
         switch (ke.getKeyCode()) {
@@ -60,7 +60,7 @@ public class PathsModeController  extends BaseController {
       public void keyReleased(KeyEvent ke) {
      
         if (ke.getKeyCode() == KeyEvent.VK_CONTROL) {
-          _controlSet = false;
+          controlSet = false;
         }
 
        }
@@ -70,17 +70,17 @@ public class PathsModeController  extends BaseController {
 
     };
     
-    _hexMouseListenerAdapter = new HexMouseListenerAdapter(commander, new IHexMouseListener() {
+    hexMouseListenerAdapter = new HexMouseListenerAdapter(commander, new IHexMouseListener() {
             
       @Override
       public void hexMousePressed(MouseEvent e, BoardHex hex) {
         int button = e.getButton();
         Location loc = hex.getLocation();
         if (button == MouseEvent.BUTTON1) {
-          if (_commander.isValidDestination(hex)) {
+          if (PathsModeController.this.commander.isValidDestination(hex)) {
             Log.info("Setting destination");
-            _commander.setDestination(hex);
-            _commander.endPathsMode();
+            PathsModeController.this.commander.setDestination(hex);
+            PathsModeController.this.commander.endPathsMode();
           }
         }
       }
@@ -108,7 +108,7 @@ public class PathsModeController  extends BaseController {
       }
     });
     
-    _hexMouseMotionListenerAdapter = new HexMouseMotionListenerAdapter(commander, new IHexMouseMotionListener() {
+    hexMouseMotionListenerAdapter = new HexMouseMotionListenerAdapter(commander, new IHexMouseMotionListener() {
             
       @Override
       public void hexMouseDragged(MouseEvent e, BoardHex hex) {
@@ -118,10 +118,10 @@ public class PathsModeController  extends BaseController {
       @Override
       public void hexMouseMoved(MouseEvent e, BoardHex hex) {
         
-        Location start = _commander.autoDraggingLocation();
+        Location start = PathsModeController.this.commander.autoDraggingLocation();
         if (start != null) {
           if (hex != null && !hex.equals(start)) {
-            _commander.showLine(start, hex.getLocation());
+            PathsModeController.this.commander.showLine(start, hex.getLocation());
           }
         }
         
@@ -133,17 +133,17 @@ public class PathsModeController  extends BaseController {
  
   @Override
   public MouseListener mouseListener() {
-    return _hexMouseListenerAdapter;
+    return hexMouseListenerAdapter;
   }
 
   @Override
   public MouseMotionListener mouseMotionListener() {
-    return _hexMouseMotionListenerAdapter;
+    return hexMouseMotionListenerAdapter;
   }
 
   @Override
   public KeyListener keyListener() {
-    return _keyListener;
+    return keyListener;
   }
 
   @Override

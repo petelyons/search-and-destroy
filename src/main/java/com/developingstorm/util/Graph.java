@@ -4,17 +4,17 @@ import java.util.HashMap;
 import java.util.List;
 
 public abstract class Graph<T, S> {
-  private HashMap<T, GraphNode<T, S>> _processed = new HashMap<T, GraphNode<T, S>>();
+  private HashMap<T, GraphNode<T, S>> processed = new HashMap<T, GraphNode<T, S>>();
   
   
   public GraphNode<T, S> buildGraphNodes(T start) {
     
-    if (_processed.containsKey(start)) {
-      return _processed.get(start);
+    if (this.processed.containsKey(start)) {
+      return this.processed.get(start);
     }
     
     GraphNode<T, S> node = new GraphNode<T, S>(this, start);
-    _processed.put(start, node);
+    this.processed.put(start, node);
     List<T> list = findRelatives(start);
     for (T c : list) {
       GraphNode<T, S> cn = buildGraphNodes(c);
@@ -26,10 +26,10 @@ public abstract class Graph<T, S> {
   protected abstract List<T> findRelatives(T start);
 
   public boolean containsKey(T key) {
-    return _processed.containsKey(key);
+    return this.processed.containsKey(key);
   }
   
   public GraphNode<T, S> get(T key) {
-    return _processed.get(key);
+    return this.processed.get(key);
   }
 }

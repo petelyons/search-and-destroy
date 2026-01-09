@@ -1,227 +1,222 @@
 package com.developingstorm.games.sad;
 
-import java.util.ArrayList;
-import java.util.List;
-
-
 import com.developingstorm.games.astar.AStarPosition;
 import com.developingstorm.games.astar.AStarState;
 import com.developingstorm.games.hexboard.BoardHex;
 import com.developingstorm.games.hexboard.Location;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MapState implements AStarState {
 
-  Location _loc;
+    Location loc;
 
-  static Board _b = null;
-  static Travel _travel;
-  static Location _goal;
-  static ArrayList<Unit> _units;
-  static Player _player;
-  static Game _game;
-  static boolean _checkedBlocked;
-  static boolean _canExplore;
+    static Board b = null;
+    static Travel travel;
+    static Location goal;
+    static ArrayList<Unit> units;
+    static Player player;
+    static Game game;
+    static boolean checkedBlocked;
+    static boolean canExplore;
 
-  public static void start(Game game, Board b, Travel travel, Player player,
-      Location goal, boolean checkBlocked, boolean canExplore) {
-    _game = game;
-    _b = b;
-    _travel = travel;
-    _goal = goal;
-    _units = null;
-    _player = player;
-    _checkedBlocked = checkBlocked;
-    _canExplore = canExplore;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.developingstorm.astar.State#key()
-   */
-  public AStarPosition pos() {
-    return _loc;
-  }
-
-  public static void start(Board b, Travel travel, Player player,
-      Location goal, ArrayList<Unit> units) {
-    _b = b;
-    _travel = travel;
-    _goal = goal;
-    _units = units;
-    _player = player;
-  }
-  
-  
-  public static MapState getUntested(Location loc) {
-    return new MapState(loc);
-  }
-
-  public static MapState getTerrainTested(Location loc) {
-    if (_travel == Travel.SEA && (_b.isWater(loc) || isPlayersCity(loc))) {
-        return new MapState(loc);
-    } else if (_travel == Travel.LAND && (_b.isLand(loc))) {
-        return new MapState(loc);
-    } else if (_travel == Travel.AIR) {
-      return new MapState(loc);
-    } 
-    return null;
-  }
-
-  public static MapState get(Location loc) {
-    if (_player.isExplored(loc) || _canExplore) {
-      if (_travel == Travel.SEA) {
-        if (_b.isWater(loc) || isPlayersCity(loc)) {
-          if (!isBlocked(loc)) {
-            return new MapState(loc);
-          }
-          return null;
-        }
-      } else if (_travel == Travel.LAND) {
-        if (!isBlocked(loc)) {
-          return new MapState(loc);
-        }
-        return null;
-      } else if (!isBlocked(loc)) {
-        return new MapState(loc);
-      }
-      return null;
-    } else {
-      if (_canExplore) {
-        return new MapState(loc);
-      }
-      else
-        return null;
+    public static void start(
+        Game game,
+        Board b,
+        Travel travel,
+        Player player,
+        Location goal,
+        boolean checkBlocked,
+        boolean canExplore
+    ) {
+        MapState.game = game;
+        MapState.b = b;
+        MapState.travel = travel;
+        MapState.goal = goal;
+        MapState.units = null;
+        MapState.player = player;
+        MapState.checkedBlocked = checkBlocked;
+        MapState.canExplore = canExplore;
     }
 
-  }
-
-  private MapState(Location loc) {
-    _loc = loc;
-  }
-
-  public Location getLocation() {
-    return _loc;
-  }
-
-
-  @Override
-  public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + ((_loc == null) ? 0 : _loc.hashCode());
-    return result;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj)
-      return true;
-    if (obj == null)
-      return false;
-    if (getClass() != obj.getClass())
-      return false;
-    MapState other = (MapState) obj;
-    if (_loc == null) {
-      if (other._loc != null)
-        return false;
-    } else if (!_loc.equals(other._loc))
-      return false;
-    return true;
-  }
-
-  /**
-   * @see java.lang.Object#toString()
-   */
-  public String toString() {
-    return _loc.toString();
-  }
-
-  /**
-   * @see com.marlinspike.astar.State#estimate(State)
-   */
-  public int estimate(AStarState goal) {
-    MapState ms = (MapState) goal;
-    return _loc.distance(ms._loc);
-  }
-
-  public static boolean isBlocked(Location loc) {
-    return isBlocked(loc, false);
-  }
-  
-  
-  public static boolean isBlocked(Location loc, boolean force) {
-    if (force || _checkedBlocked) {
-      if (isPlayersCity(loc)) {
-        return false;
-      }
-      if (_travel != Travel.LAND && isNonPlayersCity(loc)) {
-        return true;
-      }
-      List<Unit> list = _game.unitsAtLocation(loc);
-      if (!(list == null || list.isEmpty())) {
-        Unit u = list.get(0);
-        if (u != null && _player.equals(u.getOwner())) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  private static boolean isPlayersCity(Location loc) {
-    City c = _b.getCity(loc);
-    if (c != null && _player != null) {
-      return _player.ownsCity(c);
-    }
-    return false;
-  }
-
-  private static boolean isNonPlayersCity(Location loc) {
-    City c = _b.getCity(loc);
-    if (c != null && _player != null) {
-      return !_player.ownsCity(c);
-    }
-    return false;
-  }
-
-  /**
-   * @see com.marlinspike.astar.State#successors()
-   */
-  public List<AStarState> successors() {
-
-    List<BoardHex> list = _b.getRing(_loc, 1);
-
-    ArrayList<AStarState> v = new ArrayList<AStarState>();
-
-    for (BoardHex bh : list) {
-      Location loc = bh.getLocation();
-
-      if (_player.isExplored(loc)) {
-        if (_travel == Travel.SEA) {
-          if (_b.isWater(loc) || isPlayersCity(loc)) {
-            if (!isBlocked(loc))
-              v.add(new MapState(loc));
-          }
-        } else if (_travel == Travel.LAND) {
-          if (_b.isLand(loc)) {
-            if (!isBlocked(loc))
-              v.add(new MapState(loc));
-          }
-        } else {
-          if (!isBlocked(loc))
-            v.add(new MapState(loc));
-        }
-      } else {
-        if (_canExplore) {
-          v.add(new MapState(loc));
-        }
-      }
-    }
     /*
+     * (non-Javadoc)
+     *
+     * @see com.developingstorm.astar.State#key()
+     */
+    public AStarPosition pos() {
+        return loc;
+    }
+
+    public static void start(
+        Board b,
+        Travel travel,
+        Player player,
+        Location goal,
+        ArrayList<Unit> units
+    ) {
+        MapState.b = b;
+        MapState.travel = travel;
+        MapState.goal = goal;
+        MapState.units = units;
+        MapState.player = player;
+    }
+
+    public static MapState getUntested(Location loc) {
+        return new MapState(loc);
+    }
+
+    public static MapState getTerrainTested(Location loc) {
+        if (travel == Travel.SEA && (b.isWater(loc) || isPlayersCity(loc))) {
+            return new MapState(loc);
+        } else if (travel == Travel.LAND && (b.isLand(loc))) {
+            return new MapState(loc);
+        } else if (travel == Travel.AIR) {
+            return new MapState(loc);
+        }
+        return null;
+    }
+
+    public static MapState get(Location loc) {
+        if (player.isExplored(loc) || canExplore) {
+            if (travel == Travel.SEA) {
+                if (b.isWater(loc) || isPlayersCity(loc)) {
+                    if (!isBlocked(loc)) {
+                        return new MapState(loc);
+                    }
+                    return null;
+                }
+            } else if (travel == Travel.LAND) {
+                if (!isBlocked(loc)) {
+                    return new MapState(loc);
+                }
+                return null;
+            } else if (!isBlocked(loc)) {
+                return new MapState(loc);
+            }
+            return null;
+        } else {
+            if (canExplore) {
+                return new MapState(loc);
+            } else return null;
+        }
+    }
+
+    private MapState(Location loc) {
+        this.loc = loc;
+    }
+
+    public Location getLocation() {
+        return loc;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((loc == null) ? 0 : this.loc.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        MapState other = (MapState) obj;
+        if (loc == null) {
+            if (other.loc != null) return false;
+        } else if (!this.loc.equals(other.loc)) return false;
+        return true;
+    }
+
+    /**
+     * @see java.lang.Object#toString()
+     */
+    public String toString() {
+        return this.loc.toString();
+    }
+
+    /**
+     * @see com.marlinspike.astar.State#estimate(State)
+     */
+    public int estimate(AStarState goal) {
+        MapState ms = (MapState) goal;
+        return this.loc.distance(ms.loc);
+    }
+
+    public static boolean isBlocked(Location loc) {
+        return isBlocked(loc, false);
+    }
+
+    public static boolean isBlocked(Location loc, boolean force) {
+        if (force || checkedBlocked) {
+            if (isPlayersCity(loc)) {
+                return false;
+            }
+            if (travel != Travel.LAND && isNonPlayersCity(loc)) {
+                return true;
+            }
+            List<Unit> list = game.unitsAtLocation(loc);
+            if (!(list == null || list.isEmpty())) {
+                Unit u = list.get(0);
+                if (u != null && player.equals(u.getOwner())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean isPlayersCity(Location loc) {
+        City c = b.getCity(loc);
+        if (c != null && player != null) {
+            return player.ownsCity(c);
+        }
+        return false;
+    }
+
+    private static boolean isNonPlayersCity(Location loc) {
+        City c = b.getCity(loc);
+        if (c != null && player != null) {
+            return !player.ownsCity(c);
+        }
+        return false;
+    }
+
+    /**
+     * @see com.marlinspike.astar.State#successors()
+     */
+    public List<AStarState> successors() {
+        List<BoardHex> list = b.getRing(this.loc, 1);
+
+        ArrayList<AStarState> v = new ArrayList<AStarState>();
+
+        for (BoardHex bh : list) {
+            Location loc = bh.getLocation();
+
+            if (player.isExplored(loc)) {
+                if (travel == Travel.SEA) {
+                    if (b.isWater(loc) || isPlayersCity(loc)) {
+                        if (!isBlocked(loc)) v.add(new MapState(loc));
+                    }
+                } else if (travel == Travel.LAND) {
+                    if (b.isLand(loc)) {
+                        if (!isBlocked(loc)) v.add(new MapState(loc));
+                    }
+                } else {
+                    if (!isBlocked(loc)) v.add(new MapState(loc));
+                }
+            } else {
+                if (canExplore) {
+                    v.add(new MapState(loc));
+                }
+            }
+        }
+        /*
     // Put the location closest to the goal first
-    Direction dir = _loc.direction(_goal);
-    MapState ms = new MapState(_loc.relative(dir));
+    Direction dir = this.loc.direction(this.goal);
+    MapState ms = new MapState(this.loc.relative(dir));
     for (x = 0; x < v.size(); x++) {
       MapState temp = (MapState) v.get(x);
       if (temp.equals(ms)) {
@@ -233,25 +228,24 @@ public class MapState implements AStarState {
       }
     }
     */
-    return v;
-  }
+        return v;
+    }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.developingstorm.astar.State#x()
-   */
-  public int x() {
-    return _loc.x;
-  }
+    /*
+     * (non-Javadoc)
+     *
+     * @see com.developingstorm.astar.State#x()
+     */
+    public int x() {
+        return this.loc.x;
+    }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.developingstorm.astar.State#y()
-   */
-  public int y() {
-    return _loc.y;
-  }
-
+    /*
+     * (non-Javadoc)
+     *
+     * @see com.developingstorm.astar.State#y()
+     */
+    public int y() {
+        return this.loc.y;
+    }
 }

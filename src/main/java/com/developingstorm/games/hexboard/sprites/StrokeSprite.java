@@ -11,12 +11,12 @@ import java.awt.Stroke;
  */
 public abstract class StrokeSprite extends Sprite {
 
-  protected Stroke[] _strokes;
-  protected Color[] _colors;
+  protected Stroke[] strokes;
+  protected Color[] colors;
 
   protected StrokeSprite() {
-    _strokes = null;
-    _colors = null;
+    strokes = null;
+    colors = null;
   }
 
   /**
@@ -25,7 +25,7 @@ public abstract class StrokeSprite extends Sprite {
    */
   public void setColors(Color[] colors) {
 
-    _colors = colors;
+    colors = colors;
   }
 
   /**
@@ -34,7 +34,7 @@ public abstract class StrokeSprite extends Sprite {
    */
   public void setStrokes(Stroke[] strokes) {
 
-    _strokes = strokes;
+    strokes = strokes;
   }
 
   protected abstract void handleFrameChange(int old, int current);

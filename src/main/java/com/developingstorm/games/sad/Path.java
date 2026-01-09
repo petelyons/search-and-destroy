@@ -9,36 +9,36 @@ import com.developingstorm.games.sad.util.Log;
 
 public class Path implements Iterable<Location> {
 
-  private ArrayList<Location> _path;
-  private Location _start;
-  private Location _last;
+  private ArrayList<Location> path;
+  private Location start;
+  private Location last;
 
   public Path(Location start) {
-    _path = new ArrayList<Location>();
-    _start = start;
-    _last = start;
-    if (_last == null) {
+    path = new ArrayList<Location>();
+    this.start = start;
+    last = start;
+    if (last == null) {
       throw new Error("A path start cannot be null");
     }
   }
 
   public void addLocation(Location loc) {
-    if (!loc.isNear(_last, 1)) {
-      throw new SaDException("Path points must be contiguous: " + loc + " : " + _last);
+    if (!loc.isNear(this.last, 1)) {
+      throw new SaDException("Path points must be contiguous: " + loc + " : " + this.last);
     }
-    _path.add(loc);
-    _last = loc;
+    this.path.add(loc);
+    last = loc;
   }
 
   public void reverse() {
-    Collections.reverse(_path);
-    Location temp = _last;
-    _last = _start;
-    _start = temp;
+    Collections.reverse(this.path);
+    Location temp = last;
+    last = start;
+    start = temp;
   }
 
   public boolean isOnPath(Location loc) {
-    for (Location l : _path) {
+    for (Location l : this.path) {
       if (loc.equals(l))
         return true;
     }
@@ -47,7 +47,7 @@ public class Path implements Iterable<Location> {
 
   private Location next0(Location loc) {
     boolean returnNext = false;
-    for (Location l : _path) {
+    for (Location l : this.path) {
       if (returnNext) {
         return l;
       }
@@ -64,16 +64,16 @@ public class Path implements Iterable<Location> {
   }
 
   public int length() {
-    return _path.size();
+    return this.path.size();
   }
 
   public Iterator<Location> iterator() {
-    return _path.iterator();
+    return this.path.iterator();
   }
 
   public String toString() {
     StringBuffer sb = new StringBuffer();
-    Iterator<Location> itr = _path.iterator();
+    Iterator<Location> itr = this.path.iterator();
     sb.append("Path:{");
     while (itr.hasNext()) {
       Location loc = itr.next();
@@ -87,22 +87,22 @@ public class Path implements Iterable<Location> {
   }
 
   public boolean isEmpty() {
-    return _path.size() == 0;
+    return this.path.size() == 0;
   }
 
   public void verify(Location from, Location to) {
     Log.debug("Verify path:" + this);
-    if (!_path.contains(from)) {
+    if (!this.path.contains(from)) {
       Log.error("Path missing start:" + from);
     }
-    if (!_path.contains(to)) {
+    if (!this.path.contains(to)) {
       Log.error("Path missing dest:" + to);
     }
     
   }
 
   public boolean contains(Location to) {
-    return _path.contains(to);
+    return this.path.contains(to);
   }
 
 }

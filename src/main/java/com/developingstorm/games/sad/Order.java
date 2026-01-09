@@ -8,35 +8,35 @@ import java.util.List;
  */
 abstract public class Order {
 
-  protected Game _game;
-  protected Unit _unit;
-  protected Type _unitType;
-  protected OrderType _orderType;
-  private List<OrderResponse> _results;
+  protected Game game;
+  protected Unit unit;
+  protected Type unitType;
+  protected OrderType orderType;
+  private List<OrderResponse> results;
 
   protected Order(Game g, Unit u, OrderType type) {
-    _game = g;
-    _unit = u;
-    _orderType = type;
-    _unitType = _unit.getType();
-    _results = new ArrayList<OrderResponse>();
+    game = g;
+    unit = u;
+    orderType = type;
+    unitType = this.unit.getType();
+    results = new ArrayList<OrderResponse>();
   }
   
   public String toString() {
-    return _orderType.toString();
+    return this.orderType.toString();
   }
 
   public Unit getAssignee() {
-    return _unit;
+    return unit;
   }
 
   public OrderType getType() {
-    return _orderType;
+    return orderType;
   }
   
   public OrderResponse execute() {
     OrderResponse resp = executeInternal();
-    _results.add(resp);
+    this.results.add(resp);
     return resp;
   }
   

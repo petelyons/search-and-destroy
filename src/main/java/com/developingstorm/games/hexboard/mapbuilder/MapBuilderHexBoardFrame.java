@@ -41,18 +41,18 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
 
   class MapContext implements HexBoardContext {
 
-    Image[] _images;
+    Image[] images;
 
     MapContext() {
 
-      _images = new Image[7];
-      _images[iWATER] = new ImageIcon("images/water.gif").getImage();
-      _images[iLAND] = new ImageIcon("images/land.gif").getImage();
-      _images[iFOREST] = new ImageIcon("images/forest.gif").getImage();
-      _images[iSAND] = new ImageIcon("images/sand.gif").getImage();
-      _images[iARID] = new ImageIcon("images/arid.gif").getImage();
-      _images[iSWAMP] = new ImageIcon("images/swamp.gif").getImage();
-      _images[iMOUNTAIN] = new ImageIcon("images/mountain.gif").getImage();
+      images = new Image[7];
+      this.images[iWATER] = new ImageIcon("images/water.gif").getImage();
+      this.images[iLAND] = new ImageIcon("images/land.gif").getImage();
+      this.images[iFOREST] = new ImageIcon("images/forest.gif").getImage();
+      this.images[iSAND] = new ImageIcon("images/sand.gif").getImage();
+      this.images[iARID] = new ImageIcon("images/arid.gif").getImage();
+      this.images[iSWAMP] = new ImageIcon("images/swamp.gif").getImage();
+      this.images[iMOUNTAIN] = new ImageIcon("images/mountain.gif").getImage();
 
     }
 
@@ -63,7 +63,7 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
 
     public int getHeight() {
 
-      return _map.getHeight();
+      return MapBuilderHexBoardFrame.this.map.getHeight();
     }
 
     public int getHexSide() {
@@ -73,11 +73,11 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
 
     public Image[] getImages() {
 
-      return _images;
+      return images;
     }
 
     public int getTerrainImageSelector(int x, int y) {
-      return _terrainTypes[x][y];
+      return MapBuilderHexBoardFrame.this.terrainTypes[x][y];
     }
 
     public int getUnexploredImageSelector() {
@@ -96,7 +96,7 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
 
     public int getWidth() {
 
-      return _map.getHeight();
+      return MapBuilderHexBoardFrame.this.map.getHeight();
     }
 
     public Color getXorColor() {
@@ -125,17 +125,17 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
 
   private final static String MAP_EXT = ".sdm";
 
-  private HexBoard _board;
-  private HexCanvas _canvas;
-  private int _brushSize = 0;
+  private HexBoard board;
+  private HexCanvas canvas;
+  private int brushSize = 0;
 
-  private String _fileName = "map1" + MAP_EXT;
+  private String fileName = "map1" + MAP_EXT;
 
-  private JScrollPane _scroll;
-  private int _terrainType = iLAND;
+  private JScrollPane scroll;
+  private int terrainType = iLAND;
 
-  private int[][] _terrainTypes;
-  private HexBoardMap _map;
+  private int[][] terrainTypes;
+  private HexBoardMap map;
 
   private JMenuItem ARID = new JRadioButtonMenuItem();
   private JMenuItem FOREST = new JRadioButtonMenuItem();
@@ -185,8 +185,8 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
 
     setTitle("Search And Destroy - Map Builder");
 
-    _map = new HexBoardMap(50, 50);
-    _terrainTypes = _map.getData();
+    map = new HexBoardMap(50, 50);
+    terrainTypes = this.map.getData();
 
     addWindowListener(new WindowAdapter() {
 
@@ -198,18 +198,18 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
     });
 
      MapContext ctx = new MapContext();
-    _board = new HexBoard(ctx);
-    _scroll = new JScrollPane();
-    _scroll.setOpaque(true);
-    _canvas = new HexCanvas(ctx, _board);
-    _canvas.setLevelZeroCache(false);
-    _canvas.addMouseListener(this);
-    _canvas.addMouseMotionListener(this);
+    board = new HexBoard(ctx);
+    scroll = new JScrollPane();
+    this.scroll.setOpaque(true);
+    canvas = new HexCanvas(ctx, this.board);
+    this.canvas.setLevelZeroCache(false);
+    this.canvas.addMouseListener(this);
+    this.canvas.addMouseMotionListener(this);
     Container pane = getContentPane();
-    JViewport vp = _scroll.getViewport();
+    JViewport vp = this.scroll.getViewport();
     vp.setScrollMode(JViewport.BACKINGSTORE_SCROLL_MODE);
-    vp.add(_canvas);
-    pane.add(_scroll);
+    vp.add(this.canvas);
+    pane.add(this.scroll);
     pack();
     setSize(600, 500);
 
@@ -220,17 +220,17 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
 
   void resetBoardAndCanvas() {
 
-    JViewport vp = _scroll.getViewport();
-    vp.remove(_canvas);
+    JViewport vp = this.scroll.getViewport();
+    vp.remove(this.canvas);
 
     MapContext ctx = new MapContext();
-    _board = new HexBoard(ctx);
-    _canvas = new HexCanvas(ctx, _board);
-    _canvas.addMouseListener(this);
-    _canvas.addMouseMotionListener(this);
-    vp.add(_canvas);
-    _canvas.stopAmination();
-    _canvas.setVisible(true);
+    board = new HexBoard(ctx);
+    canvas = new HexCanvas(ctx, this.board);
+    this.canvas.addMouseListener(this);
+    this.canvas.addMouseMotionListener(this);
+    vp.add(this.canvas);
+    this.canvas.stopAmination();
+    this.canvas.setVisible(true);
   }
 
   public void actionPerformed(ActionEvent event) {
@@ -239,19 +239,19 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
     if (object == EXIT) {
       exit();
     } else if (object == WATER) {
-      _terrainType = iWATER;
+      terrainType = iWATER;
     } else if (object == LAND) {
-      _terrainType = iLAND;
+      terrainType = iLAND;
     } else if (object == FOREST) {
-      _terrainType = iFOREST;
+      terrainType = iFOREST;
     } else if (object == SAND) {
-      _terrainType = iSAND;
+      terrainType = iSAND;
     } else if (object == SWAMP) {
-      _terrainType = iSWAMP;
+      terrainType = iSWAMP;
     } else if (object == ARID) {
-      _terrainType = iARID;
+      terrainType = iARID;
     } else if (object == MOUNTAIN) {
-      _terrainType = iMOUNTAIN;
+      terrainType = iMOUNTAIN;
     } else if (object == SAVE) {
       onSave();
     } else if (object == SAVEAS) {
@@ -259,11 +259,11 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
     } else if (object == OPEN) {
       onOpen();
     } else if (object == SMALL) {
-      _brushSize = 0;
+      brushSize = 0;
     } else if (object == MEDIUM) {
-      _brushSize = 1;
+      brushSize = 1;
     } else if (object == LARGE) {
-      _brushSize = 2;
+      brushSize = 2;
     }
 
   }
@@ -343,16 +343,16 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
   }
 
   private void setHexTerrain(BoardHex bh) {
-    bh.setImageSelector(_terrainType);
+    bh.setImageSelector(this.terrainType);
     Location loc = bh.getLocation();
-    _terrainTypes[loc.x][loc.y] = _terrainType;
+    this.terrainTypes[loc.x][loc.y] = terrainType;
   }
 
   private void brushTerrain(BoardHex bh) {
     if (bh != null) {
       setHexTerrain(bh);
-      if (_brushSize > 0) {
-        List<BoardHex> list = bh.getRing(_brushSize);
+      if (this.brushSize > 0) {
+        List<BoardHex> list = bh.getRing(this.brushSize);
         for (BoardHex bh2 : list) {
           if (bh2 != null) {
             setHexTerrain(bh2);
@@ -367,7 +367,7 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
   }
 
   public void mouseDragged(MouseEvent e) {
-    BoardHex bh = _board.get(e.getPoint());
+    BoardHex bh = this.board.get(e.getPoint());
     brushTerrain(bh);
     repaint();
   }
@@ -387,7 +387,7 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
   public void mousePressed(MouseEvent e) {
     int button = e.getButton();
     if (button == MouseEvent.BUTTON1) {
-      BoardHex bh = _board.get(e.getPoint());
+      BoardHex bh = this.board.get(e.getPoint());
       brushTerrain(bh);
       repaint();
     }
@@ -402,16 +402,16 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
       FileDialog openFileDialog = new FileDialog(this, "Open", FileDialog.LOAD);
       openFileDialog.setDirectory(".");
       openFileDialog.setVisible(true);
-      _fileName = openFileDialog.getFile();
-      if (_fileName == null) {
+      fileName = openFileDialog.getFile();
+      if (fileName == null) {
         return;
       }
-      if (!_fileName.endsWith(MAP_EXT)) {
+      if (!this.fileName.endsWith(MAP_EXT)) {
         return;
       }
 
-      _map = HexBoardMap.loadMap(_fileName);
-      _terrainTypes = _map.getData();
+      map = HexBoardMap.loadMap(this.fileName);
+      terrainTypes = this.map.getData();
 
       resetBoardAndCanvas();
       repaint();
@@ -421,13 +421,13 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
   }
 
   void onSave() {
-    if (_fileName == null) {
+    if (fileName == null) {
       onSaveAs();
       return;
     }
 
     try {
-      _map.saveMap(_fileName);
+      this.map.saveMap(this.fileName);
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -438,13 +438,13 @@ public class MapBuilderHexBoardFrame extends JFrame implements MouseListener,
       FileDialog openFileDialog = new FileDialog(this, "Save", FileDialog.SAVE);
       openFileDialog.setDirectory(".");
       openFileDialog.setVisible(true);
-      _fileName = openFileDialog.getFile();
-      if (_fileName == null) {
+      fileName = openFileDialog.getFile();
+      if (fileName == null) {
         return;
       }
-      if (!_fileName.endsWith(MAP_EXT))
-        _fileName = _fileName + MAP_EXT;
-      _map.saveMap(_fileName);
+      if (!this.fileName.endsWith(MAP_EXT))
+        fileName = this.fileName + MAP_EXT;
+      this.map.saveMap(this.fileName);
     } catch (Exception e) {
       e.printStackTrace();
       return;

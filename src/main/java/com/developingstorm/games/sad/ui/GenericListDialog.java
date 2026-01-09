@@ -23,7 +23,7 @@ public class GenericListDialog extends JDialog {
 
     private static GenericListDialog dialog;
     private static String value = "";
-    private JList<Object> _list;
+    private JList<Object> list;
 
     /**
      * Set up the dialog. The first argument can be null, but it really should be
@@ -60,11 +60,11 @@ public class GenericListDialog extends JDialog {
 
     private void setValue(String newValue) {
         value = newValue;
-        _list.setSelectedValue(value, true);
+        this.list.setSelectedValue(value, true);
     }
 
     private Object[] getValues() {
-        return _list.getSelectedValuesList().toArray();
+        return this.list.getSelectedValuesList().toArray();
     }
 
     private GenericListDialog(
@@ -81,15 +81,15 @@ public class GenericListDialog extends JDialog {
             GenericListDialog.dialog.setVisible(false)
         );
         setButton.addActionListener(e -> {
-            GenericListDialog.value = (String) (_list.getSelectedValue());
+            GenericListDialog.value = (String) (this.list.getSelectedValue());
             GenericListDialog.dialog.setVisible(false);
         });
         getRootPane().setDefaultButton(setButton);
 
         // main part of the dialog
-        _list = new JList<Object>(data);
-        _list.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
-        _list.addMouseListener(
+        list = new JList<Object>(data);
+        this.list.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+        this.list.addMouseListener(
             new MouseAdapter() {
                 public void mouseClicked(MouseEvent e) {
                     if (e.getClickCount() == 2) {
@@ -98,7 +98,7 @@ public class GenericListDialog extends JDialog {
                 }
             }
         );
-        JScrollPane listScroller = new JScrollPane(_list);
+        JScrollPane listScroller = new JScrollPane(this.list);
         listScroller.setPreferredSize(new Dimension(250, 80));
         // XXX: Must do the following, too, or else the scroller thinks
         // XXX: it's taller than it is:
@@ -112,7 +112,7 @@ public class GenericListDialog extends JDialog {
         JPanel listPane = new JPanel();
         listPane.setLayout(new BoxLayout(listPane, BoxLayout.Y_AXIS));
         JLabel label = new JLabel(labelText);
-        label.setLabelFor(_list);
+        label.setLabelFor(this.list);
         listPane.add(label);
         listPane.add(Box.createRigidArea(new Dimension(0, 5)));
         listPane.add(listScroller);

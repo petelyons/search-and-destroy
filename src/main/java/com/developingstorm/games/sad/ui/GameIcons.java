@@ -47,8 +47,8 @@ public class GameIcons {
 
   private static final int MAX_ICONS = 30;
 
-  private ImageIcon[] _icons;
-  private Image[] _images;
+  private ImageIcon[] icons;
+  private Image[] images;
 
   private static GameIcons s_icons = new GameIcons();
 
@@ -62,51 +62,51 @@ public class GameIcons {
 
   private GameIcons() {
 
-    _icons = new ImageIcon[MAX_ICONS];
-    _images = new Image[MAX_ICONS];
+    icons = new ImageIcon[MAX_ICONS];
+    images = new Image[MAX_ICONS];
 
-    _icons[iWATER] = loadImageIcon(PATH + "water.gif");
-    _icons[iLAND] = loadImageIcon(PATH + "land.gif");
-    _icons[iFOREST] = loadImageIcon(PATH + "forest.gif");
-    _icons[iSAND] = loadImageIcon(PATH + "sand.gif");
-    _icons[iARID] = loadImageIcon(PATH + "arid.gif");
-    _icons[iSWAMP] = loadImageIcon(PATH + "swamp.gif");
-    _icons[iMOUNTAIN] = loadImageIcon(PATH + "mountain.gif");
+    this.icons[iWATER] = loadImageIcon(PATH + "water.gif");
+    this.icons[iLAND] = loadImageIcon(PATH + "land.gif");
+    this.icons[iFOREST] = loadImageIcon(PATH + "forest.gif");
+    this.icons[iSAND] = loadImageIcon(PATH + "sand.gif");
+    this.icons[iARID] = loadImageIcon(PATH + "arid.gif");
+    this.icons[iSWAMP] = loadImageIcon(PATH + "swamp.gif");
+    this.icons[iMOUNTAIN] = loadImageIcon(PATH + "mountain.gif");
 
-    _icons[iARMY] = loadImageIcon(PATH + "army.gif");
-    _icons[iFIGHTER] = loadImageIcon(PATH + "fighter.gif");
-    _icons[iTRANSPORT] = loadImageIcon(PATH + "transport.gif");
-    _icons[iDESTROYER] = loadImageIcon(PATH + "destroyer.gif");
-    _icons[iSUBMARINE] = loadImageIcon(PATH + "sub.gif");
-    _icons[iCRUISER] = loadImageIcon(PATH + "cruiser.gif");
-    _icons[iBATTLESHIP] = loadImageIcon(PATH + "battleship.gif");
-    _icons[iAIRCRAFTCARRIER] = loadImageIcon(PATH + "carrier.gif");
-    _icons[iFULLTRANSPORT] = loadImageIcon(PATH + "fulltransport.gif");
-    _icons[iFULLCARRIER] = loadImageIcon(PATH + "fullcarrier.gif");
-    _icons[iSENTRYARMY] = loadImageIcon(PATH + "tent.gif");
-    _icons[iTANK] = loadImageIcon(PATH + "tank.gif");
-    _icons[iCARGO] = loadImageIcon(PATH + "cargo.gif");
-    _icons[iBOMBER] = loadImageIcon(PATH + "bomber.gif");
-    _icons[iSENTRYTANK] = loadImageIcon(PATH + "sentrytank.gif");
-    _icons[iFULLCARGO] = loadImageIcon(PATH + "fullcargo.gif");
+    this.icons[iARMY] = loadImageIcon(PATH + "army.gif");
+    this.icons[iFIGHTER] = loadImageIcon(PATH + "fighter.gif");
+    this.icons[iTRANSPORT] = loadImageIcon(PATH + "transport.gif");
+    this.icons[iDESTROYER] = loadImageIcon(PATH + "destroyer.gif");
+    this.icons[iSUBMARINE] = loadImageIcon(PATH + "sub.gif");
+    this.icons[iCRUISER] = loadImageIcon(PATH + "cruiser.gif");
+    this.icons[iBATTLESHIP] = loadImageIcon(PATH + "battleship.gif");
+    this.icons[iAIRCRAFTCARRIER] = loadImageIcon(PATH + "carrier.gif");
+    this.icons[iFULLTRANSPORT] = loadImageIcon(PATH + "fulltransport.gif");
+    this.icons[iFULLCARRIER] = loadImageIcon(PATH + "fullcarrier.gif");
+    this.icons[iSENTRYARMY] = loadImageIcon(PATH + "tent.gif");
+    this.icons[iTANK] = loadImageIcon(PATH + "tank.gif");
+    this.icons[iCARGO] = loadImageIcon(PATH + "cargo.gif");
+    this.icons[iBOMBER] = loadImageIcon(PATH + "bomber.gif");
+    this.icons[iSENTRYTANK] = loadImageIcon(PATH + "sentrytank.gif");
+    this.icons[iFULLCARGO] = loadImageIcon(PATH + "fullcargo.gif");
 
-    _icons[iEXPLOSION0] = loadImageIcon(PATH + "explosion0.gif");
-    _icons[iEXPLOSION1] = loadImageIcon(PATH + "explosion1.gif");
-    _icons[iEXPLOSION2] = loadImageIcon(PATH + "explosion2.gif");
-    _icons[iEXPLOSION3] = loadImageIcon(PATH + "explosion3.gif");
-    _icons[iEXPLOSION4] = loadImageIcon(PATH + "explosion4.gif");
+    this.icons[iEXPLOSION0] = loadImageIcon(PATH + "explosion0.gif");
+    this.icons[iEXPLOSION1] = loadImageIcon(PATH + "explosion1.gif");
+    this.icons[iEXPLOSION2] = loadImageIcon(PATH + "explosion2.gif");
+    this.icons[iEXPLOSION3] = loadImageIcon(PATH + "explosion3.gif");
+    this.icons[iEXPLOSION4] = loadImageIcon(PATH + "explosion4.gif");
 
-    _icons[iUNEXPLORED] = loadImageIcon(PATH + "unexplored.gif");
-    _icons[iANCHOR] = loadImageIcon(PATH + "anchor.gif");
+    this.icons[iUNEXPLORED] = loadImageIcon(PATH + "unexplored.gif");
+    this.icons[iANCHOR] = loadImageIcon(PATH + "anchor.gif");
 
     for (int x = 0; x < MAX_ICONS; x++) {
-      _images[x] = _icons[x].getImage();
+      this.images[x] = this.icons[x].getImage();
     }
 
   }
 
   public Image[] getImages() {
-    return _images;
+    return images;
   }
 
 }

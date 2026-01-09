@@ -21,10 +21,10 @@ public class OrderMenuBuilder {
     private final JMenuItem UNLOAD_SEL = new JMenuItem("Unload");
     private final JMenuItem HEAD_HOME_SEL = new JMenuItem("Head Home");
 
-    private List<Unit> _units;
-    private Game _game;
-    private GameCommander _commander;
-    private SaDFrame _frame;
+    private List<Unit> units;
+    private Game game;
+    private GameCommander commander;
+    private SaDFrame frame;
 
     public OrderMenuBuilder(
         SaDFrame frame,
@@ -32,17 +32,17 @@ public class OrderMenuBuilder {
         List<Unit> units,
         GameCommander commander
     ) {
-        _frame = frame;
-        _units = units;
-        _game = g;
-        _commander = commander;
+        this.frame = frame;
+        this.units = units;
+        this.game = g;
+        this.commander = commander;
 
-        ACTIVATE_SEL.addActionListener(e -> _commander.activate(null));
-        SENTRY_SEL.addActionListener(e -> _commander.sentry());
-        MOVE_SEL.addActionListener(e -> _commander.moveBegin());
-        UNLOAD_SEL.addActionListener(e -> _commander.unload());
-        EXPLORE_SEL.addActionListener(e -> _commander.explore());
-        HEAD_HOME_SEL.addActionListener(e -> _commander.headHome());
+        ACTIVATE_SEL.addActionListener(e -> this.commander.activate(null));
+        SENTRY_SEL.addActionListener(e -> this.commander.sentry());
+        MOVE_SEL.addActionListener(e -> this.commander.moveBegin());
+        UNLOAD_SEL.addActionListener(e -> this.commander.unload());
+        EXPLORE_SEL.addActionListener(e -> this.commander.explore());
+        HEAD_HOME_SEL.addActionListener(e -> this.commander.headHome());
     }
 
     public JPopupMenu build() {
@@ -66,15 +66,15 @@ public class OrderMenuBuilder {
         menuItem = HEAD_HOME_SEL;
         ordersPopup.add(menuItem);
 
-        if (_units.size() == 1) {
-            Unit u = (Unit) _units.get(0);
-            City c = _game.cityAtLocation(u.getLocation());
+        if (this.units.size() == 1) {
+            Unit u = (Unit) this.units.get(0);
+            City c = this.game.cityAtLocation(u.getLocation());
             if (c != null) {
                 CityMenuBuilder cm = new CityMenuBuilder(
-                    _frame,
-                    _game,
+                    this.frame,
+                    this.game,
                     c,
-                    _commander
+                    this.commander
                 );
                 ordersPopup.addSeparator();
                 ordersPopup.add(cm.getSubmenu());

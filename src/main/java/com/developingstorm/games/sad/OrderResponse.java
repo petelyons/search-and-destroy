@@ -4,18 +4,18 @@ package com.developingstorm.games.sad;
  * Class information
  */
 public class OrderResponse {
-  ResponseCode _code;
-  Object _context;
-  Order _orig;
+  ResponseCode code;
+  Object context;
+  Order orig;
 
   public OrderResponse(ResponseCode code, Order orig, Object ctx) {
-    _code = code;
-    _orig = orig;
-    _context = ctx;
+    this.code = code;
+    this.orig = orig;
+    context = ctx;
   }
 
   public ResponseCode getCode() {
-    return _code;
+    return code;
   }
 
 }

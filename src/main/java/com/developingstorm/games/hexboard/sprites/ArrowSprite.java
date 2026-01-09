@@ -13,48 +13,48 @@ import java.awt.Stroke;
  */
 public class ArrowSprite extends StrokeSprite {
 
-  private Point _tail;
-  private Point _head;
+  private Point tail;
+  private Point head;
 
   public ArrowSprite() {
 
-    _tail = null;
-    _head = null;
+    tail = null;
+    head = null;
 
     setRate(200);
 
     setZPos(2);
     setRepeat(true);
-    setStrokes(_strokes);
-    setColors(_colors);
+    setStrokes(this.strokes);
+    setColors(this.colors);
 
     initFrames(1, Color.DARK_GRAY);
   }
 
   public ArrowSprite(int frames, Color c) {
 
-    _tail = null;
-    _head = null;
+    tail = null;
+    head = null;
 
     setRate(200);
 
     setZPos(2);
     setRepeat(true);
-    setStrokes(_strokes);
-    setColors(_colors);
+    setStrokes(this.strokes);
+    setColors(this.colors);
 
     initFrames(frames, c);
   }
 
   private void initFrames(int count, Color color) {
     setFrames(count);
-    _strokes = new BasicStroke[count];
-    _colors = new Color[count];
+    strokes = new BasicStroke[count];
+    colors = new Color[count];
 
     for (int x = 0; x < count; x++) {
-      _strokes[x] = new BasicStroke(1.0f, BasicStroke.CAP_BUTT,
+      this.strokes[x] = new BasicStroke(1.0f, BasicStroke.CAP_BUTT,
           BasicStroke.JOIN_BEVEL, 5.0f, new float[] { 6.0f, 3.0f }, x);
-      _colors[x] = color;
+      this.colors[x] = color;
     }
   }
 
@@ -64,13 +64,13 @@ public class ArrowSprite extends StrokeSprite {
 
   protected void handleDraw(long time, Image[] images, Graphics2D g) {
 
-    if (_head != null && _tail != null) {
+    if (this.head != null && this.tail != null) {
       Color c = g.getColor();
       Stroke s = g.getStroke();
 
-      g.setColor(_colors[_current]);
-      g.setStroke(_strokes[_current]);
-      drawArrow(g, _tail.x, _tail.y, _head.x, _head.y, 15, 10, 0.3f);
+      g.setColor(this.colors[this.current]);
+      g.setStroke(this.strokes[this.current]);
+      drawArrow(g, this.tail.x, this.tail.y, this.head.x, this.head.y, 15, 10, 0.3f);
 
       g.setColor(c);
       g.setStroke(s);
@@ -80,8 +80,8 @@ public class ArrowSprite extends StrokeSprite {
 
   public void setArrow(Point tail, Point head) {
 
-    _tail = tail;
-    _head = head;
+    this.tail = tail;
+    this.head = head;
   }
 
   // found on Suns

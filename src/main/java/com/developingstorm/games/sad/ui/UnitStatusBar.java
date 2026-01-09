@@ -21,96 +21,96 @@ public class UnitStatusBar extends JComponent {
   private static final String CARRIES = "Carries:";
   private static final Color LABEL_COLOR = new Color(20, 0, 100);
 
-  private Unit _unit = null;
-  private Game _game = null;
+  private Unit unit = null;
+  private Game game = null;
 
-  private JLabel _unitlabel = new JLabel();
-  private JLabel _unitDesc = new JLabel();
-  private JLabel _loclabel = new JLabel();
-  private JLabel _location = new JLabel();
-  private JLabel _statlabel = new JLabel();
-  private JLabel _status = new JLabel();
-  private JLabel _healthlabel = new JLabel();
-  private JLabel _health = new JLabel();
-  private JLabel _movelabel = new JLabel();
-  private JLabel _move = new JLabel();
-  private JLabel _carrieslabel = new JLabel();
-  private JLabel _carries = new JLabel();
-  private JLabel _turnlabel = new JLabel();
-  private JLabel _turnDesc = new JLabel();
-  private JLabel _spacer = new JLabel();
+  private JLabel unitlabel = new JLabel();
+  private JLabel unitDesc = new JLabel();
+  private JLabel loclabel = new JLabel();
+  private JLabel location = new JLabel();
+  private JLabel statlabel = new JLabel();
+  private JLabel status = new JLabel();
+  private JLabel healthlabel = new JLabel();
+  private JLabel health = new JLabel();
+  private JLabel movelabel = new JLabel();
+  private JLabel move = new JLabel();
+  private JLabel carrieslabel = new JLabel();
+  private JLabel carries = new JLabel();
+  private JLabel turnlabel = new JLabel();
+  private JLabel turnDesc = new JLabel();
+  private JLabel spacer = new JLabel();
 
   public UnitStatusBar() {
     setLayout(new FlowLayout(FlowLayout.LEFT));
 
-    _turnlabel.setText(TURN);
-    add(_turnlabel);
+    this.turnlabel.setText(TURN);
+    add(this.turnlabel);
 
-    _turnDesc.setText("1");
-    add(_turnDesc);
+    this.turnDesc.setText("1");
+    add(this.turnDesc);
 
-    _spacer.setText("  :  ");
-    add(_spacer);
+    this.spacer.setText("  :  ");
+    add(this.spacer);
 
-    _unitlabel.setText(UNIT);
-    add(_unitlabel);
+    this.unitlabel.setText(UNIT);
+    add(this.unitlabel);
 
-    _unitDesc.setText("(Unknown)");
-    add(_unitDesc);
-    _unitDesc.setForeground(LABEL_COLOR);
+    this.unitDesc.setText("(Unknown)");
+    add(this.unitDesc);
+    this.unitDesc.setForeground(LABEL_COLOR);
 
-    _loclabel.setText(LOCATION);
-    add(_loclabel);
+    this.loclabel.setText(LOCATION);
+    add(this.loclabel);
 
-    _location.setText("(unknown)");
-    add(_location);
-    _location.setForeground(LABEL_COLOR);
+    this.location.setText("(unknown)");
+    add(this.location);
+    this.location.setForeground(LABEL_COLOR);
 
-    _healthlabel.setText(HEALTH);
-    add(_healthlabel);
+    this.healthlabel.setText(HEALTH);
+    add(this.healthlabel);
 
-    _health.setText("(unknown)");
-    add(_health);
-    _health.setForeground(LABEL_COLOR);
+    this.health.setText("(unknown)");
+    add(this.health);
+    this.health.setForeground(LABEL_COLOR);
 
-    _movelabel.setText(MOVE);
-    add(_movelabel);
+    this.movelabel.setText(MOVE);
+    add(this.movelabel);
 
-    _move.setText("(unknown)");
-    add(_move);
-    _move.setForeground(LABEL_COLOR);
+    this.move.setText("(unknown)");
+    add(this.move);
+    this.move.setForeground(LABEL_COLOR);
     
-    _carrieslabel.setText(CARRIES);
-    add(_carrieslabel);
+    this.carrieslabel.setText(CARRIES);
+    add(this.carrieslabel);
 
-    _carries.setText("(none)");
-    add(_carries);
+    this.carries.setText("(none)");
+    add(this.carries);
 
-    _statlabel.setText(STATUS);
-    add(_statlabel);
+    this.statlabel.setText(STATUS);
+    add(this.statlabel);
 
-    _status.setText("(unknown)");
-    add(_status);
+    this.status.setText("(unknown)");
+    add(this.status);
 
   }
 
   public void setGame(Game g) {
-    _game = g;
+    game = g;
   }
 
   public void setUnit(Unit u) {
-    _turnDesc.setText("" + _game.getTurn());
+    this.turnDesc.setText("" + this.game.getTurn());
 
-    _unit = u;
-    _unitDesc.setText(_unit.typeDesc());
+    unit = u;
+    this.unitDesc.setText(this.unit.typeDesc());
 
-    _location.setText(_unit.locationDesc());
+    this.location.setText(this.unit.locationDesc());
 
-    _health.setText(_unit.life().healthDesc());
+    this.health.setText(this.unit.life().healthDesc());
 
-    _move.setText(_unit.life().moveDesc());
+    this.move.setText(this.unit.life().moveDesc());
     
-    _carries.setText(_unit.carriesDesc());
+    this.carries.setText(this.unit.carriesDesc());
     validate();
     //repaint();
   }

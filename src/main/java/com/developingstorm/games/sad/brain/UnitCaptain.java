@@ -29,12 +29,12 @@ import com.developingstorm.util.RandomUtil;
  */
 public abstract class UnitCaptain<T extends Unit>  {
   
-  protected Battleplan _plan;
-  protected General _general;
+  protected Battleplan plan;
+  protected General general;
 
   protected UnitCaptain(General general, Battleplan plan) {
-    _general = general;
-    _plan = plan;
+    this.general = general;
+    this.plan = plan;
   }
   
   /**
@@ -74,7 +74,7 @@ public abstract class UnitCaptain<T extends Unit>  {
    * @return null if the order could not be constructed 
    */
   protected Order goToLoadingPoint(Unit u) {
-    Set<Location> loadingPoints = _plan.getLoadingPoints();
+    Set<Location> loadingPoints = this.plan.getLoadingPoints();
     Set<Location> validLoadingPoints = loadingPoints;
     
     if (u.isCarried()) {
@@ -90,7 +90,7 @@ public abstract class UnitCaptain<T extends Unit>  {
         throw new SaDException("Land units must be on a continent! " + u.getLocation());
       }
       for (Location loc : loadingPoints) {
-        Continent cont2 = _plan.getBoard().getContinent(loc);
+        Continent cont2 = this.plan.getBoard().getContinent(loc);
         if (cont.equals(cont2)) {
           validLoadingPoints.add(loc);
         }
@@ -170,7 +170,7 @@ public abstract class UnitCaptain<T extends Unit>  {
    * @return
    */
   protected Order goToUnloadingPoint(Unit u) {
-    Location loc = u.getClosestLocation(_general.getUnloadingZone());
+    Location loc = u.getClosestLocation(this.general.getUnloadingZone());
     if (loc != null) {
       Log.info(u, "Going to unloading point");
       return u.newMoveOrder(loc);
@@ -197,7 +197,7 @@ public abstract class UnitCaptain<T extends Unit>  {
    * @return
    */
   protected boolean atLoadingPoint(Unit u) {
-    return _plan.getLoadingPoints().contains(u.getLocation());
+    return this.plan.getLoadingPoints().contains(u.getLocation());
   }
 
   /**
@@ -206,8 +206,8 @@ public abstract class UnitCaptain<T extends Unit>  {
    * @return
    */
   protected boolean atUnloadPoint(Unit u) {
-    return _plan.getDefenseUnloadingPoints().contains(u.getLocation()) || 
-        _plan.getExpandUnloadingPoints().contains(u.getLocation());
+    return this.plan.getDefenseUnloadingPoints().contains(u.getLocation()) || 
+        this.plan.getExpandUnloadingPoints().contains(u.getLocation());
   }
   
   /**
@@ -216,7 +216,7 @@ public abstract class UnitCaptain<T extends Unit>  {
    * @return
    */
   protected Order patrolUnloadingZones(Unit u) {
-    Location loc = u.getClosestLocation(_plan.getDefenseUnloadingPoints());
+    Location loc = u.getClosestLocation(this.plan.getDefenseUnloadingPoints());
     if (loc == null) {
       return null;
     }

@@ -16,19 +16,19 @@ import com.developingstorm.games.sad.util.Log;
  */
 public class CityDialog {
 
-  private Game _game;
-  private City _city;
-  private Component _comp;
+  private Game game;
+  private City city;
+  private Component comp;
 
   CityDialog(Component c, Game game, City city) {
-    _game = game;
-    _city = city;
-    _comp = c;
+    game = game;
+    city = city;
+    comp = c;
   }
 
   public List<Unit> show() {
 
-    List<Unit> units = _game.unitsAtLocation(_city.getLocation());
+    List<Unit> units = this.game.unitsAtLocation(this.city.getLocation());
     String[] values = new String[units.size()];
     int x = 0;
 
@@ -39,10 +39,10 @@ public class CityDialog {
       x++;
     }
 
-    GenericListDialog.initialize(_comp, values, "Units",
+    GenericListDialog.initialize(this.comp, values, "Units",
         "Issue Orders to Unit(s)");
 
-    Object[] vals = GenericListDialog.showDialog(_comp, "");
+    Object[] vals = GenericListDialog.showDialog(this.comp, "");
     ArrayList<Unit> list = new ArrayList<Unit>(vals.length);
     for (x = 0; x < vals.length; x++) {
       Log.debug("Looking up:" + vals[x]);

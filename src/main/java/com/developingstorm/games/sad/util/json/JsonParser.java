@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 public class JsonParser {
-  StringBuilder _builder;
+  StringBuilder builder;
   static final String NUMERIC = "0123456789-.";
   
   enum TokenType {BEGIN_CURLY, END_CURLY, BEGIN_ARRAY, END_ARRAY, COMMA, KEYSEP, NULL, TRUE, FALSE, STRING, NUMBER, END}
@@ -13,11 +13,11 @@ public class JsonParser {
 
   
   private static class Scanner {
-    private char[] _buf;
-    int _pos;
+    private char[] buf;
+    int pos;
     public Scanner(String val) {
-      _buf = val.toCharArray();
-      _pos = 0;
+      buf = val.toCharArray();
+      pos = 0;
     }
     
     
@@ -26,12 +26,12 @@ public class JsonParser {
     }
     
     private boolean eof() {
-      return _pos >= _buf.length;
+      return this.pos >= this.buf.length;
     }
     
     private void eatWS() {
       while (isWS(current()) && !eof()) { 
-        _pos++;
+        this.pos++;
       }
     }
 
@@ -40,13 +40,13 @@ public class JsonParser {
         if (eof()) {
           return;
         }
-        _pos++;
+        this.pos++;
       }
     }
 
     
     char current() {
-      return _buf[_pos];
+      return this.buf[this.pos];
     }
     
     TokenType peek() {
@@ -151,25 +151,25 @@ public class JsonParser {
     }
   }
   
-  Scanner _scanner;
+  Scanner scanner;
   
   public JsonParser(String val) {
-    _scanner = new Scanner(val);
+    scanner = new Scanner(val);
     
   }
   
   
   public Object parse() {
-    TokenType tt = _scanner.peek();
+    TokenType tt = this.scanner.peek();
     switch(tt) {
     case BEGIN_CURLY:
       return parseJsonObj();
     case STRING:
-      return _scanner.getString();
+      return this.scanner.getString();
     case BEGIN_ARRAY:
       return parseJsonArray();
     case NUMBER:
-      return _scanner.getNumber();
+      return this.scanner.getNumber();
     default:
       throw new RuntimeException("Invalid JSON");
     }
@@ -181,39 +181,39 @@ public class JsonParser {
   private Object parseJsonArray() {
 
     List<Object> list = new ArrayList<Object>();
-    _scanner.consume(TokenType.BEGIN_ARRAY);
+    this.scanner.consume(TokenType.BEGIN_ARRAY);
     while (true) {
-      TokenType tt = _scanner.peek();
+      TokenType tt = this.scanner.peek();
       switch(tt) {
       case BEGIN_CURLY:
         list.add(parseJsonObj());
         break;
       case STRING:
-        list.add(_scanner.getString());
+        list.add(this.scanner.getString());
         break;
       case BEGIN_ARRAY:
         list.add(parseJsonArray());
         break;
       case NUMBER:
-        list.add(_scanner.getNumber());
+        list.add(this.scanner.getNumber());
         break;
       case NULL:
         list.add(null);
-        _scanner.consume(tt);
+        this.scanner.consume(tt);
         break;
       case TRUE:
         list.add(true);
-        _scanner.consume(tt);
+        this.scanner.consume(tt);
         break;
       case FALSE:
         list.add(false);
-        _scanner.consume(tt);
+        this.scanner.consume(tt);
         break;
       case COMMA:
-        _scanner.consume(tt);
+        this.scanner.consume(tt);
         break;
       case END_ARRAY:
-        _scanner.consume(tt);
+        this.scanner.consume(tt);
         return list.toArray();
       default:
         throw new RuntimeException("BAD ARRAY");
@@ -225,10 +225,10 @@ public class JsonParser {
 
   private Object parseJsonObj() {
     JsonObj obj = new JsonObj();
-    _scanner.consume(TokenType.BEGIN_CURLY);
+    this.scanner.consume(TokenType.BEGIN_CURLY);
     String key = null;
     while (true) {
-      TokenType tt = _scanner.peek();
+      TokenType tt = this.scanner.peek();
       switch(tt) {
       case BEGIN_ARRAY:
         if (key == null) {
@@ -238,7 +238,7 @@ public class JsonParser {
         key = null;
         break;
       case STRING:
-        String s = _scanner.getString();
+        String s = this.scanner.getString();
         if (key == null) {
           key = s;
         } else {
@@ -257,7 +257,7 @@ public class JsonParser {
         if (key == null)  {
           throw new RuntimeException("Unexpected number");
         } 
-        Number num = _scanner.getNumber();
+        Number num = this.scanner.getNumber();
         obj.put(key, num);
         key = null;
         break;
@@ -267,7 +267,7 @@ public class JsonParser {
         } 
         obj.put(key, null);
         key = null;
-        _scanner.consume(tt);
+        this.scanner.consume(tt);
         break;
       case TRUE:
         if (key == null)  {
@@ -275,7 +275,7 @@ public class JsonParser {
         } 
         obj.put(key, true);
         key = null;
-        _scanner.consume(tt);
+        this.scanner.consume(tt);
         break;
       case FALSE:
         if (key == null)  {
@@ -283,16 +283,16 @@ public class JsonParser {
         } 
         obj.put(key, true);
         key = null;
-        _scanner.consume(tt);
+        this.scanner.consume(tt);
         break;
       case COMMA:
-        _scanner.consume(tt);
+        this.scanner.consume(tt);
         break;
       case KEYSEP:
-        _scanner.consume(tt);
+        this.scanner.consume(tt);
         break;
       case END_CURLY:
-        _scanner.consume(tt);
+        this.scanner.consume(tt);
         return obj;
       default:
         throw new RuntimeException("BAD OBJECT");

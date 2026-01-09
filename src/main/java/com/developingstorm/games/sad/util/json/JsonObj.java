@@ -5,7 +5,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 public class JsonObj {
-  private HashMap<String, Object> _map = new HashMap<String, Object>();
+  private HashMap<String, Object> map = new HashMap<String, Object>();
   
 
   public String getString(String key) {
@@ -13,7 +13,7 @@ public class JsonObj {
   }
   
   private Object get(String key) {
-    return _map.get(key);
+    return this.map.get(key);
   }
   
   public JsonObj getObj(String key) {
@@ -42,15 +42,15 @@ public class JsonObj {
 //
   
   public void put(String key, Object val) {
-    _map.put(key, val);
+    this.map.put(key, val);
   }
   
   
   public Set<String> keySet() {
-    return _map.keySet();
+    return this.map.keySet();
   }
   public Set<Entry<String, Object>> entrySet() {
-    return _map.entrySet();
+    return this.map.entrySet();
   }
 
 }

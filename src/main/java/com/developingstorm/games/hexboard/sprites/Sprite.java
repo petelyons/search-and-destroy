@@ -8,20 +8,20 @@ import java.awt.Image;
  */
 public abstract class Sprite {
 
-  protected int _current;
-  protected boolean _repeat;
-  protected int _frames;
-  protected int _rate;
-  protected int _zPos;
-  protected long _lastUpdate;
+  protected int current;
+  protected boolean repeat;
+  protected int frames;
+  protected int rate;
+  protected int zPos;
+  protected long lastUpdate;
 
   protected Sprite() {
-    _current = 0;
-    _frames = 0;
-    _repeat = false;
-    _lastUpdate = 0;
-    _rate = 100;
-    _zPos = 0;
+    current = 0;
+    frames = 0;
+    repeat = false;
+    lastUpdate = 0;
+    rate = 100;
+    zPos = 0;
 
   }
 
@@ -30,7 +30,7 @@ public abstract class Sprite {
    */
   public int getCurrent() {
 
-    return _current;
+    return current;
   }
 
   /**
@@ -38,7 +38,7 @@ public abstract class Sprite {
    */
   public long getLastUpdate() {
 
-    return _lastUpdate;
+    return lastUpdate;
   }
 
   /**
@@ -47,7 +47,7 @@ public abstract class Sprite {
    */
   public void setFrames(int frames) {
 
-    _frames = frames;
+    this.frames = frames;
   }
 
   /**
@@ -56,7 +56,7 @@ public abstract class Sprite {
    */
   public void setRate(int rate) {
 
-    _rate = rate;
+    this.rate = rate;
   }
 
   /**
@@ -65,7 +65,7 @@ public abstract class Sprite {
    */
   public void setRepeat(boolean repeat) {
 
-    _repeat = repeat;
+    this.repeat = repeat;
   }
 
   /**
@@ -74,33 +74,33 @@ public abstract class Sprite {
    */
   public void setZPos(int pos) {
 
-    _zPos = pos;
+    zPos = pos;
   }
 
   public void draw(long time, Image[] images, Graphics2D g) {
-    int old = _current;
+    int old = current;
 
-    if (time - _lastUpdate > _rate) {
-      _current++;
-      _lastUpdate = time;
+    if (time - this.lastUpdate > this.rate) {
+      this.current++;
+      lastUpdate = time;
     }
 
-    if (_current >= _frames && _repeat) {
-      _current = 0;
+    if (this.current >= this.frames && this.repeat) {
+      current = 0;
     }
 
-    if (_current >= _frames || g == null) {
+    if (this.current >= this.frames || g == null) {
       return;
     }
 
-    if (_current != old) {
-      handleFrameChange(old, _current);
+    if (this.current != old) {
+      handleFrameChange(old, this.current);
     }
     handleDraw(time, images, g);
   }
 
   public boolean check(long time) {
-    return (time - _lastUpdate > _rate);
+    return (time - this.lastUpdate > this.rate);
   }
 
   protected abstract void handleFrameChange(int old, int current);
@@ -108,10 +108,10 @@ public abstract class Sprite {
   protected abstract void handleDraw(long time, Image[] images, Graphics2D g);
 
   public int getZPos() {
-    return _zPos;
+    return zPos;
   }
 
   public boolean done() {
-    return _current > _frames;
+    return this.current > frames;
   }
 }

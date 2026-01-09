@@ -21,7 +21,7 @@ public class GameNames {
 
   private static GameNames s_names = new GameNames();
 
-  private List<String> _unused;
+  private List<String> unused;
 
   private GameNames() {
 
@@ -46,18 +46,18 @@ public class GameNames {
       }
     }
 
-    _unused = new ArrayList<String>(names);
+    unused = new ArrayList<String>(names);
 
   }
 
   private String alloc() {
-    int i = RandomUtil.getInt(_unused.size());
-    String s = (String) _unused.remove(i);
+    int i = RandomUtil.getInt(this.unused.size());
+    String s = (String) this.unused.remove(i);
     return s;
   }
 
   private void free(String s) {
-    _unused.add(s);
+    this.unused.add(s);
   }
 
   public static String getName() {

@@ -12,12 +12,12 @@ import com.developingstorm.games.hexboard.BoardHex;
  */
 public class UserAction implements UserActionListener {
 
-  protected UserActionOwner _owner;
-  protected GameCommander _commander;
+  protected UserActionOwner owner;
+  protected GameCommander commander;
 
   public UserAction(GameCommander commander, UserActionOwner owner) {
-    _owner = owner;
-    _commander = commander;
+    this.owner = owner;
+    this.commander = commander;
   }
 
   public void keyPressed(KeyEvent ke) {
@@ -27,37 +27,37 @@ public class UserAction implements UserActionListener {
   }
 
   public void mousePressed(MouseEvent e) {
-    BoardHex hex = _commander.trans(e.getPoint());
+    BoardHex hex = this.commander.trans(e.getPoint());
     extMousePressed(e, hex);
   }
 
   public void mouseReleased(MouseEvent e) {
-    BoardHex hex = _commander.trans(e.getPoint());
+    BoardHex hex = this.commander.trans(e.getPoint());
     extMouseReleased(e, hex);
   }
 
   public void mouseClicked(MouseEvent e) {
-    BoardHex hex = _commander.trans(e.getPoint());
+    BoardHex hex = this.commander.trans(e.getPoint());
     extMouseClicked(e, hex);
   }
 
   public void mouseEntered(MouseEvent e) {
-    BoardHex hex = _commander.trans(e.getPoint());
+    BoardHex hex = this.commander.trans(e.getPoint());
     extMouseEntered(e, hex);
   }
 
   public void mouseDragged(MouseEvent e) {
-    BoardHex hex = _commander.trans(e.getPoint());
+    BoardHex hex = this.commander.trans(e.getPoint());
     extMouseDragged(e, hex);
   }
 
   public void mouseMoved(MouseEvent e) {
-    BoardHex hex = _commander.trans(e.getPoint());
+    BoardHex hex = this.commander.trans(e.getPoint());
     extMouseMoved(e, hex);
   }
 
   public void mouseExited(MouseEvent e) {
-    BoardHex hex = _commander.trans(e.getPoint());
+    BoardHex hex = this.commander.trans(e.getPoint());
     extMouseExited(e, hex);
   }
 

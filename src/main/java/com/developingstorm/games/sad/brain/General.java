@@ -22,81 +22,81 @@ import com.developingstorm.util.RandomUtil;
 
 public class General {
 
-  private final ArmorCaptain _armor;
-  private final BattleshipCaptain _battleship;
-  private final BomberCaptain _bomber;
-  private final CargoCaptain _cargo;
-  private final CruiserCaptain _cruiser;
-  private final DestroyerCaptain _destroyer;
-  private final InfantryCaptain _infantry;
-  private final SubmarineCaptain _submarine;
-  private final TransportCaptain _transport;
-  private final FighterCaptain _fighter;
-  private final CarrierCaptain _carrier;
+  private final ArmorCaptain armor;
+  private final BattleshipCaptain battleship;
+  private final BomberCaptain bomber;
+  private final CargoCaptain cargo;
+  private final CruiserCaptain cruiser;
+  private final DestroyerCaptain destroyer;
+  private final InfantryCaptain infantry;
+  private final SubmarineCaptain submarine;
+  private final TransportCaptain transport;
+  private final FighterCaptain fighter;
+  private final CarrierCaptain carrier;
   
   
-  private int _defendVsExplore = 50;
+  private int defendVsExplore = 50;
   
-  private Battleplan _plan;
+  private Battleplan plan;
   
   public General(Battleplan plan) {
-    _plan = plan;
+    this.plan = plan;
     
-    _armor = new ArmorCaptain(this, plan);
-    _battleship = new BattleshipCaptain(this, plan);
-    _bomber = new BomberCaptain(this, plan);
-    _cargo = new CargoCaptain(this, plan);
-    _cruiser = new CruiserCaptain(this, plan);
-    _destroyer = new DestroyerCaptain(this, plan);
-    _fighter = new FighterCaptain(this, plan);
-    _infantry = new InfantryCaptain(this, plan);
-    _submarine = new SubmarineCaptain(this, plan);
-    _transport = new TransportCaptain(this, plan);
-    _carrier = new CarrierCaptain(this, plan);
+    armor = new ArmorCaptain(this, plan);
+    battleship = new BattleshipCaptain(this, plan);
+    bomber = new BomberCaptain(this, plan);
+    cargo = new CargoCaptain(this, plan);
+    cruiser = new CruiserCaptain(this, plan);
+    destroyer = new DestroyerCaptain(this, plan);
+    fighter = new FighterCaptain(this, plan);
+    infantry = new InfantryCaptain(this, plan);
+    submarine = new SubmarineCaptain(this, plan);
+    transport = new TransportCaptain(this, plan);
+    carrier = new CarrierCaptain(this, plan);
   }
   
   private Order plan(Fighter u) {
-    return _fighter.plan(u);
+    return this.fighter.plan(u);
   }
 
   private Order plan(Submarine u) {
-    return _submarine.plan(u);
+    return this.submarine.plan(u);
   }
 
   private Order plan(Transport u) {
-    return _transport.plan(u);
+    return this.transport.plan(u);
   }
   private Order plan(Armor u) {
-    return _armor.plan(u);
+    return this.armor.plan(u);
   }
   
   private Order plan(Infantry u) {
-    return _infantry.plan(u);
+    return this.infantry.plan(u);
   }
 
   private Order plan(Destroyer u) {
-    return _destroyer.plan(u);
+    return this.destroyer.plan(u);
   }
   
   private Order plan(Cruiser u) {
-    return _cruiser.plan(u);
+    return this.cruiser.plan(u);
   }
   
   private Order plan(Cargo u) {
-    return _cargo.plan(u);
+    return this.cargo.plan(u);
   }
 
   private Order plan(Bomber u) {
-    return _bomber.plan(u);
+    return this.bomber.plan(u);
   }
   
   private Order plan(Battleship u) {
-    return _battleship.plan(u);
+    return this.battleship.plan(u);
   }
   
 
   private Order plan(Carrier u) {
-    return _carrier.plan(u);
+    return this.carrier.plan(u);
   }
 
   public Order getOrders(Unit u) {
@@ -159,15 +159,15 @@ public class General {
 
 
   boolean shouldDefend() {
-    return (RandomUtil.getInt(100) <= _defendVsExplore);
+    return (RandomUtil.getInt(100) <= this.defendVsExplore);
   }
   
   
 
 
   Set<Location> getUnloadingZone() {
-    Set<Location> def = _plan.getDefenseUnloadingPoints();
-    Set<Location> exp = _plan.getExpandUnloadingPoints();
+    Set<Location> def = this.plan.getDefenseUnloadingPoints();
+    Set<Location> exp = this.plan.getExpandUnloadingPoints();
     
     if (def.isEmpty() && exp.isEmpty()) {
       return def;

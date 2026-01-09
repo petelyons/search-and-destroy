@@ -3,7 +3,7 @@ package com.developingstorm.games.sad.util.json;
 import java.util.Map.Entry;
 
 public class JsonFormatter {
-  StringBuilder _builder;
+  StringBuilder builder;
     
   private static String format(int v) {
     return "" + v;

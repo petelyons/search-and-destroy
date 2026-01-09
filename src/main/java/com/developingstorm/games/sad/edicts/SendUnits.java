@@ -14,40 +14,40 @@ import com.developingstorm.games.sad.util.json.JsonObj;
 
 public class SendUnits extends Edict {
   
-  Travel _travel;
-  City _dest;
+  Travel travel;
+  City dest;
 
   protected SendUnits(Player p, City c, EdictType t, Travel travel, City dest) {
     super(p, c, t);
-    _travel = travel;
-    _dest = dest;
+    this.travel = travel;
+    this.dest = dest;
   }
   
   protected SendUnits(Player p, EdictType t, Travel travel, JsonObj json) {
     super(p, t, json);
-    _travel = travel;
-    _dest = p.getGame().getCity(json.getString("dest"));
+    this.travel = travel;
+    dest = p.getGame().getCity(json.getString("dest"));
   }
 
   public City destination() {
-   return _dest;
+   return dest;
   }
   
   @Override
   public void execute(Game game) {
     
-    List<Unit> units = unitsMatchingTravel(_travel);
+    List<Unit> units = unitsMatchingTravel(this.travel);
     if (!units.isEmpty()) {
       for (Unit u : units) {
-        Log.debug(u, "Applying send edict. " + _travel);
-        u.orderMove(_dest.getLocation());
+        Log.debug(u, "Applying send edict. " + this.travel);
+        u.orderMove(this.dest.getLocation());
       }
     }
   }
   
   public JsonObj toJson() {
     JsonObj obj = super.toJson();
-    obj.put("dest", _dest.toJsonLink());
+    obj.put("dest", this.dest.toJsonLink());
     return obj;
   }
 

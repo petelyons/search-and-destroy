@@ -11,70 +11,70 @@ import com.developingstorm.games.hexboard.Location;
  */
 public class MoveController extends UserAction {
 
-  private Location _start;
-  private Location _end;
-  private int _boardMiddle;
+  private Location start;
+  private Location end;
+  private int boardMiddle;
 
   public MoveController(GameCommander commander, UserActionOwner owner) {
     super(commander, owner);
-    _start = _end = commander.getCurrentLocation();
-    _boardMiddle = (commander.boardWidth() / 2);
+    start = end = commander.getCurrentLocation();
+    boardMiddle = (commander.boardWidth() / 2);
   }
   
   public void keyPressed(KeyEvent ke) {
     
-    Location oldEnd = _end;
+    Location oldEnd = end;
     switch (ke.getKeyCode()) {
     case KeyEvent.VK_UP:
-      if (_end.x >= _boardMiddle) {
-        _end = _end.relative(Direction.NORTH_WEST);
+      if (this.end.x >= this.boardMiddle) {
+        end = this.end.relative(Direction.NORTH_WEST);
       } else {
-        _end = _end.relative(Direction.NORTH_EAST);
+        end = this.end.relative(Direction.NORTH_EAST);
       }
       break;
     case KeyEvent.VK_DOWN:
-      if (_end.x >= _boardMiddle) {
-        _end = _end.relative(Direction.SOUTH_WEST);
+      if (this.end.x >= this.boardMiddle) {
+        end = this.end.relative(Direction.SOUTH_WEST);
       } else { 
-        _end = _end.relative(Direction.SOUTH_EAST);
+        end = this.end.relative(Direction.SOUTH_EAST);
       }
       break;
     case KeyEvent.VK_LEFT:
-      _end = _end.relative(Direction.WEST);
+      end = this.end.relative(Direction.WEST);
       break;
     case KeyEvent.VK_RIGHT:
-      _end = _end.relative(Direction.EAST);
+      end = this.end.relative(Direction.EAST);
       break;
     case KeyEvent.VK_PAGE_UP:
-      _end = _end.relative(Direction.NORTH_EAST);
+      end = this.end.relative(Direction.NORTH_EAST);
       break;
     case KeyEvent.VK_PAGE_DOWN:
-      _end = _end.relative(Direction.SOUTH_EAST);
+      end = this.end.relative(Direction.SOUTH_EAST);
       break;
     case KeyEvent.VK_HOME:
-      _end = _end.relative(Direction.NORTH_WEST);
+      end = this.end.relative(Direction.NORTH_WEST);
       break;
     case KeyEvent.VK_END:
-      _end = _end.relative(Direction.SOUTH_WEST);
+      end = this.end.relative(Direction.SOUTH_WEST);
       break;
     case KeyEvent.VK_ENTER:
-      _commander.move(_end);
-      _commander.showLine(null, null);
-      _owner.clearAction();
+      this.commander.move(this.end);
+      this.commander.showLine(null, null);
+      this.owner.clearAction();
       return;
 
     case KeyEvent.VK_ESCAPE:
-      _commander.showLine(null, null);
-      _owner.clearAction();
+      this.commander.showLine(null, null);
+      this.owner.clearAction();
       return;
     }
 
-    if (!_commander.onBoard(_end)) {
-      _end = oldEnd;
+    if (!this.commander.onBoard(this.end)) {
+      end = oldEnd;
     }
-    _commander.showLine(null, null);
-    _commander.showLocation(_end);
-    _commander.showLine(_start, _end);
+    this.commander.showLine(null, null);
+    this.commander.showLocation(this.end);
+    this.commander.showLine(this.start, this.end);
   }
 
 }

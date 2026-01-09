@@ -14,13 +14,13 @@ import javax.swing.JToolBar;
  */
 public class GameToolbar extends JToolBar {
 
-  private ActionListener _alistener;
-  private ItemListener _ilistener;
+  private ActionListener alistener;
+  private ItemListener ilistener;
 
   public GameToolbar(ActionListener alistener, ItemListener ilistener) {
 
-    _alistener = alistener;
-    _ilistener = ilistener;
+    this.alistener = alistener;
+    this.ilistener = ilistener;
 
     JToggleButton button = null;
 
@@ -52,7 +52,7 @@ public class GameToolbar extends JToolBar {
     JToggleButton button = new JToggleButton();
     button.setActionCommand(actionCommand);
     button.setToolTipText(toolTipText);
-    button.addItemListener(_ilistener);
+    button.addItemListener(this.ilistener);
     if (icon != null) { // image found
       button.setIcon(icon);
 

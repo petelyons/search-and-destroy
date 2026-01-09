@@ -14,18 +14,18 @@ import com.developingstorm.games.sad.util.Log;
 
 public class UnitTurnState {
   
-  private Game _game;
+  private Game game;
   
-  private OrderState _orderState;
-  private final Unit _unit;
-  private int _attemptCounter;
-  private PathFinder _pathFinder;
+  private OrderState orderState;
+  private final Unit unit;
+  private int attemptCounter;
+  private PathFinder pathFinder;
 
   
   public UnitTurnState(Game g, Unit u) {
-    _game = g;
-    _unit = u;
-    _attemptCounter = 0;
+    game = g;
+    unit = u;
+    attemptCounter = 0;
     updateOrderState();
   }
   
@@ -65,16 +65,16 @@ public class UnitTurnState {
 
   
   public boolean attemptTurn() {
-    Unit u = _unit;
+    Unit u = unit;
     Order alternate = null;
-    _attemptCounter++;
+    this.attemptCounter++;
     
-    if (_attemptCounter > 2 && u.getOwner().isRobot()) {
+    if (this.attemptCounter > 2 && u.getOwner().isRobot()) {
       Log.warn("**** RANDOM MOVE ****");
       alternate = u.newRandomMoveOrder();
     }
     
-    if (_attemptCounter > 5 &&  u.getOwner().isRobot()) {
+    if (this.attemptCounter > 5 &&  u.getOwner().isRobot()) {
       //u.getOrder();
       Log.warn(u, "***ATTEMPT COUNTER EXCEEEDED****");
       u.turn().completeTurn();
@@ -99,19 +99,19 @@ public class UnitTurnState {
   public void beginTurn() {
 
 
-    _attemptCounter = 0;
-    _pathFinder = null;
-    _unit.life().resetForTurn();
+    attemptCounter = 0;
+    pathFinder = null;
+    this.unit.life().resetForTurn();
 
-    _unit.repairAndRefuel();
+    this.unit.repairAndRefuel();
 
     
-    Order order = _unit.getOrder();
+    Order order = this.unit.getOrder();
     if (order != null && order.getType() == OrderType.SKIPTURN) {
-      _unit.clearOrders();
+      this.unit.clearOrders();
     }
     
-    _unit.autoLoad();
+    this.unit.autoLoad();
     
     updateOrderState();
     
@@ -119,66 +119,66 @@ public class UnitTurnState {
 
   public void completeTurn() {
     
-    _unit.life().burnMoves();
-    if (_unit.life().hasDied()) {
-      _game.killUnit(_unit);
+    this.unit.life().burnMoves();
+    if (this.unit.life().hasDied()) {
+      this.game.killUnit(this.unit);
     }
-    _orderState = OrderState.DONE;
+    orderState = OrderState.DONE;
   }
   
   
   public void clearOrderAndCompleteTurn() {
-    _unit.clearOrders();
+    this.unit.clearOrders();
     completeTurn();
   }
 
  
   public String toString() {
-    if (_orderState == null) {
+    if (orderState == null) {
       return "UNKNOWN";
     }
-    return _orderState.toString();
+    return this.orderState.toString();
   }
   
   
   public Path getPath(Location dest) {
-    if (_pathFinder != null && _pathFinder.getDest().equals(dest)) {
+    if (this.pathFinder != null && this.pathFinder.getDest().equals(dest)) {
       ;
     } else {
-      _pathFinder = new PathFinder(_unit, dest);
+      pathFinder = new PathFinder(this.unit, dest);
     }
-    return _pathFinder.getPath();
+    return this.pathFinder.getPath();
   }
   
   public void addObstruction(Location dest) {
-    if (_pathFinder != null) {
-      _pathFinder.addObstruction(dest);
+    if (this.pathFinder != null) {
+      this.pathFinder.addObstruction(dest);
     }
   }
   
   private void updateOrderState() {
-    if (_unit.hasOrders()) {
-      _orderState = OrderState.READY;
+    if (this.unit.hasOrders()) {
+      orderState = OrderState.READY;
     } else {
-      _orderState = OrderState.AWAITING_ORDERS;
+      orderState = OrderState.AWAITING_ORDERS;
     }
   }
   
   public boolean isDone() {
-    return _orderState == OrderState.DONE;
+    return orderState == OrderState.DONE;
   }
 
   public boolean isReady() {
-    return _orderState == OrderState.READY;
+    return orderState == OrderState.READY;
   }
 
   public void setReady() {
-    _orderState = OrderState.READY;
+    orderState = OrderState.READY;
   }
 
   public boolean isKnownObstruction(Location dest) {
-    if (_pathFinder != null) {
-      return _pathFinder.isKnownObstruction(dest);
+    if (this.pathFinder != null) {
+      return this.pathFinder.isKnownObstruction(dest);
     }
     return false;
   }

@@ -24,9 +24,9 @@ import javax.swing.JRadioButtonMenuItem;
  */
 public class CityMenuBuilder {
 
-    private City _c;
-    private Game _game;
-    private GameCommander _commander;
+    private City c;
+    private Game game;
+    private GameCommander commander;
 
     private final JMenuItem INFANTRY_SEL = new JRadioButtonMenuItem("Infantry");
     private final JMenuItem ARMOR_SEL = new JRadioButtonMenuItem("Armor");
@@ -68,7 +68,7 @@ public class CityMenuBuilder {
 
     private final JMenuItem UNITS_SEL = new JMenuItem("Units...");
 
-    private final SaDFrame _frame;
+    private final SaDFrame frame;
 
     private String formatName(Type type, UnitStats stats) {
         StringBuffer sb = new StringBuffer();
@@ -88,96 +88,106 @@ public class CityMenuBuilder {
         City c,
         GameCommander commander
     ) {
-        _frame = frame;
-        _game = g;
-        _c = c;
-        _commander = commander;
+        this.frame = frame;
+        this.game = g;
+        this.c = c;
+        this.commander = commander;
 
         UnitStats stats = c.getOwner().unitStats();
 
         selectProduction(c.getProduction());
         INFANTRY_SEL.setText(formatName(Type.INFANTRY, stats));
-        INFANTRY_SEL.addActionListener(e -> _c.produce(Type.INFANTRY));
+        INFANTRY_SEL.addActionListener(e -> this.c.produce(Type.INFANTRY));
 
         ARMOR_SEL.setText(formatName(Type.ARMOR, stats));
-        ARMOR_SEL.addActionListener(e -> _c.produce(Type.ARMOR));
+        ARMOR_SEL.addActionListener(e -> this.c.produce(Type.ARMOR));
         BOMBER_SEL.setText(formatName(Type.BOMBER, stats));
-        BOMBER_SEL.addActionListener(e -> _c.produce(Type.BOMBER));
+        BOMBER_SEL.addActionListener(e -> this.c.produce(Type.BOMBER));
         CARGO_SEL.setText(formatName(Type.CARGO, stats));
-        CARGO_SEL.addActionListener(e -> _c.produce(Type.CARGO));
+        CARGO_SEL.addActionListener(e -> this.c.produce(Type.CARGO));
         FIGHTER_SEL.setText(formatName(Type.FIGHTER, stats));
-        FIGHTER_SEL.addActionListener(e -> _c.produce(Type.FIGHTER));
+        FIGHTER_SEL.addActionListener(e -> this.c.produce(Type.FIGHTER));
         TRANSPORT_SEL.setText(formatName(Type.TRANSPORT, stats));
-        TRANSPORT_SEL.addActionListener(e -> _c.produce(Type.TRANSPORT));
+        TRANSPORT_SEL.addActionListener(e -> this.c.produce(Type.TRANSPORT));
         DESTROYER_SEL.setText(formatName(Type.DESTROYER, stats));
-        DESTROYER_SEL.addActionListener(e -> _c.produce(Type.DESTROYER));
+        DESTROYER_SEL.addActionListener(e -> this.c.produce(Type.DESTROYER));
         SUBMARINE_SEL.setText(formatName(Type.SUBMARINE, stats));
-        SUBMARINE_SEL.addActionListener(e -> _c.produce(Type.SUBMARINE));
+        SUBMARINE_SEL.addActionListener(e -> this.c.produce(Type.SUBMARINE));
         CRUISER_SEL.setText(formatName(Type.CRUISER, stats));
-        CRUISER_SEL.addActionListener(e -> _c.produce(Type.CRUISER));
+        CRUISER_SEL.addActionListener(e -> this.c.produce(Type.CRUISER));
         BATTLESHIP_SEL.setText(formatName(Type.BATTLESHIP, stats));
-        BATTLESHIP_SEL.addActionListener(e -> _c.produce(Type.BATTLESHIP));
+        BATTLESHIP_SEL.addActionListener(e -> this.c.produce(Type.BATTLESHIP));
         AIRCRAFT_CARRIER_SEL.setText(formatName(Type.CARRIER, stats));
-        AIRCRAFT_CARRIER_SEL.addActionListener(e -> _c.produce(Type.CARRIER));
+        AIRCRAFT_CARRIER_SEL.addActionListener(e ->
+            this.c.produce(Type.CARRIER)
+        );
         UNITS_SEL.addActionListener(e -> {
-            CityDialog cd = new CityDialog(frame, _game, _c);
+            CityDialog cd = new CityDialog(this.frame, this.game, this.c);
             List<Unit> list = cd.show();
 
             if (!list.isEmpty()) {
                 GameCommander specialCtx =
-                    _commander.commanderForSpecifiedUnits(list);
+                    this.commander.commanderForSpecifiedUnits(list);
 
                 OrderMenuBuilder orderMenu = new OrderMenuBuilder(
-                    frame,
-                    _game,
+                    this.frame,
+                    this.game,
                     list,
                     specialCtx
                 );
 
                 JPopupMenu om = orderMenu.build();
 
-                Location loc = _c.getLocation();
-                BoardHex hex = _game.getBoard().get(loc);
+                Location loc = this.c.getLocation();
+                BoardHex hex = this.game.getBoard().get(loc);
                 Point p = hex.center();
 
-                om.show(frame.getCanvas(), p.x, p.y);
+                om.show(this.frame.getCanvas(), p.x, p.y);
             }
         });
 
-        SEND_SEA_SEL.addActionListener(e -> _commander.setSeaPath(_c));
+        SEND_SEA_SEL.addActionListener(e -> this.commander.setSeaPath(this.c));
 
-        SEND_AIR_SEL.addActionListener(e -> _commander.setAirPath(_c));
-        SEND_LAND_SEL.addActionListener(e -> _commander.setLandPath(_c));
+        SEND_AIR_SEL.addActionListener(e -> this.commander.setAirPath(this.c));
+        SEND_LAND_SEL.addActionListener(e ->
+            this.commander.setLandPath(this.c)
+        );
 
         CLEAR_SEA_SEL.addActionListener(e -> {
             // TODO Move to Commander - all the postGameAction calls
-            _game.postAndRunGameAction(() -> _c.getGovernor().clearSeaPath());
+            this.game.postAndRunGameAction(() ->
+                this.c.getGovernor().clearSeaPath()
+            );
         });
 
         CLEAR_AIR_SEL.addActionListener(e -> {
-            _game.postAndRunGameAction(() -> _c.getGovernor().clearAirPath());
+            this.game.postAndRunGameAction(() ->
+                this.c.getGovernor().clearAirPath()
+            );
         });
         CLEAR_LAND_SEL.addActionListener(e -> {
-            _game.postAndRunGameAction(() -> _c.getGovernor().clearLandPath());
+            this.game.postAndRunGameAction(() ->
+                this.c.getGovernor().clearLandPath()
+            );
         });
 
-        AIR_PATROL_SEL.setSelected(_c.getGovernor().hasAirPatrol());
+        AIR_PATROL_SEL.setSelected(this.c.getGovernor().hasAirPatrol());
         AIR_PATROL_SEL.addActionListener(e -> {
-            _game.postAndRunGameAction(() -> {
-                if (_c.getGovernor().hasAirPatrol()) {
-                    _c.getGovernor().clearAirPatrol();
+            this.game.postAndRunGameAction(() -> {
+                if (this.c.getGovernor().hasAirPatrol()) {
+                    this.c.getGovernor().clearAirPatrol();
                 } else {
-                    _c.getGovernor().setAirPatrol();
+                    this.c.getGovernor().setAirPatrol();
                 }
             });
         });
-        AUTO_SENTRY_SEL.setSelected(_c.getGovernor().hasAutoSentry());
+        AUTO_SENTRY_SEL.setSelected(this.c.getGovernor().hasAutoSentry());
         AUTO_SENTRY_SEL.addActionListener(e -> {
-            _game.postAndRunGameAction(() -> {
-                if (_c.getGovernor().hasAutoSentry()) {
-                    _c.getGovernor().clearAutoSenty();
+            this.game.postAndRunGameAction(() -> {
+                if (this.c.getGovernor().hasAutoSentry()) {
+                    this.c.getGovernor().clearAutoSenty();
                 } else {
-                    _c.getGovernor().setAutoSentry();
+                    this.c.getGovernor().setAutoSentry();
                 }
             });
         });
@@ -186,14 +196,14 @@ public class CityMenuBuilder {
     public JPopupMenu build() {
         JPopupMenu cityPopup = new JPopupMenu("City");
 
-        fillMenu(_game, cityPopup, _c);
+        fillMenu(this.game, cityPopup, this.c);
         return cityPopup;
     }
 
     public JMenu getSubmenu() {
         JMenu cityMenu = new JMenu("City");
 
-        fillMenu(_game, cityMenu, _c);
+        fillMenu(this.game, cityMenu, this.c);
         return cityMenu;
     }
 
@@ -259,18 +269,18 @@ public class CityMenuBuilder {
 
         addSep(menu);
 
-        menuItem = _c.getGovernor().hastAirPath()
+        menuItem = this.c.getGovernor().hastAirPath()
             ? CLEAR_AIR_SEL
             : SEND_AIR_SEL;
         menu.add(menuItem);
 
-        menuItem = _c.getGovernor().hasLandPath()
+        menuItem = this.c.getGovernor().hasLandPath()
             ? CLEAR_LAND_SEL
             : SEND_LAND_SEL;
         menu.add(menuItem);
 
         if (c.isCoastal()) {
-            menuItem = _c.getGovernor().hasSeaPath()
+            menuItem = this.c.getGovernor().hasSeaPath()
                 ? CLEAR_SEA_SEL
                 : SEND_SEA_SEL;
             menu.add(menuItem);

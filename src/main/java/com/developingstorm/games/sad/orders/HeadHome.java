@@ -20,18 +20,18 @@ public class HeadHome extends Move {
   }
 
   public OrderResponse executeInternal() {
-    Player p = _unit.getOwner();
+    Player p = this.unit.getOwner();
 
-    City c = p.getClosestHome(_unit);
+    City c = p.getClosestHome(this.unit);
     if (c != null) {
-      Log.debug(c, "chosen as landing point for " + _unit);
+      Log.debug(c, "chosen as landing point for " + this.unit);
       Location loc = c.getLocation();
-      if (loc.equals(_unit.getLocation())) {
+      if (loc.equals(this.unit.getLocation())) {
         return new OrderResponse(ResponseCode.ORDER_COMPLETE, this, null);
       }
       
-      _loc = loc;
-      _lastPath = null;
+      loc = loc;
+      lastPath = null;
       
       return super.executeInternal();
     }

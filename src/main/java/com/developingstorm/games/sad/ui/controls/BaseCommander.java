@@ -12,53 +12,53 @@ import com.developingstorm.games.sad.util.Log;
  * BaseCommander is a common foundation class for objects that act as glue between the UI and the game model. 
  */
 public abstract class BaseCommander {
-  protected SaDFrame _frame;
-  protected BoardCanvas _canvas;
-  protected Game _game;
+  protected SaDFrame frame;
+  protected BoardCanvas canvas;
+  protected Game game;
 
   public BaseCommander(SaDFrame frame, Game game) {
-    _frame = frame;
-    _canvas = frame.getCanvas();
-    _game = game;
+    this.frame = frame;
+    canvas = frame.getCanvas();
+    this.game = game;
   }
 
   public boolean onBoard(Location loc) {
-    return _game.getBoard().onBoard(loc);
+    return this.game.getBoard().onBoard(loc);
   }
 
   public void showLine(Location start, Location end) {
-    _canvas.setLine(start, end);
+    this.canvas.setLine(start, end);
   }
 
   public void showLocation(Location loc) {
-    _frame.showLocation(loc);
+    this.frame.showLocation(loc);
   }
   
   public int boardWidth() {
-    return _game.getBoard().getWidth();
+    return this.game.getBoard().getWidth();
   }
 
   public int boardHeight() {
-    return _game.getBoard().getHeight();
+    return this.game.getBoard().getHeight();
   }
 
   public BoardHex trans(Point p) {
-    return _game.getBoard().get(p);
+    return this.game.getBoard().get(p);
   }
 
   public void setFocus(BoardHex hex) {
     Log.debug(this, "Setting focus");
-    _game.getBoard().setFocus(hex);
+    this.game.getBoard().setFocus(hex);
   }
 
   public void refocus() {
-    if (!_canvas.hasFocus()) {
-      _canvas.requestFocus();
+    if (!this.canvas.hasFocus()) {
+      this.canvas.requestFocus();
     }
   }
   
   public BoardHex locationToHex(Location loc) {
-    return _game.getBoard().get(loc);
+    return this.game.getBoard().get(loc);
   }
 
   public abstract Location getCurrentLocation();

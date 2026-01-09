@@ -18,7 +18,7 @@ public class Unload extends Order {
   }
 
   public OrderResponse executeInternal() {
-    _unit.unload();
+    this.unit.unload();
     return new OrderResponse(ResponseCode.ORDER_COMPLETE, this, null);
   }
 

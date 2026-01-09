@@ -22,7 +22,7 @@ public class AutoSentry extends Edict {
   @Override
   public void execute(Game game) {
     
-    List<Unit> units = _city.getUnits();
+    List<Unit> units = this.city.getUnits();
     if (!units.isEmpty()) {
       
       for (Unit u : units) {

@@ -1,11 +1,5 @@
 package com.developingstorm.games.sad;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.orders.Explore;
 import com.developingstorm.games.sad.orders.HeadHome;
@@ -22,885 +16,845 @@ import com.developingstorm.games.sad.orders.Unload;
 import com.developingstorm.games.sad.turn.UnitTurnState;
 import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.RandomUtil;
-
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
- * Units are the moveable pieces of the game.  
+ * Units are the moveable pieces of the game.
  * Units have attributes based on their Type. Infantry, Battleships and Bombers are all examples of Types of units.
- * Different Types of units can travel in different terrains.  
+ * Different Types of units can travel in different terrains.
  * Units have a 'life' which controls how much damage they can absorb, and how much they can move.
  * Some units can carry other units.
- * Units are always owned by one of the games players. 
+ * Units are always owned by one of the games players.
  */
 public abstract class Unit {
 
-  static long s_unitCounter = 1;
+    static long s_unitCounter = 1;
 
-  private volatile Type _type; // This type of unit
-  private volatile Player _owner;
-  private volatile Location _loc;
-  private volatile Board _board;
-  private volatile Travel _travel;
-  private volatile Game _game;
-  private volatile ArrayList<Unit> _carries;
-  private volatile Unit _onboard;
-  private volatile int _dist;
-  private volatile Order _order;
-  private volatile String _name;
-  private volatile long _id;
-  private volatile UnitTurnState _turn;
-  private boolean _isDead = false;  //Used to prevent endless looping during kill processing u->game->u->game->u->game...
-  private Life _life;
-  
-  
-  
-  
-  public class Life {
-    private volatile int _hits;
-    private volatile int _fuel;
-    private volatile int _moves;
-    private volatile boolean _sleeping;
-    
-    
-    public Life() {
-      _hits = _type.getHits();
-      _fuel = _type.getFuel();
-      _moves = _type.getDist();
-      _sleeping = false;
-    }
+    private volatile Type type; // This type of unit
+    private volatile Player owner;
+    private volatile Location loc;
+    private volatile Board board;
+    private volatile Travel travel;
+    private volatile Game game;
+    public volatile ArrayList<Unit> carries;
+    public volatile Unit onboard;
+    public volatile int dist;
+    private volatile Order order;
+    public volatile String name;
+    public volatile long id;
+    private volatile UnitTurnState turn;
+    private boolean isDead = false; //Used to prevent endless looping during kill processing u->game->u->game->u->game...
+    public Life life;
 
-    public void repair() {
-      if (_hits < _type.getHits()) {
-        _hits++;
-      }
-    }
+    public class Life {
 
-    public void fuel() {
-      _fuel = _type.getFuel();
-    }
-    
-    public void resetForTurn() {
-      _moves = _type.getDist();
-    }
+        public volatile int hits;
+        private volatile int fuel;
+        private volatile int moves;
+        private volatile boolean sleeping;
 
-    public void move() {
-      _moves--;
-      
-      if (_type.getFuel() != 0 && !atCity()) {
-        _fuel--;
-      }
-    }
-    
-    public void wake() {
-      _sleeping = false;
-    }
-        
-    public void sleep() {
-      _sleeping = true;
-    }
-    
-    public boolean isSleeping() {
-      return _sleeping;
-    }
-    
-    public void burnMoves() {
-      while (movesLeft() > 0) {
-        move();
-      }
-    }
-
-    public void burnMovesButNotFuel() {
-      while (movesLeft() > 0) {
-        _moves--;
-      }
-    }
-    
-    public boolean hasDied() {
-      return _hits <= 0 || !hasFuel();
-    }
-   
-    public boolean hasFuel() {
-      if (_travel != Travel.AIR) {
-        return true;
-      }
-      return _fuel > 0;
-    }
- 
-    public boolean hasMoves() {
-      return _sleeping == false && _moves > 0 && !hasDied();
-    }
-    
-    public int turnAroundDist() {
-      if (_travel == Travel.AIR) {
-        return (getMaxTravel() / 2);
-      }
-      return 0;
-    }
-
-    public boolean mustLand() {
-      if (_travel == Travel.AIR) {
-        if (_fuel < turnAroundDist()) {
-          return true;
+        public Life() {
+            hits = Unit.this.type.getHits();
+            fuel = Unit.this.type.getFuel();
+            moves = Unit.this.type.getDist();
+            sleeping = false;
         }
-      }
-      return false;
-    }
-    
-    public String healthDesc() {
-      return "" + _hits + " of " + _type.getHits();
-    }  
 
-    public String moveDesc() {
-      String s = "" + _moves + " of " + _dist;
-      int maxTravel = getMaxTravel();
-      if (maxTravel > 0) {
-        s += " [" + _fuel + " of " + maxTravel + "]";
-      }
-      return s;
-    }
-    
-    public int movesLeft() {
-      return _moves;
-    }
-    
-    public boolean attack(int attackVal) {
-      if (attackVal == 0) {
-        return isDead();
-      }
-      if (attackVal < 0) {
-        throw new SaDException("BAD ATTACK VALUE");
-      }
-      _hits -= attackVal;
-      return isDead();
-    }
-    
-    public String toString() {
-      StringBuffer sb = new StringBuffer();
-      sb.append('[');
-      sb.append("HITS=");
-      sb.append(_hits);
-      sb.append("/");
-      sb.append(_type.getHits());
-      sb.append(": MOVE=");
-      sb.append(_moves);
-      sb.append("/");
-      sb.append(_type.getDist());
-      if (_type.getFuel() > 0) {
-        sb.append(": FUEL=");
-        sb.append(_fuel);
-        sb.append("/");
-        sb.append(_type.getFuel());
-      }
-      sb.append(']');
-      return sb.toString();
-    }
-
-    public void kill() {
-      _hits = 0;
-    }
-
-    public int remainingFuel() {
-      return _fuel;
-    }
-  }
-  
-  protected Unit(Type t, Player owner, Location loc, Game game) {
-    _type = t;
-    _loc = loc;
-    _name = null;
-    _dist = _type.getDist();
-    _travel = _type.getTravel();
-    _owner = owner;
-    _game = game;
-    _board = _game.getBoard();
-    _order = null;
-    _turn = new UnitTurnState(game, this);
-    _life = new Life();
-    synchronized (this) {
-      s_unitCounter++;
-      _id = s_unitCounter;
-    }
-    // A unit needs an ID before it can be placed!
-    _game.placeUnitOnBoard(this);
-  }
-  
-  
-  public boolean atCity() {
-    return _game.isCity(_loc);
-  }
-    
-  private synchronized void changeLoc(Location loc) {
-    Log.info(this, "change location to " + loc);
-    _game.changeUnitLoc(this, loc);
-    _loc = loc;
-  }
-
-  public String toString() {
-    StringBuffer sb = new StringBuffer();
-    sb.append('[');
-    sb.append(toUIString());
-    sb.append(": Own=");
-    sb.append(_owner);
-    sb.append(": Loc=(");
-    sb.append(_loc);
-    sb.append("): Life=");
-    sb.append(_life);
-    if (_onboard != null) {
-      sb.append(": On=");
-      sb.append(_onboard.toUIString());
-    }
-    if (_carries != null) {
-      sb.append(": Carries=");
-      sb.append(carriesDesc());
-    }
-    sb.append(']');
-    return sb.toString();
-  }
-  
-  
-  public String carriesDesc() {
-    if (!canCarry()) {
-      return "N/A";
-    }
-    if (_carries == null || _carries.isEmpty()) {
-      return "None";
-    }
-    StringBuffer sb = new StringBuffer();
-    for (Unit u : _carries) {
-      sb.append(u.getType().getAbr());
-    }
-    return sb.toString();
-  }
-
-  public String toUIString() {
-    StringBuffer sb = new StringBuffer();
-    
-    sb.append(_type);
-    sb.append(' ');
-    sb.append(_id);
-    sb.append(": ");
-    if (_life == null) {
-      sb.append("INIT");
-    }
-    else if (_life.isSleeping()) {
-      sb.append("SLEEP");
-    } else {
-      sb.append("AWAKE");
-    }
-    sb.append(": ");
-    sb.append((_order != null) ? _order.getType().toString() : "No Orders");
-    return sb.toString();
-  }
-
-  public boolean hasOrders() {
-    return (_order != null);
-  }
-
-  public String typeDesc() {
-    if (_name != null) {
-      return (_type + " " + _name);
-    } else {
-      return _type.toString() + " " + _id;
-    }
-  }
-
-
-  
-
-
-  public String locationDesc() {
-    return _loc.toString();
-  }
-
-  public Location getLocation() {
-    return _loc;
-  }
-  
- 
-  public void move(Location loc) {
-    
-    if (_loc.distance(loc) == 0) {
-      Log.error(this, "Attempting to spend move with no move");
-      throw new SaDException("Invalid non-move");
-    }
-
-    if (_loc.distance(loc) > 1) {
-      Log.error(this, "Invalid Move to location " + loc);
-      throw new SaDException("Invalid Move:");
-    }
-    
-    if (!_life.hasMoves()) {
-      throw new SaDException("This unit shouldn't be moving! " + this);
-    }
-
-    _life.move();
-    
-    changeLoc(loc);
-    _owner.adjustVisibility(this);
-    _game.trackUnit(this);
-
-    
-    // If this unit was on-board another unit, and it moved then it's no longer carried
-    if (_onboard != null) {
-      _onboard.removeCarried(this);
-    }
-
-    // Move the carried units 
-    if (_carries != null) {
-      for(Unit u2 : _carries) {
-        u2.changeLoc(_loc);
-      }
-    }
-
-    // Land the aircraft
-    if (_travel == Travel.AIR) {
-      City city = _board.getCity(loc);
-      if (city != null && city.getOwner() == getOwner()) {
-        _turn.clearOrderAndCompleteTurn();
-      }
-    }
-
-    // If the unit ran out of fuel, it dies
-    if (!_life.hasFuel()) {
-      _game.killUnit(this);
-    }
-
-  }
-  
-  public UnitTurnState turn() {
-    return _turn;
-  }
-
-  public Travel getTravel() {
-    return _travel;
-  }
-
-  public Type getType() {
-    return _type;
-  }
-
-
-  public boolean inSentryMode() {
-    return (_order != null && _order.getType() == OrderType.SENTRY);
-  }
-  
-  public Player getOwner() {
-    return _owner;
-  }
-
-  public int getAttack() {
-    return _type.getAttack();
-  }
-
-  public boolean canTravel(Location loc) {
-    Travel t = _type.getTravel();
-    if (t == Travel.AIR)
-      return true;
-    if (t == Travel.SEA && _board.isWater(loc))
-      return true;
-    if (t == Travel.LAND && _board.isLand(loc))
-      return true;
-    return false;
-  }
-
-  public Path getPath(Location loc) {
-    
-    Path p = _turn.getPath(loc);
-    if (p != null && p.isEmpty()) {
-      return null;
-    }
-    return p;
-  }
-
-  public boolean isDead() {
-    return _life.hasDied() || _isDead;
-  }
-
-  @Override
-  public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + (int) (_id ^ (_id >>> 32));
-    result = prime * result + ((_type == null) ? 0 : _type.hashCode());
-    return result;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj)
-      return true;
-    if (obj == null)
-      return false;
-    if (getClass() != obj.getClass())
-      return false;
-    Unit other = (Unit) obj;
-    if (_id != other._id)
-      return false;
-    if (_type == null) {
-      if (other._type != null)
-        return false;
-    } else if (!_type.equals(other._type))
-      return false;
-    return true;
-  }
-
-
-
-  // Should only be called by (Game).killUnit
-  void kill() {
-    if (_isDead) {
-      return;
-    }
-    killCarried();
-    _life.kill();
-    _isDead  = true;
-    if (_onboard != null) {
-      _onboard.removeCarried(this);
-    }
-  }
-
-  public boolean isCarried() {
-    return _onboard != null;
-  }
-
-  public int carriedWeight() {
-    if (_carries == null) {
-      return 0;
-    }
-
-    int weight = 0;
-    for(Unit u : _carries) {
-      Type t = u.getType();
-      weight += t.getWeight();
-    }
-    return weight;
-  }
-
-  public int carriableWeight() {
-    return _type.getCarryCount();
-  }
-
-  public Type[] getCarryTypes() {
-    return _type.getCarryTypes();
-  }
-
-  public int getWeight() {
-    return _type.getWeight();
-  }
-
-  public boolean canCarry(Unit u) {
-    return (_type.canCarry(u.getType()) && carriedWeight() + u.getWeight() <= carriableWeight());
-  }
-
-  public boolean canCarry(Type t) {
-    return (_type.canCarry(t));
-  }
-
-  public void addCarried(Unit u) {
-    if (_carries == null) {
-      _carries = new ArrayList<Unit>();
-    }
-    if (u._onboard != null) {
-      throw new SaDException("Unit already loaded" + u);
-    }
-    if (!u.getLocation().equals(_loc)) {
-      Log.error(this, "Attempting to carry unit not at location");
-      u.move(_loc);
-    }
-    
-    
-    u._onboard = this;
-    u.orderSentry();
-    _carries.add(u);
-  }
-
-  public void unload() {
-    if (_carries == null) {
-      return;
-    }
-
-    for(Unit u : _carries) {
-      u.activate();
-      _owner.pushPendingOrders(u);
-    }
-  }
-
-  public void removeCarried(Unit u) {
-    if (_carries != null) {
-      _carries.remove(u);
-    }
-    u._onboard = null;
-  }
-
-  public boolean isVisible(Vision v) {
-    if (v == Vision.NONE)
-      return false;
-    if (v == Vision.SURFACE) {
-      if (_type == Type.SUBMARINE)
-        return false;
-      return true;
-    }
-    if (v == Vision.WATER) {
-      if (_travel == Travel.AIR || _travel == Travel.LAND) {
-        return false;
-      }
-      return true;
-    }
-    return true;
-  }
-
-  public ArrayList<Location> getAreaOfInfluence() {
-
-    ArrayList<Location> list = new ArrayList<Location>();
-    for (Location loc : list) {
-      if (canTravel(loc)) {
-        list.add(loc);
-      }
-    }
-    return list;
-  }
-  
-  
-  void killCarried() {
-   
-    if (_carries != null) {
-      @SuppressWarnings("unchecked")
-      List<Unit> copy =  (List<Unit>) _carries.clone();
-      _game.killUnits(copy);
-    }
-  }
-  
-  
-  public void repairAndRefuel() {
-    if (_game.isCity(_loc)) {
-      _life.repair();
-      _life.fuel();
-    }
-  }
-  
-    
-  public void autoLoad() {
-    if (_game.isCity(_loc)) {
-      if (carriableWeight() > 0  && carriedWeight() < carriableWeight()) {
-        List<Unit> ul = _game.unitsAtLocation(_loc);
-        for (Unit u : ul) {
-          if (u.isCarried() == false) {
-            if (canCarry(u)) {
-              addCarried(u);
+        public void repair() {
+            if (this.hits < Unit.this.type.getHits()) {
+                this.hits++;
             }
-          }
         }
-      }
+
+        public void fuel() {
+            fuel = Unit.this.type.getFuel();
+        }
+
+        public void resetForTurn() {
+            moves = Unit.this.type.getDist();
+        }
+
+        public void move() {
+            this.moves--;
+
+            if (Unit.this.type.getFuel() != 0 && !atCity()) {
+                this.fuel--;
+            }
+        }
+
+        public void wake() {
+            sleeping = false;
+        }
+
+        public void sleep() {
+            sleeping = true;
+        }
+
+        public boolean isSleeping() {
+            return sleeping;
+        }
+
+        public void burnMoves() {
+            while (movesLeft() > 0) {
+                move();
+            }
+        }
+
+        public void burnMovesButNotFuel() {
+            while (movesLeft() > 0) {
+                this.moves--;
+            }
+        }
+
+        public boolean hasDied() {
+            return this.hits <= 0 || !hasFuel();
+        }
+
+        public boolean hasFuel() {
+            if (Unit.this.travel != Travel.AIR) {
+                return true;
+            }
+            return this.fuel > 0;
+        }
+
+        public boolean hasMoves() {
+            return sleeping == false && this.moves > 0 && !hasDied();
+        }
+
+        public int turnAroundDist() {
+            if (travel == Travel.AIR) {
+                return (getMaxTravel() / 2);
+            }
+            return 0;
+        }
+
+        public boolean mustLand() {
+            if (travel == Travel.AIR) {
+                if (this.fuel < turnAroundDist()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public String healthDesc() {
+            return "" + this.hits + " of " + Unit.this.type.getHits();
+        }
+
+        public String moveDesc() {
+            String s = "" + this.moves + " of " + dist;
+            int maxTravel = getMaxTravel();
+            if (maxTravel > 0) {
+                s += " [" + this.fuel + " of " + maxTravel + "]";
+            }
+            return s;
+        }
+
+        public int movesLeft() {
+            return moves;
+        }
+
+        public boolean attack(int attackVal) {
+            if (attackVal == 0) {
+                return isDead();
+            }
+            if (attackVal < 0) {
+                throw new SaDException("BAD ATTACK VALUE");
+            }
+            this.hits -= attackVal;
+            return isDead();
+        }
+
+        public String toString() {
+            StringBuffer sb = new StringBuffer();
+            sb.append('[');
+            sb.append("HITS=");
+            sb.append(this.hits);
+            sb.append("/");
+            sb.append(Unit.this.type.getHits());
+            sb.append(": MOVE=");
+            sb.append(this.moves);
+            sb.append("/");
+            sb.append(Unit.this.type.getDist());
+            if (Unit.this.type.getFuel() > 0) {
+                sb.append(": FUEL=");
+                sb.append(this.fuel);
+                sb.append("/");
+                sb.append(Unit.this.type.getFuel());
+            }
+            sb.append(']');
+            return sb.toString();
+        }
+
+        public void kill() {
+            hits = 0;
+        }
+
+        public int remainingFuel() {
+            return fuel;
+        }
     }
-  }
-  
-  
-  public boolean hasCargo() {
-    if (_carries == null) {
-      return false;
+
+    protected Unit(Type t, Player owner, Location loc, Game game) {
+        this.type = t;
+        this.loc = loc;
+        this.name = null;
+        this.dist = this.type.getDist();
+        this.travel = this.type.getTravel();
+        this.owner = owner;
+        this.game = game;
+        this.board = this.game.getBoard();
+        this.order = null;
+        this.turn = new UnitTurnState(game, this);
+        this.life = new Life();
+        synchronized (this) {
+            s_unitCounter++;
+            this.id = s_unitCounter;
+        }
+        // A unit needs an ID before it can be placed!
+        this.game.placeUnitOnBoard(this);
     }
-    return !_carries.isEmpty();
-  }
-  
 
+    public boolean atCity() {
+        return this.game.isCity(this.loc);
+    }
 
-  public void clearOrders() {
-    _order = null;
-  }
+    private synchronized void changeLoc(Location loc) {
+        Log.info(this, "change location to " + loc);
+        this.game.changeUnitLoc(this, loc);
+        this.loc = loc;
+    }
 
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append('[');
+        sb.append(toUIString());
+        sb.append(": Own=");
+        sb.append(this.owner);
+        sb.append(": Loc=(");
+        sb.append(this.loc);
+        sb.append("): Life=");
+        sb.append(this.life);
+        if (this.onboard != null) {
+            sb.append(": On=");
+            sb.append(this.onboard.toUIString());
+        }
+        if (this.carries != null) {
+            sb.append(": Carries=");
+            sb.append(carriesDesc());
+        }
+        sb.append(']');
+        return sb.toString();
+    }
 
-  public void orderSentry() {
-    assignOrder(newSentryOrder());
-  }
+    public String carriesDesc() {
+        if (!canCarry()) {
+            return "N/A";
+        }
+        if (carries == null || this.carries.isEmpty()) {
+            return "None";
+        }
+        StringBuffer sb = new StringBuffer();
+        for (Unit u : this.carries) {
+            sb.append(u.getType().getAbr());
+        }
+        return sb.toString();
+    }
 
-  public void orderMove(Location loc) {
-    assignOrder(newMoveOrder(loc));
-  }
+    public String toUIString() {
+        StringBuffer sb = new StringBuffer();
 
-  public void assignOrder(Order order) {
-    _order = order;
-  }
+        sb.append(this.type);
+        sb.append(' ');
+        sb.append(this.id);
+        sb.append(": ");
+        if (life == null) {
+            sb.append("INIT");
+        } else if (this.life.isSleeping()) {
+            sb.append("SLEEP");
+        } else {
+            sb.append("AWAKE");
+        }
+        sb.append(": ");
+        sb.append(
+            (this.order != null) ? this.order.getType().toString() : "No Orders"
+        );
+        return sb.toString();
+    }
 
-  public Location getClosestLocation(Collection<Location> locationsCollection) {
+    public boolean hasOrders() {
+        return (this.order != null);
+    }
 
-    List<Location> locations = new ArrayList<>(locationsCollection);
-    Collections.sort(locations, new DistanceComparator(_loc));
+    public String typeDesc() {
+        if (this.name != null) {
+            return (this.type + " " + this.name);
+        } else {
+            return this.type.toString() + " " + id;
+        }
+    }
 
-    Location shortest = null;
-    int shortestLen = 99999;
+    public String locationDesc() {
+        return this.loc.toString();
+    }
 
-    for (Location loc : locations) {
-      if (_loc.equals(loc)) {
+    public Location getLocation() {
         return loc;
-      }
-
-      if (_turn.isKnownObstruction(loc)) {
-        continue;
-      }
-      
-      Path p = getPath(loc);
-      if (p == null) {
-        continue;
-      }
-      int pLen = p.length();
-      int tLen = _loc.distance(loc);
-      if (pLen == tLen) {
-        return loc;
-      } else if (pLen < shortestLen) {
-        shortestLen = pLen;
-        shortest = loc;
-      }
     }
-    return shortest;
-  }
 
+    public void move(Location loc) {
+        if (this.loc.distance(loc) == 0) {
+            Log.error(this, "Attempting to spend move with no move");
+            throw new SaDException("Invalid non-move");
+        }
 
-  private static class DistanceComparator implements Comparator<Object> {
+        if (this.loc.distance(loc) > 1) {
+            Log.error(this, "Invalid Move to location " + loc);
+            throw new SaDException("Invalid Move:");
+        }
 
-    private Location _loc;
+        if (!this.life.hasMoves()) {
+            throw new SaDException("This unit shouldn't be moving! " + this);
+        }
 
-    public DistanceComparator(Location loc) {
-      _loc = loc;
+        this.life.move();
+
+        changeLoc(loc);
+        this.owner.adjustVisibility(this);
+        this.game.trackUnit(this);
+
+        // If this unit was on-board another unit, and it moved then it's no longer carried
+        if (this.onboard != null) {
+            this.onboard.removeCarried(this);
+        }
+
+        // Move the carried units
+        if (this.carries != null) {
+            for (Unit u2 : this.carries) {
+                u2.changeLoc(this.loc);
+            }
+        }
+
+        // Land the aircraft
+        if (travel == Travel.AIR) {
+            City city = this.board.getCity(loc);
+            if (city != null && city.getOwner() == getOwner()) {
+                this.turn.clearOrderAndCompleteTurn();
+            }
+        }
+
+        // If the unit ran out of fuel, it dies
+        if (!this.life.hasFuel()) {
+            this.game.killUnit(this);
+        }
+    }
+
+    public UnitTurnState turn() {
+        return turn;
+    }
+
+    public Travel getTravel() {
+        return travel;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public boolean inSentryMode() {
+        return (this.order != null && this.order.getType() == OrderType.SENTRY);
+    }
+
+    public Player getOwner() {
+        return owner;
+    }
+
+    public int getAttack() {
+        return this.type.getAttack();
+    }
+
+    public boolean canTravel(Location loc) {
+        Travel t = this.type.getTravel();
+        if (t == Travel.AIR) return true;
+        if (t == Travel.SEA && this.board.isWater(loc)) return true;
+        if (t == Travel.LAND && this.board.isLand(loc)) return true;
+        return false;
+    }
+
+    public Path getPath(Location loc) {
+        Path p = this.turn.getPath(loc);
+        if (p != null && p.isEmpty()) {
+            return null;
+        }
+        return p;
+    }
+
+    public boolean isDead() {
+        return this.life.hasDied() || isDead;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (int) (this.id ^ (this.id >>> 32));
+        result = prime * result + ((type == null) ? 0 : this.type.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        Unit other = (Unit) obj;
+        if (this.id != other.id) return false;
+        if (type == null) {
+            if (other.type != null) return false;
+        } else if (!this.type.equals(other.type)) return false;
+        return true;
+    }
+
+    // Should only be called by (Game).killUnit
+    void kill() {
+        if (this.isDead) {
+            return;
+        }
+        killCarried();
+        this.life.kill();
+        isDead = true;
+        if (this.onboard != null) {
+            this.onboard.removeCarried(this);
+        }
+    }
+
+    public boolean isCarried() {
+        return this.onboard != null;
+    }
+
+    public int carriedWeight() {
+        if (carries == null) {
+            return 0;
+        }
+
+        int weight = 0;
+        for (Unit u : this.carries) {
+            Type t = u.getType();
+            weight += t.getWeight();
+        }
+        return weight;
+    }
+
+    public int carriableWeight() {
+        return this.type.getCarryCount();
+    }
+
+    public Type[] getCarryTypes() {
+        return this.type.getCarryTypes();
+    }
+
+    public int getWeight() {
+        return this.type.getWeight();
+    }
+
+    public boolean canCarry(Unit u) {
+        return (
+            this.type.canCarry(u.getType()) &&
+            carriedWeight() + u.getWeight() <= carriableWeight()
+        );
+    }
+
+    public boolean canCarry(Type t) {
+        return (this.type.canCarry(t));
+    }
+
+    public void addCarried(Unit u) {
+        if (carries == null) {
+            carries = new ArrayList<Unit>();
+        }
+        if (u.onboard != null) {
+            throw new SaDException("Unit already loaded" + u);
+        }
+        if (!u.getLocation().equals(this.loc)) {
+            Log.error(this, "Attempting to carry unit not at location");
+            u.move(this.loc);
+        }
+
+        u.onboard = this;
+        u.orderSentry();
+        this.carries.add(u);
+    }
+
+    public void unload() {
+        if (carries == null) {
+            return;
+        }
+
+        for (Unit u : this.carries) {
+            u.activate();
+            this.owner.pushPendingOrders(u);
+        }
+    }
+
+    public void removeCarried(Unit u) {
+        if (this.carries != null) {
+            this.carries.remove(u);
+        }
+        u.onboard = null;
+    }
+
+    public boolean isVisible(Vision v) {
+        if (v == Vision.NONE) return false;
+        if (v == Vision.SURFACE) {
+            if (type == Type.SUBMARINE) return false;
+            return true;
+        }
+        if (v == Vision.WATER) {
+            if (travel == Travel.AIR || travel == Travel.LAND) {
+                return false;
+            }
+            return true;
+        }
+        return true;
+    }
+
+    public ArrayList<Location> getAreaOfInfluence() {
+        ArrayList<Location> list = new ArrayList<Location>();
+        for (Location loc : list) {
+            if (canTravel(loc)) {
+                list.add(loc);
+            }
+        }
+        return list;
+    }
+
+    void killCarried() {
+        if (this.carries != null) {
+            @SuppressWarnings("unchecked")
+            List<Unit> copy = (List<Unit>) this.carries.clone();
+            this.game.killUnits(copy);
+        }
+    }
+
+    public void repairAndRefuel() {
+        if (this.game.isCity(this.loc)) {
+            this.life.repair();
+            this.life.fuel();
+        }
+    }
+
+    public void autoLoad() {
+        if (this.game.isCity(this.loc)) {
+            if (carriableWeight() > 0 && carriedWeight() < carriableWeight()) {
+                List<Unit> ul = this.game.unitsAtLocation(this.loc);
+                for (Unit u : ul) {
+                    if (u.isCarried() == false) {
+                        if (canCarry(u)) {
+                            addCarried(u);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public boolean hasCargo() {
+        if (carries == null) {
+            return false;
+        }
+        return !this.carries.isEmpty();
+    }
+
+    public void clearOrders() {
+        order = null;
+    }
+
+    public void orderSentry() {
+        assignOrder(newSentryOrder());
+    }
+
+    public void orderMove(Location loc) {
+        assignOrder(newMoveOrder(loc));
+    }
+
+    public void assignOrder(Order order) {
+        this.order = order;
+    }
+
+    public Location getClosestLocation(
+        Collection<Location> locationsCollection
+    ) {
+        List<Location> locations = new ArrayList<>(locationsCollection);
+        Collections.sort(locations, new DistanceComparator(this.loc));
+
+        Location shortest = null;
+        int shortestLen = 99999;
+
+        for (Location loc : locations) {
+            if (this.loc.equals(loc)) {
+                return loc;
+            }
+
+            if (this.turn.isKnownObstruction(loc)) {
+                continue;
+            }
+
+            Path p = getPath(loc);
+            if (p == null) {
+                continue;
+            }
+            int pLen = p.length();
+            int tLen = this.loc.distance(loc);
+            if (pLen == tLen) {
+                return loc;
+            } else if (pLen < shortestLen) {
+                shortestLen = pLen;
+                shortest = loc;
+            }
+        }
+        return shortest;
+    }
+
+    private static class DistanceComparator implements Comparator<Object> {
+
+        private Location loc;
+
+        public DistanceComparator(Location loc) {
+            this.loc = loc;
+        }
+
+        /**
+         *
+         */
+        public int compare(Object arg0, Object arg1) {
+            Location loc0 = (Location) arg0;
+            Location loc1 = (Location) arg1;
+
+            int dist0 = this.loc.distance(loc0);
+            int dist1 = this.loc.distance(loc1);
+            if (dist0 == dist1) {
+                return 0;
+            }
+            if (dist0 < dist1) {
+                return -1;
+            }
+            return 1;
+        }
+    }
+
+    public Order getOrder() {
+        return order;
+    }
+
+    public boolean canCarry() {
+        return this.type.getCarryCount() > 0;
+    }
+
+    public boolean hasLanded() {
+        if (travel == Travel.AIR) {
+            City city = this.board.getCity(this.loc);
+            return (city != null && city.getOwner() == getOwner());
+        }
+        throw new SaDException("hasLanded called for non air unit");
+    }
+
+    public boolean canAttackCity() {
+        return (travel == Travel.LAND || type == Type.BOMBER);
+    }
+
+    public Explore newExploreOrder() {
+        return new Explore(this.game, this);
+    }
+
+    public HeadHome newHeadHomeOrder() {
+        return new HeadHome(this.game, this);
+    }
+
+    public Move newMoveOrder(Location loc) {
+        if (loc == null) {
+            throw new SaDException("Cannot move to NULL location");
+        }
+        return new Move(this.game, this, loc);
+    }
+
+    public Move newRandomMoveOrder() {
+        List<Location> ring = this.loc.getRing(1);
+        List<Location> reachable = new ArrayList();
+        for (Location loc : ring) {
+            if (!MapState.isBlocked(loc, true)) {
+                reachable.add(loc);
+            }
+        }
+
+        if (!reachable.isEmpty()) {
+            Location loc = RandomUtil.randomValue(reachable);
+            return new Move(this.game, this, loc);
+        }
+        return null;
+    }
+
+    public Sentry newSentryOrder() {
+        return new Sentry(this.game, this);
+    }
+
+    public Unload newUnloadOrder() {
+        return new Unload(this.game, this);
+    }
+
+    public MoveEast newMoveEast() {
+        return new MoveEast(this.game, this);
+    }
+
+    public MoveWest newMoveWest() {
+        return new MoveWest(this.game, this);
+    }
+
+    public MoveNorthWest newMoveNorthWest() {
+        return new MoveNorthWest(this.game, this);
+    }
+
+    public MoveSouthWest newMoveSouthWest() {
+        return new MoveSouthWest(this.game, this);
+    }
+
+    public MoveNorthEast newMoveNorthEast() {
+        return new MoveNorthEast(this.game, this);
+    }
+
+    public MoveSouthEast newMoveSouthEast() {
+        return new MoveSouthEast(this.game, this);
+    }
+
+    public SkipTurn newSkipTurn() {
+        return new SkipTurn(this.game, this);
     }
 
     /**
-         *
-         */
-    public int compare(Object arg0, Object arg1) {
-
-      Location loc0 = (Location) arg0;
-      Location loc1 = (Location) arg1;
-
-      int dist0 = _loc.distance(loc0);
-      int dist1 = _loc.distance(loc1);
-      if (dist0 == dist1) {
-        return 0;
-      }
-      if (dist0 < dist1) {
-        return -1;
-      }
-      return 1;
+     * Construct and order given an OrderType and an optional parameter.
+     *
+     * WHEN OrderType.MOVE, p1 MUST BE Location
+     *
+     * Otherwise p1 is ignored
+     *
+     * @param order
+     * @param p1
+     * @return
+     */
+    public Order newOrder(OrderType order, Object p1) {
+        if (order.equals(OrderType.EXPLORE)) {
+            return newExploreOrder();
+        } else if (order.equals(OrderType.HEAD_HOME)) {
+            return newHeadHomeOrder();
+        } else if (order.equals(OrderType.MOVE)) {
+            return newMoveOrder((Location) p1);
+        } else if (order.equals(OrderType.SENTRY)) {
+            return newSentryOrder();
+        } else if (order.equals(OrderType.UNLOAD)) {
+            return newUnloadOrder();
+        } else if (order.equals(OrderType.MOVE_WEST)) {
+            return newMoveWest();
+        } else if (order.equals(OrderType.MOVE_EAST)) {
+            return newMoveEast();
+        } else if (order.equals(OrderType.MOVE_NORTH_WEST)) {
+            return newMoveNorthWest();
+        } else if (order.equals(OrderType.MOVE_SOUTH_WEST)) {
+            return newMoveSouthWest();
+        } else if (order.equals(OrderType.MOVE_NORTH_EAST)) {
+            return newMoveNorthEast();
+        } else if (order.equals(OrderType.MOVE_SOUTH_EAST)) {
+            return newMoveSouthEast();
+        } else if (order.equals(OrderType.SKIPTURN)) {
+            return newSkipTurn();
+        } else {
+            throw new SaDException("Unknown order type:" + order.toString());
+        }
     }
 
-  }
-
-
-  public Order getOrder() {
-    return _order;
-  }
-
-  public boolean canCarry() {
-    return _type.getCarryCount() > 0;
-  }
-
-
-
-  public boolean hasLanded() {
-    if (_travel == Travel.AIR) {
-      City city = _board.getCity(_loc);
-      return (city != null && city.getOwner() == getOwner());
-    }
-    throw new SaDException("hasLanded called for non air unit");
-  }
-
-  public boolean canAttackCity() {
-    return (_travel == Travel.LAND || _type == Type.BOMBER);
-  }
-  
-  
-  public Explore newExploreOrder() {
-    return new Explore(_game, this);
-  }
-  
-  public HeadHome newHeadHomeOrder() {
-    return new HeadHome(_game, this);
-  }
-  
-  public Move newMoveOrder(Location loc) {
-    if (loc == null) {
-      throw new SaDException("Cannot move to NULL location");
-    }
-    return new Move(_game, this, loc);
-  }
-  
-  public Move newRandomMoveOrder() {
-    List<Location> ring = _loc.getRing(1);
-    List<Location> reachable = new ArrayList();
-    for (Location loc: ring) {
-      if (!MapState.isBlocked(loc, true)) {
-        reachable.add(loc);
-      }
-    }
-    
-    if (!reachable.isEmpty()) {
-      Location loc = RandomUtil.randomValue(reachable);
-      return new Move(_game, this, loc);
-    }
-    return null;
-  }
-  
-  public Sentry newSentryOrder() {
-    return new Sentry(_game, this);
-  }
-  
-  public Unload newUnloadOrder() {
-    return new Unload(_game, this);
-  }
-  
-  public MoveEast newMoveEast() {
-    return new MoveEast(_game, this);
-  }
-  public MoveWest newMoveWest() {
-    return new MoveWest(_game, this);
-  }
-
-  public MoveNorthWest newMoveNorthWest() {
-    return new MoveNorthWest(_game, this);
-  }
-  public MoveSouthWest newMoveSouthWest() {
-    return new MoveSouthWest(_game, this);
-  }
-  
-  public MoveNorthEast newMoveNorthEast() {
-    return new MoveNorthEast(_game, this);
-  }
-  public MoveSouthEast newMoveSouthEast() {
-    return new MoveSouthEast(_game, this);
-  }
-  
-  public SkipTurn newSkipTurn() {
-    return new SkipTurn(_game, this);
-  }
-  
-  
-  /**
-   * Construct and order given an OrderType and an optional parameter.
-   * 
-   * WHEN OrderType.MOVE, p1 MUST BE Location 
-   * 
-   * Otherwise p1 is ignored 
-   *  
-   * @param order
-   * @param p1
-   * @return
-   */
-  public Order newOrder(OrderType order, Object p1) {
-    if (order.equals(OrderType.EXPLORE)) {
-      return newExploreOrder();
-    } else if (order.equals(OrderType.HEAD_HOME)) {
-      return newHeadHomeOrder();
-    } else if (order.equals(OrderType.MOVE)) {
-      return newMoveOrder((Location) p1);
-    } else if (order.equals(OrderType.SENTRY)) {
-      return newSentryOrder();
-    } else if (order.equals(OrderType.UNLOAD)) {
-      return newUnloadOrder();
-    } else if (order.equals(OrderType.MOVE_WEST)) {
-      return newMoveWest();
-    } else if (order.equals(OrderType.MOVE_EAST)) {
-      return newMoveEast();
-    } else if (order.equals(OrderType.MOVE_NORTH_WEST)) {
-      return newMoveNorthWest();
-    } else if (order.equals(OrderType.MOVE_SOUTH_WEST)) {
-      return newMoveSouthWest();
-    } else if (order.equals(OrderType.MOVE_NORTH_EAST)) {
-      return newMoveNorthEast();
-    } else if (order.equals(OrderType.MOVE_SOUTH_EAST)) {
-      return newMoveSouthEast();
-    } else if (order.equals(OrderType.SKIPTURN)) {
-        return newSkipTurn();
-    } else  {
-      throw new SaDException("Unknown order type:" + order.toString());
-    }
-  }
-
-  
-  public Life life() {
-    return _life;
-  }
-
-
-  public int getMaxTravel() {
-    return _type.getFuel();
-  }
-
-  
-  public OrderResponse execOrder(Order alternate) {
-
-    OrderResponse lastOrderResponse = null;
-    if (isDead()) {
-      throw new SaDException("Dead units should not be playing");
+    public Life life() {
+        return life;
     }
 
-    Log.debug(this, "Getting units orders");
-    
-    Order order = alternate;
-    if (order == null) {
-      order = getOrder();
-    }
-    if (order == null) {
-      throw new SaDException("Attempting to play unit with no order!");
-    }
-    if (this != order.getAssignee()) {
-      throw new SaDException("Order does not belong to unit running it!");
+    public int getMaxTravel() {
+        return this.type.getFuel();
     }
 
-    lastOrderResponse = order.execute();
-    return lastOrderResponse;
-  }
+    public OrderResponse execOrder(Order alternate) {
+        OrderResponse lastOrderResponse = null;
+        if (isDead()) {
+            throw new SaDException("Dead units should not be playing");
+        }
 
-  public void activate() {
-    clearOrders();
-    _life.wake();
-  }
+        Log.debug(this, "Getting units orders");
 
-  public boolean isInfantry() {
-   return _type == Type.INFANTRY;
-  }
+        Order order = alternate;
+        if (order == null) {
+            order = getOrder();
+        }
+        if (order == null) {
+            throw new SaDException("Attempting to play unit with no order!");
+        }
+        if (this != order.getAssignee()) {
+            throw new SaDException("Order does not belong to unit running it!");
+        }
 
-  public boolean isArmour() {
-    return _type == Type.ARMOR;
-  }
+        lastOrderResponse = order.execute();
+        return lastOrderResponse;
+    }
 
-  public boolean isBomber() {
-    return _type == Type.BOMBER;
-  }
+    public void activate() {
+        clearOrders();
+        this.life.wake();
+    }
 
-  public boolean isTransport() {
-    return _type == Type.TRANSPORT;
-  }
-  
-  public boolean isCargo() {
-    return _type == Type.CARGO;
-  }
-  
-  public boolean isDestroyer() {
-    return _type == Type.DESTROYER;
-  }
+    public boolean isInfantry() {
+        return type == Type.INFANTRY;
+    }
 
-  public boolean isFighter() {
-    return _type == Type.FIGHTER;
-  }
+    public boolean isArmour() {
+        return type == Type.ARMOR;
+    }
 
-  public boolean isSubmarine() {
-    return _type == Type.SUBMARINE;
-  }
-  
-  public boolean isCruiser() {
-    return _type == Type.CRUISER;
-  }
-  
-  public boolean isBattleship() {
-    return _type == Type.BATTLESHIP;
-  }
-  
-  public boolean isCarrier() {
-    return _type == Type.CARRIER;
-  }
+    public boolean isBomber() {
+        return type == Type.BOMBER;
+    }
 
-  public Continent getContinent() {
-    return _board.getContinent(_loc);
-  }
+    public boolean isTransport() {
+        return type == Type.TRANSPORT;
+    }
 
+    public boolean isCargo() {
+        return type == Type.CARGO;
+    }
 
+    public boolean isDestroyer() {
+        return type == Type.DESTROYER;
+    }
+
+    public boolean isFighter() {
+        return type == Type.FIGHTER;
+    }
+
+    public boolean isSubmarine() {
+        return type == Type.SUBMARINE;
+    }
+
+    public boolean isCruiser() {
+        return type == Type.CRUISER;
+    }
+
+    public boolean isBattleship() {
+        return type == Type.BATTLESHIP;
+    }
+
+    public boolean isCarrier() {
+        return type == Type.CARRIER;
+    }
+
+    public Continent getContinent() {
+        return this.board.getContinent(this.loc);
+    }
 }
