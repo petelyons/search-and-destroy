@@ -1,0 +1,27 @@
+[
+  {
+    "label": "Build Project",
+    "command": "mvn clean compile",
+    "use_new_terminal": false,
+  },
+  {
+    "label": "Run Game",
+    "command": "mvn exec:java -Dexec.mainClass=SAD",
+    "use_new_terminal": true,
+  },
+  {
+    "label": "Package JAR",
+    "command": "mvn clean package",
+    "use_new_terminal": false,
+  },
+  {
+    "label": "Run JAR",
+    "command": "java -jar target/sad-game-1.0.0.jar",
+    "use_new_terminal": true,
+  },
+  {
+    "label": "Run Tests",
+    "command": "mvn test",
+    "use_new_terminal": false,
+  },
+]
