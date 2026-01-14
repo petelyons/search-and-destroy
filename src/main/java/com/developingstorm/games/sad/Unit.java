@@ -303,7 +303,7 @@ public abstract class Unit {
     }
 
     public Location getLocation() {
-        return loc;
+        return this.loc;
     }
 
     public void move(Location loc) {
@@ -336,6 +336,15 @@ public abstract class Unit {
         if (this.carries != null) {
             for (Unit u2 : this.carries) {
                 u2.changeLoc(this.loc);
+            }
+
+            // If this is a transport not along coast, carried units should be in sentry
+            if (this.isTransport() && !isAlongCoast()) {
+                for (Unit u2 : this.carries) {
+                    if (!u2.inSentryMode()) {
+                        u2.orderSentry();
+                    }
+                }
             }
         }
 
@@ -473,6 +482,14 @@ public abstract class Unit {
     }
 
     public void addCarried(Unit u) {
+        addCarried(u, true);
+    }
+
+    /**
+     * Adds a carried unit. If assignOrder is false, does not assign a sentry order
+     * (used when restoring from save files where orders are restored separately).
+     */
+    public void addCarried(Unit u, boolean assignOrder) {
         if (carries == null) {
             carries = new ArrayList<Unit>();
         }
@@ -480,12 +497,17 @@ public abstract class Unit {
             throw new SaDException("Unit already loaded" + u);
         }
         if (!u.getLocation().equals(this.loc)) {
-            Log.error(this, "Attempting to carry unit not at location");
-            u.move(this.loc);
+            Log.warn(
+                this,
+                "Unit being loaded is not at exact location - adjusting position"
+            );
+            u.changeLoc(this.loc);
         }
 
         u.onboard = this;
-        u.orderSentry();
+        if (assignOrder) {
+            u.orderSentry();
+        }
         this.carries.add(u);
     }
 
@@ -856,5 +878,23 @@ public abstract class Unit {
 
     public Continent getContinent() {
         return this.board.getContinent(this.loc);
+    }
+
+    /**
+     * Checks if this unit (typically a transport on water) is along the coast.
+     * Returns true if any adjacent hex is land.
+     */
+    private boolean isAlongCoast() {
+        if (!this.board.isWater(this.loc)) {
+            return false;
+        }
+
+        List<Location> ring = this.loc.getRing(1);
+        for (Location neighborLoc : ring) {
+            if (this.board.isLand(neighborLoc)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -89,9 +89,11 @@ public class AStar {
 
     public List<AStarState> solve() {
         List<AStarState> stateList = solve(false);
-        if (stateList == null) {
-            solve(true);
-        }
+        // Don't retry with debug visualization - it's distracting during normal gameplay
+        // If you need to debug pathfinding, enable this manually
+        // if (stateList == null) {
+        //     solve(true);
+        // }
         return stateList;
     }
 

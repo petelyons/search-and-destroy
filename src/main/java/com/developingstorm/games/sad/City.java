@@ -34,8 +34,10 @@ public class City {
     public City(Game g, JsonObj json) {
         game = g;
         board = this.game.getBoard();
-        owner = this.game.getPlayer(json.getString("owner"));
-        produces = Type.get(json.getString("produces"));
+        String ownerName = json.getString("owner");
+        owner = (ownerName != null) ? this.game.getPlayer(ownerName) : null;
+        String productionType = json.getString("produces");
+        produces = (productionType != null) ? Type.get(productionType) : null;
         location = Location.get(json.getObj("location"));
         round = json.getLong("round");
         productionStart = json.getLong("ps");
@@ -61,7 +63,11 @@ public class City {
         json.put("ps", this.productionStart);
         json.put("prodcomplete", this.productionCompletedThisTurn);
 
-        json.put("edicts", this.edicts.toJson());
+        if (this.edicts != null) {
+            json.put("edicts", this.edicts.toJson());
+        } else {
+            json.put("edicts", null);
+        }
         return json;
     }
 

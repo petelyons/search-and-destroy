@@ -6,6 +6,7 @@ import com.developingstorm.games.hexboard.Hex;
 import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.Board;
+import com.developingstorm.games.sad.CombatResult;
 import com.developingstorm.games.sad.Debug;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.GameListener;
@@ -13,11 +14,15 @@ import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Robot;
 import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.persistence.GameStateSerializer;
 import com.developingstorm.games.sad.ui.NewGameDialog.NewGameValues;
 import com.developingstorm.games.sad.ui.controls.PathsCommander;
 import com.developingstorm.games.sad.ui.controls.UIController;
 import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.NoKeyScrollPane;
+import com.formdev.flatlaf.FlatDarculaLaf;
+import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
@@ -32,6 +37,7 @@ import java.awt.event.WindowEvent;
 import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
 import javax.swing.UIManager;
@@ -165,6 +171,10 @@ public class SaDFrame extends JFrame {
 
     private UnitStatusBar ubar;
 
+    private UnitDetailsDialog unitDetailsDialog;
+
+    private CombatResultPanel combatResultPanel;
+
     private boolean paused;
 
     private Unit unitTracked = null;
@@ -176,6 +186,8 @@ public class SaDFrame extends JFrame {
     private GameRunner runner;
 
     private UIController controller;
+
+    private String currentSaveName = null;
 
     public static boolean SHOW_AIR_PATHS = true;
     public static boolean SHOW_SEA_PATHS = true;
@@ -194,14 +206,27 @@ public class SaDFrame extends JFrame {
     public static final int MAX_PLAYERS = 6;
 
     public static void main(String[] args) {
-        String os = System.getProperty("os.name");
-        if (os.startsWith("Windows")) {
+        // Set macOS-specific properties before initializing UI
+        if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+            System.setProperty(
+                "apple.awt.application.name",
+                "Search and Destroy"
+            );
+        }
+
+        // Use FlatLaf for modern, native-looking UI
+        try {
+            // FlatLightLaf is the light theme - use FlatDarculaLaf for dark theme
+            FlatLightLaf.setup();
+        } catch (Exception ex) {
+            // Fall back to system L&F if FlatLaf fails
             try {
                 UIManager.setLookAndFeel(
-                    "com.sun.java.swing.plaf.windows.WindowsLookAndFeel"
+                    UIManager.getSystemLookAndFeelClassName()
                 );
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            } catch (Exception ex2) {
+                ex2.printStackTrace();
             }
         }
         SaDFrame frame = new SaDFrame();
@@ -263,10 +288,20 @@ public class SaDFrame extends JFrame {
 
         startNewGame(vals);
 
+        // Create unit details dialog and combat result panel after ctx is initialized
+        this.unitDetailsDialog = new UnitDetailsDialog(this.ctx);
+        this.combatResultPanel = new CombatResultPanel(this.ctx);
+
+        // Create east panel to hold both unit details and combat result
+        JPanel eastPanel = new JPanel(new BorderLayout());
+        eastPanel.add(BorderLayout.CENTER, this.unitDetailsDialog);
+        eastPanel.add(BorderLayout.SOUTH, this.combatResultPanel);
+
         Container pane = getContentPane();
         pane.setLayout(new BorderLayout(0, 0));
         pane.add(BorderLayout.CENTER, this.scroll);
         pane.add(BorderLayout.SOUTH, this.ubar);
+        pane.add(BorderLayout.EAST, eastPanel);
         // pane.add(BorderLayout.NORTH, this.tbar);
 
         setSize(600, 500);
@@ -290,6 +325,7 @@ public class SaDFrame extends JFrame {
         this.map = HexBoardMap.loadMapAsResource(this, "MedMap.sdm");
         this.playLocation = null;
         this.ctx = new MapContext();
+        this.currentSaveName = null; // Reset save name for new game
 
         Player[] players = new Player[2];
         players[0] = createPlayer(vals.player1Type, vals.player1Name, 1);
@@ -324,6 +360,7 @@ public class SaDFrame extends JFrame {
 
                     EventQueue.invokeLater(() -> {
                         SaDFrame.this.ubar.setUnit(u);
+                        SaDFrame.this.unitDetailsDialog.updateUnit(u);
                         SaDFrame.this.board.clearSelected();
 
                         if (Debug.getDebugExplore()) {
@@ -395,6 +432,13 @@ public class SaDFrame extends JFrame {
                             "We have a winner!",
                             JOptionPane.WARNING_MESSAGE
                         );
+                    });
+                }
+
+                @Override
+                public void combatResolved(CombatResult result) {
+                    EventQueue.invokeLater(() -> {
+                        SaDFrame.this.combatResultPanel.updateCombat(result);
                     });
                 }
             }
@@ -541,6 +585,9 @@ public class SaDFrame extends JFrame {
                         openFileDialog.setDirectory(".");
                         openFileDialog.setVisible(true);
                         fileName = openFileDialog.getFile();
+                        if (SaDFrame.this.fileName == null) {
+                            return; // User cancelled
+                        }
                         if (!SaDFrame.this.fileName.endsWith(MAP_EXT)) {
                             return;
                         }
@@ -551,36 +598,401 @@ public class SaDFrame extends JFrame {
                 }
 
                 public void onSave() {
-                    Log.info("Saving game...");
-                    if (fileName == null) {
-                        onSaveAs();
+                    Log.info(
+                        "Save menu clicked - game is: " + SaDFrame.this.game
+                    );
+                    if (SaDFrame.this.game == null) {
+                        Log.warn("Cannot save - no game in progress");
+                        JOptionPane.showMessageDialog(
+                            SaDFrame.this,
+                            "No game in progress to save.",
+                            "Cannot Save",
+                            JOptionPane.WARNING_MESSAGE
+                        );
                         return;
                     }
 
+                    // If no save name exists, prompt for one
+                    if (SaDFrame.this.currentSaveName == null) {
+                        String saveName = JOptionPane.showInputDialog(
+                            SaDFrame.this,
+                            "Enter a name for this save:",
+                            "Save Game",
+                            JOptionPane.PLAIN_MESSAGE
+                        );
+
+                        if (saveName == null || saveName.trim().isEmpty()) {
+                            return; // User cancelled
+                        }
+                        SaDFrame.this.currentSaveName = saveName.trim();
+                    }
+
                     try {
-                        SaDFrame.this.map.saveMap(SaDFrame.this.fileName);
+                        Log.info("Creating GameStateSerializer...");
+                        GameStateSerializer serializer =
+                            new GameStateSerializer();
+                        Log.info(
+                            "Calling saveGame with name: " +
+                                SaDFrame.this.currentSaveName
+                        );
+                        serializer.saveGame(
+                            SaDFrame.this.game,
+                            SaDFrame.this.currentSaveName
+                        );
+                        Log.info("Save completed successfully");
+                        JOptionPane.showMessageDialog(
+                            SaDFrame.this,
+                            "Game saved successfully to " +
+                                GameStateSerializer.getSaveDirectory(),
+                            "Game Saved",
+                            JOptionPane.INFORMATION_MESSAGE
+                        );
                     } catch (Exception e) {
+                        Log.error(
+                            "Save failed with exception: " + e.getMessage()
+                        );
                         e.printStackTrace();
+                        JOptionPane.showMessageDialog(
+                            SaDFrame.this,
+                            "Failed to save game: " + e.getMessage(),
+                            "Save Error",
+                            JOptionPane.ERROR_MESSAGE
+                        );
                     }
                 }
 
                 public void onSaveAs() {
-                    try {
-                        FileDialog openFileDialog = new FileDialog(
+                    if (SaDFrame.this.game == null) {
+                        JOptionPane.showMessageDialog(
                             SaDFrame.this,
-                            "Save",
-                            FileDialog.SAVE
+                            "No game in progress to save.",
+                            "Cannot Save",
+                            JOptionPane.WARNING_MESSAGE
                         );
-                        openFileDialog.setDirectory(".");
-                        openFileDialog.setVisible(true);
-                        fileName = openFileDialog.getFile();
-                        if (
-                            !SaDFrame.this.fileName.endsWith(MAP_EXT)
-                        ) fileName = SaDFrame.this.fileName + MAP_EXT;
-                        SaDFrame.this.map.saveMap(SaDFrame.this.fileName);
+                        return;
+                    }
+
+                    String saveName = JOptionPane.showInputDialog(
+                        SaDFrame.this,
+                        "Enter a name for this save:",
+                        "Save Game As",
+                        JOptionPane.PLAIN_MESSAGE
+                    );
+
+                    if (saveName == null || saveName.trim().isEmpty()) {
+                        return; // User cancelled
+                    }
+
+                    try {
+                        GameStateSerializer serializer =
+                            new GameStateSerializer();
+                        serializer.saveGame(
+                            SaDFrame.this.game,
+                            saveName.trim()
+                        );
+                        // Update current save name after successful save
+                        SaDFrame.this.currentSaveName = saveName.trim();
+                        JOptionPane.showMessageDialog(
+                            SaDFrame.this,
+                            "Game saved successfully to " +
+                                GameStateSerializer.getSaveDirectory(),
+                            "Game Saved",
+                            JOptionPane.INFORMATION_MESSAGE
+                        );
                     } catch (Exception e) {
                         e.printStackTrace();
-                        return;
+                        JOptionPane.showMessageDialog(
+                            SaDFrame.this,
+                            "Failed to save game: " + e.getMessage(),
+                            "Save Error",
+                            JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                }
+
+                public void onLoadGame() {
+                    System.out.println("=== onLoadGame called ===");
+                    System.err.println("=== onLoadGame called to stderr ===");
+                    try {
+                        Log.info("onLoadGame called");
+                        System.out.println("About to show file dialog");
+                        FileDialog loadFileDialog = new FileDialog(
+                            SaDFrame.this,
+                            "Load Game",
+                            FileDialog.LOAD
+                        );
+                        loadFileDialog.setDirectory("./saves");
+                        loadFileDialog.setFile("*.json");
+                        loadFileDialog.setVisible(true);
+
+                        String fileName = loadFileDialog.getFile();
+                        System.out.println("Selected file: " + fileName);
+                        Log.info("Selected file: " + fileName);
+                        if (fileName == null) {
+                            System.out.println("User cancelled file selection");
+                            Log.info("User cancelled file selection");
+                            return; // User cancelled
+                        }
+
+                        System.out.println(
+                            "File name is not null, checking extension"
+                        );
+                        if (!fileName.endsWith(".json")) {
+                            System.out.println(
+                                "Invalid file extension: " + fileName
+                            );
+                            Log.warn("Invalid file extension: " + fileName);
+                            JOptionPane.showMessageDialog(
+                                SaDFrame.this,
+                                "Please select a JSON save file.",
+                                "Invalid File",
+                                JOptionPane.WARNING_MESSAGE
+                            );
+                            return;
+                        }
+
+                        String directory = loadFileDialog.getDirectory();
+                        System.out.println("Directory: " + directory);
+                        java.io.File saveFile = new java.io.File(
+                            directory,
+                            fileName
+                        );
+                        System.out.println(
+                            "Full save file path: " + saveFile.getAbsolutePath()
+                        );
+                        Log.info(
+                            "Full save file path: " + saveFile.getAbsolutePath()
+                        );
+
+                        if (!saveFile.exists()) {
+                            System.out.println("ERROR: Save file not found!");
+                            Log.error(
+                                "Save file not found: " +
+                                    saveFile.getAbsolutePath()
+                            );
+                            JOptionPane.showMessageDialog(
+                                SaDFrame.this,
+                                "Save file not found: " + saveFile.getPath(),
+                                "File Not Found",
+                                JOptionPane.ERROR_MESSAGE
+                            );
+                            return;
+                        }
+
+                        // Load the game
+                        System.out.println("Creating GameStateSerializer...");
+                        Log.info("Creating GameStateSerializer...");
+                        GameStateSerializer serializer =
+                            new GameStateSerializer();
+                        System.out.println("Loading game from file...");
+                        Log.info("Loading game from file...");
+                        Game loadedGame = serializer.loadGame(
+                            saveFile,
+                            SaDFrame.this.ctx
+                        );
+                        System.out.println(
+                            "Game loaded successfully from serializer"
+                        );
+                        Log.info("Game loaded successfully from file");
+
+                        // Stop the current game if one is running
+                        System.out.println(
+                            "Stopping current game if running..."
+                        );
+                        if (SaDFrame.this.game != null) {
+                            termGame();
+                        }
+
+                        // Set up the loaded game - use same initialization as startNewGame
+                        System.out.println("Setting up loaded game...");
+                        SaDFrame.this.game = loadedGame;
+                        SaDFrame.this.map = loadedGame.getBoard().map;
+                        System.out.println("Setting game listener...");
+                        SaDFrame.this.game.setGameListener(
+                            new GameListener() {
+                                @Override
+                                public void abort() {
+                                    System.exit(1);
+                                }
+
+                                @Override
+                                public void newTurn(int t) {}
+
+                                @Override
+                                public void trackUnit(Unit u) {
+                                    SaDFrame.this.unitTracked = u;
+                                    EventQueue.invokeLater(() -> {
+                                        SaDFrame.this.ubar.setUnit(u);
+                                    });
+                                }
+
+                                @Override
+                                public void selectUnit(Unit u) {
+                                    SaDFrame.this.unitChanged = u;
+                                    EventQueue.invokeLater(() -> {
+                                        SaDFrame.this.ubar.setUnit(u);
+                                        SaDFrame.this.unitDetailsDialog.updateUnit(
+                                            u
+                                        );
+                                        SaDFrame.this.board.clearSelected();
+                                        if (Debug.getDebugExplore()) {
+                                            List<Location> list =
+                                                Debug.getDebugLocations();
+                                            if (list != null) {
+                                                SaDFrame.this.board.setLocationsSelected(
+                                                    list,
+                                                    true
+                                                );
+                                            }
+                                        }
+                                    });
+                                }
+
+                                @Override
+                                public void killUnit(
+                                    Unit u,
+                                    boolean showDeath
+                                ) {
+                                    if (showDeath) {
+                                        EventQueue.invokeLater(() -> {
+                                            SaDFrame.this.canvas.addExplosion(
+                                                u.getLocation()
+                                            );
+                                        });
+                                    }
+                                }
+
+                                @Override
+                                public void hitLocation(Location loc) {
+                                    EventQueue.invokeLater(() -> {
+                                        SaDFrame.this.canvas.addExplosion(loc);
+                                    });
+                                }
+
+                                @Override
+                                public AStarWatcher getWatcher() {
+                                    return SaDFrame.this.canvas.getAStarWatcher();
+                                }
+
+                                @Override
+                                public void selectPlayer(Player p) {
+                                    EventQueue.invokeLater(() -> {
+                                        SaDFrame.this.selectPlayer(p);
+                                    });
+                                }
+
+                                @Override
+                                public void notifyWait() {
+                                    if (SaDFrame.this.unitChanged != null) {
+                                        centerIfOff(
+                                            SaDFrame.this.unitChanged.getLocation()
+                                        );
+                                        SaDFrame.this.canvas.setCursor(
+                                            SaDFrame.this.unitChanged.getLocation()
+                                        );
+                                        SaDFrame.this.unitChanged = null;
+                                        SaDFrame.this.unitTracked = null;
+                                    } else if (
+                                        SaDFrame.this.unitTracked != null
+                                    ) {
+                                        showLocation(
+                                            SaDFrame.this.unitTracked.getLocation()
+                                        );
+                                        SaDFrame.this.canvas.setCursor(
+                                            SaDFrame.this.unitTracked.getLocation()
+                                        );
+                                        SaDFrame.this.unitTracked = null;
+                                    } else {
+                                        throw new SaDException("No UNIT");
+                                    }
+                                }
+
+                                @Override
+                                public void gameOver(Player winner) {
+                                    EventQueue.invokeLater(() -> {
+                                        JOptionPane.showMessageDialog(
+                                            SaDFrame.this,
+                                            "GAME OVER.",
+                                            "We have a winner!",
+                                            JOptionPane.WARNING_MESSAGE
+                                        );
+                                    });
+                                }
+
+                                @Override
+                                public void combatResolved(
+                                    CombatResult result
+                                ) {
+                                    EventQueue.invokeLater(() -> {
+                                        SaDFrame.this.combatResultPanel.updateCombat(
+                                            result
+                                        );
+                                    });
+                                }
+                            }
+                        );
+
+                        // Set up board and canvas
+                        SaDFrame.this.board = SaDFrame.this.game.getBoard();
+                        SaDFrame.this.ubar.setGame(SaDFrame.this.game);
+                        GameIcons icons = GameIcons.get();
+                        BoardCanvas oldCanvas = SaDFrame.this.canvas;
+                        SaDFrame.this.canvas = new BoardCanvas(
+                            SaDFrame.this.game,
+                            icons,
+                            SaDFrame.this.ctx
+                        );
+                        JViewport vp = SaDFrame.this.scroll.getViewport();
+                        if (oldCanvas != null) {
+                            vp.remove(oldCanvas);
+                        }
+                        vp.setScrollMode(JViewport.BACKINGSTORE_SCROLL_MODE);
+                        vp.add(SaDFrame.this.canvas);
+
+                        // Initialize and start the game
+                        System.out.println("About to call initGame()...");
+                        initGame();
+                        System.out.println("initGame() completed");
+
+                        // Force UI update
+                        System.out.println("Forcing UI update...");
+                        SaDFrame.this.scroll.revalidate();
+                        SaDFrame.this.scroll.repaint();
+                        SaDFrame.this.revalidate();
+                        SaDFrame.this.repaint();
+                        System.out.println("UI update complete");
+
+                        System.out.println("About to show success dialog...");
+                        JOptionPane.showMessageDialog(
+                            SaDFrame.this,
+                            "Game loaded successfully!",
+                            "Game Loaded",
+                            JOptionPane.INFORMATION_MESSAGE
+                        );
+                        System.out.println("Success dialog shown");
+                    } catch (Exception e) {
+                        Log.error("Failed to load game: " + e.getMessage());
+                        e.printStackTrace();
+
+                        // Build detailed error message
+                        StringBuilder errorMsg = new StringBuilder();
+                        errorMsg.append("Failed to load game:\n\n");
+                        errorMsg
+                            .append(e.getClass().getSimpleName())
+                            .append(": ");
+                        errorMsg.append(e.getMessage()).append("\n\n");
+
+                        if (e.getCause() != null) {
+                            errorMsg.append("Caused by: ");
+                            errorMsg.append(e.getCause().getMessage());
+                        }
+
+                        JOptionPane.showMessageDialog(
+                            SaDFrame.this,
+                            errorMsg.toString(),
+                            "Load Error",
+                            JOptionPane.ERROR_MESSAGE
+                        );
                     }
                 }
 

@@ -5,26 +5,28 @@ import com.developingstorm.games.hexboard.Location;
 
 /**
 
- * 
+ *
  */
 public interface GameListener {
-  void abort();
+    void abort();
 
-  void selectUnit(Unit u);
+    void selectUnit(Unit u);
 
-  void trackUnit(Unit u);
+    void trackUnit(Unit u);
 
-  void killUnit(Unit u, boolean showDeath);
+    void killUnit(Unit u, boolean showDeath);
 
-  void hitLocation(Location loc);
+    void hitLocation(Location loc);
 
-  void selectPlayer(Player p);
+    void selectPlayer(Player p);
 
-  void notifyWait();
+    void notifyWait();
 
-  AStarWatcher getWatcher();
+    AStarWatcher getWatcher();
 
-  void newTurn(int t);
+    void newTurn(int t);
 
-  void gameOver(Player winner);
+    void gameOver(Player winner);
+
+    void combatResolved(CombatResult result);
 }

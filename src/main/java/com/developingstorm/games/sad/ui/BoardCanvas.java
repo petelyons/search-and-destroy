@@ -222,6 +222,9 @@ public class BoardCanvas extends HexCanvas {
         Font f = g.getFont();
         FontRenderContext frc = g.getFontRenderContext();
         String name = city.getName();
+        if (name == null) {
+            name = "City"; // Default name if none provided
+        }
         Type t = city.getProduction();
         if (t != null) {
             name = name + " (" + t.getAbr() + ")";

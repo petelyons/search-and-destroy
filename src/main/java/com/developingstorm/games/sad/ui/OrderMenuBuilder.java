@@ -4,6 +4,7 @@ import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.ui.controls.GameCommander;
+import com.developingstorm.games.sad.util.Log;
 import java.util.List;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -69,7 +70,14 @@ public class OrderMenuBuilder {
         if (this.units.size() == 1) {
             Unit u = (Unit) this.units.get(0);
             City c = this.game.cityAtLocation(u.getLocation());
+            Log.debug(
+                "Checking for city at unit location: " +
+                    u.getLocation() +
+                    ", city=" +
+                    c
+            );
             if (c != null) {
+                Log.debug("Adding city submenu for city: " + c.getName());
                 CityMenuBuilder cm = new CityMenuBuilder(
                     this.frame,
                     this.game,
@@ -78,6 +86,10 @@ public class OrderMenuBuilder {
                 );
                 ordersPopup.addSeparator();
                 ordersPopup.add(cm.getSubmenu());
+            } else {
+                Log.debug(
+                    "No city found at location or city not owned by current player"
+                );
             }
         }
 

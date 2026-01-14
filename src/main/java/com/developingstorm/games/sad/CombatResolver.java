@@ -30,7 +30,12 @@ class CombatResolver {
         Type at = atk.getType();
         // Type dt = def.getType();
 
+        // Capture initial state for combat result
+        int attackerInitialHits = atk.life().hits;
+        int defenderInitialHits = def.life().hits;
+
         // trade blows until someone dies
+        boolean attackerWon = false;
         while (true) {
             int attackStrength;
             // attacker hit
@@ -43,7 +48,8 @@ class CombatResolver {
                 }
 
                 if (def.life().attack(attackStrength)) {
-                    return true;
+                    attackerWon = true;
+                    break;
                 }
             }
 
@@ -56,10 +62,23 @@ class CombatResolver {
                     attackStrength = 1;
                 }
                 if (atk.life().attack(attackStrength)) {
-                    return false;
+                    attackerWon = false;
+                    break;
                 }
             }
         }
+
+        // Create and notify combat result
+        CombatResult result = new CombatResult(
+            atk,
+            attackerInitialHits,
+            def,
+            defenderInitialHits,
+            attackerWon
+        );
+        getGameListener().combatResolved(result);
+
+        return attackerWon;
     }
 
     /**

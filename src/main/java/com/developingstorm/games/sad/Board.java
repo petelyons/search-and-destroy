@@ -86,6 +86,17 @@ public class Board extends HexBoard {
         return cities;
     }
 
+    /**
+     * Rebuilds the city location lookup HashMap.
+     * Called after loading cities from a save file to ensure isCity() works correctly.
+     */
+    public void rebuildCityLookup() {
+        this.ctoks.clear();
+        for (City city : this.cities) {
+            this.ctoks.put(city.getLocation(), city);
+        }
+    }
+
     private City getCity(int x) {
         return (City) this.cities.get(x);
     }

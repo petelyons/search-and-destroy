@@ -613,6 +613,14 @@ public class Player implements UnitLens, LocationLens {
         this.explored[loc.x][loc.y] = true;
     }
 
+    /**
+     * Directly marks a location as explored (used for save/load).
+     * Public to allow GameStateSerializer to restore explored state.
+     */
+    public void markExploredDirect(Location loc) {
+        this.explored[loc.x][loc.y] = true;
+    }
+
     private void markRegion(Location p, Vision v, int dist) {
         for (int x = p.x - dist; x <= p.x + dist; x++) {
             for (int y = p.y - dist; y <= p.y + dist; y++) {

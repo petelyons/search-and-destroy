@@ -22,6 +22,7 @@ public class MenuBarBuilder {
 
     private final JMenuItem NEW = new JMenuItem("New");
     private final JMenuItem OPEN = new JMenuItem("Open...");
+    private final JMenuItem LOAD = new JMenuItem("Load Game...");
     private final JMenuItem SAVE = new JMenuItem("Save");
     private final JMenuItem SAVEAS = new JMenuItem("Save As...");
     private final JMenuItem EXIT = new JMenuItem("Exit");
@@ -75,6 +76,9 @@ public class MenuBarBuilder {
 
         OPEN.setMnemonic(KeyEvent.VK_O);
         OPEN.addActionListener(e -> this.handler.onOpen());
+
+        LOAD.setMnemonic(KeyEvent.VK_L);
+        LOAD.addActionListener(e -> this.handler.onLoadGame());
 
         SAVE.setMnemonic(KeyEvent.VK_S);
         SAVE.setAccelerator(
@@ -145,7 +149,7 @@ public class MenuBarBuilder {
 
         FILE.setMnemonic(KeyEvent.VK_F);
         FILE.add(NEW);
-        FILE.add(OPEN);
+        FILE.add(LOAD);
         FILE.addSeparator();
         FILE.add(SAVE);
         FILE.add(SAVEAS);
