@@ -1183,6 +1183,16 @@ public class SaDFrame extends JFrame {
         return this.controller.getPathsCommander();
     }
 
+    public void startPatrolMode(Unit unit) {
+        this.controller.switchMode(UIMode.PATROL);
+        this.controller.getPatrolCommander().setUnit(unit);
+    }
+
+    public void startAttackMode(Unit unit) {
+        this.controller.switchMode(UIMode.ATTACK);
+        this.controller.getAttackCommander().setUnit(unit);
+    }
+
     public void returnGameMode() {
         this.controller.switchMode(UIMode.GAME);
         selectPlayer(this.game.currentPlayer());

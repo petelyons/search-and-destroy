@@ -125,7 +125,11 @@ public class UnitTurnState {
     }
 
     public void completeTurn() {
-        this.unit.life().burnMoves();
+        // Only burn moves if the unit is not carried
+        // Carried units are cargo and shouldn't lose moves while being transported
+        if (!this.unit.isCarried()) {
+            this.unit.life().burnMoves();
+        }
         if (this.unit.life().hasDied()) {
             this.game.killUnit(this.unit);
         }
@@ -158,7 +162,7 @@ public class UnitTurnState {
         }
     }
 
-    private void updateOrderState() {
+    public void updateOrderState() {
         if (this.unit.hasOrders()) {
             orderState = OrderState.READY;
         } else {

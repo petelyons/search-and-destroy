@@ -9,16 +9,20 @@ import com.developingstorm.games.hexboard.Hex;
 import com.developingstorm.games.hexboard.HexCanvas;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.hexboard.sprites.ArrowSprite;
+import com.developingstorm.games.hexboard.sprites.LineSprite;
 import com.developingstorm.games.hexboard.sprites.Sprite;
 import com.developingstorm.games.sad.Board;
 import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Continent;
 import com.developingstorm.games.sad.Game;
+import com.developingstorm.games.sad.Order;
+import com.developingstorm.games.sad.OrderType;
 import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.orders.Patrol;
 import com.developingstorm.games.sad.ui.sprites.ExplosionSprite;
 import java.awt.Color;
 import java.awt.Font;
@@ -93,6 +97,7 @@ public class BoardCanvas extends HexCanvas {
     private List<Sprite> seaPaths;
     private List<Sprite> airPaths;
     private List<Sprite> groundPaths;
+    private List<Sprite> patrolPaths;
 
     Set<PathError> pathErrors;
 
@@ -113,6 +118,7 @@ public class BoardCanvas extends HexCanvas {
         this.seaPaths = null;
         this.airPaths = null;
         this.groundPaths = null;
+        this.patrolPaths = null;
 
         this.pathErrors = new HashSet<PathError>();
     }
@@ -134,6 +140,16 @@ public class BoardCanvas extends HexCanvas {
             }
             case PATHS:
                 break;
+            case PATROL: {
+                this.gameCursor = loc;
+                showGameCursor();
+                break;
+            }
+            case ATTACK: {
+                this.gameCursor = loc;
+                showGameCursor();
+                break;
+            }
         }
     }
 
@@ -373,6 +389,64 @@ public class BoardCanvas extends HexCanvas {
         addSprites(this.seaPaths);
     }
 
+    /**
+     * Shows patrol paths for the given player's units
+     */
+    public void showPatrolPaths(Player player) {
+        removeSprites(this.patrolPaths);
+
+        if (player == null || player.isRobot()) {
+            return;
+        }
+
+        this.patrolPaths = new ArrayList<Sprite>();
+
+        // Iterate through all units and find those with patrol orders
+        for (Unit unit : this.game.units()) {
+            if (unit.getOwner() != player) {
+                continue;
+            }
+
+            Order order = unit.getOrder();
+            if (order != null && order.getType() == OrderType.PATROL) {
+                Patrol patrol = (Patrol) order;
+                List<Location> waypoints = patrol.getWaypoints();
+
+                if (waypoints.size() < 2) {
+                    continue;
+                }
+
+                // Choose color based on unit travel type
+                Color lineColor;
+                if (unit.getTravel() == Travel.AIR) {
+                    lineColor = Color.CYAN;
+                } else if (unit.getTravel() == Travel.SEA) {
+                    lineColor = Color.BLUE;
+                } else {
+                    lineColor = Color.GREEN;
+                }
+
+                // Draw lines between consecutive waypoints
+                for (int i = 0; i < waypoints.size() - 1; i++) {
+                    Location loc1 = waypoints.get(i);
+                    Location loc2 = waypoints.get(i + 1);
+
+                    BoardHex hex1 = this.board.get(loc1);
+                    BoardHex hex2 = this.board.get(loc2);
+
+                    Point p1 = hex1.center();
+                    Point p2 = hex2.center();
+
+                    LineSprite line = new LineSprite(lineColor, 2.0f);
+                    line.setLine(p1, p2);
+                    this.patrolPaths.add(line);
+                }
+            }
+        }
+
+        addSprites(this.patrolPaths);
+    }
+
     private void drawUnit(
         Unit u,
         Graphics g,
@@ -428,6 +502,12 @@ public class BoardCanvas extends HexCanvas {
                 drawPathsBoard(z, g);
                 break;
             case EXPLORE:
+                drawGameBoard(z, g);
+                break;
+            case PATROL:
+                drawGameBoard(z, g);
+                break;
+            case ATTACK:
                 drawGameBoard(z, g);
                 break;
         }
@@ -612,9 +692,19 @@ public class BoardCanvas extends HexCanvas {
         switch (mode) {
             case GAME:
                 showGameCursor();
+                showPatrolPaths(this.game.currentPlayer());
                 break;
             case PATHS:
                 clearCursor();
+                removeSprites(this.patrolPaths);
+                break;
+            case PATROL:
+                showGameCursor();
+                showPatrolPaths(this.game.currentPlayer());
+                break;
+            case ATTACK:
+                showGameCursor();
+                showPatrolPaths(this.game.currentPlayer());
                 break;
         }
     }
@@ -625,5 +715,16 @@ public class BoardCanvas extends HexCanvas {
 
     public void clearArrow() {
         setArrow(null, null);
+    }
+
+    public void clearSelected() {
+        this.board.clearSelected();
+    }
+
+    public void setLocationsSelected(
+        List<Location> locations,
+        boolean selected
+    ) {
+        this.board.setLocationsSelected(locations, selected);
     }
 }

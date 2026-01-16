@@ -1,6 +1,7 @@
 package com.developingstorm.games.sad.ui.controls;
 
 import com.developingstorm.games.hexboard.BoardHex;
+import com.developingstorm.games.hexboard.Direction;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Game;
@@ -115,7 +116,15 @@ public class GameCommander extends BaseCommander {
                         "UI",
                         "Issuing Order:" + order + " to special context:" + u
                     );
-                    u.assignOrder(u.newOrder(order, moveTo));
+                    // Enable avoidance for long-distance moves
+                    boolean enableAvoidance = shouldEnableAvoidance(
+                        u,
+                        order,
+                        moveTo
+                    );
+                    u.assignOrder(u.newOrder(order, moveTo, enableAvoidance));
+                    // Push to pendingPlay so carried units can execute their orders
+                    u.getOwner().pushPendingPlay(u);
                 }
             } else if (this.game.selectedUnit() != null) {
                 Log.debug(
@@ -125,15 +134,43 @@ public class GameCommander extends BaseCommander {
                         " to selected unit:" +
                         this.game.selectedUnit()
                 );
-                this.game.selectedUnit().assignOrder(
-                    this.game.selectedUnit().newOrder(order, moveTo)
+                Unit selected = this.game.selectedUnit();
+                // Enable avoidance for long-distance moves
+                boolean enableAvoidance = shouldEnableAvoidance(
+                    selected,
+                    order,
+                    moveTo
                 );
+                selected.assignOrder(
+                    selected.newOrder(order, moveTo, enableAvoidance)
+                );
+                // Push to pendingPlay so carried units can execute their orders
+                selected.getOwner().pushPendingPlay(selected);
             } else {
                 throw new SaDException("No unit avaialble for orders");
             }
 
             Unit active = this.game.selectedUnit();
         });
+    }
+
+    /**
+     * Determines if enemy avoidance should be enabled for this move order.
+     * Enables avoidance for long-distance moves (>3 hexes).
+     */
+    private boolean shouldEnableAvoidance(
+        Unit unit,
+        OrderType order,
+        Location moveTo
+    ) {
+        // Only enable for MOVE orders with a destination
+        if (!order.equals(OrderType.MOVE) || moveTo == null) {
+            return false;
+        }
+
+        // Enable avoidance for long-distance moves
+        int distance = unit.getLocation().distance(moveTo);
+        return distance > 3;
     }
 
     public void activate(BoardHex hex) {
@@ -181,11 +218,23 @@ public class GameCommander extends BaseCommander {
     }
 
     public void moveEast() {
-        issueOrders(OrderType.MOVE_EAST);
+        // Smart east: prefer visually rightward movement
+        // Check EAST first (same row), then NE/SE as fallbacks
+        moveInVisualDirection(
+            OrderType.MOVE_EAST,
+            OrderType.MOVE_NORTH_EAST,
+            OrderType.MOVE_SOUTH_EAST
+        );
     }
 
     public void moveWest() {
-        issueOrders(OrderType.MOVE_WEST);
+        // Smart west: prefer visually leftward movement
+        // Check WEST first (same row), then NW/SW as fallbacks
+        moveInVisualDirection(
+            OrderType.MOVE_WEST,
+            OrderType.MOVE_NORTH_WEST,
+            OrderType.MOVE_SOUTH_WEST
+        );
     }
 
     public void moveNorthEast() {
@@ -194,6 +243,90 @@ public class GameCommander extends BaseCommander {
 
     public void moveNorthWest() {
         issueOrders(OrderType.MOVE_NORTH_WEST);
+    }
+
+    /**
+     * Try to move in a visual direction, picking the best available hex.
+     * Tries primary direction first, then fallback options if blocked.
+     */
+    private void moveInVisualDirection(
+        OrderType primary,
+        OrderType fallback1,
+        OrderType fallback2
+    ) {
+        Unit u = this.game.selectedUnit();
+        if (u == null) {
+            return;
+        }
+
+        Location currentLoc = u.getLocation();
+
+        // Try primary direction first
+        Location primaryDest = getDestinationForOrder(currentLoc, primary);
+        if (
+            primaryDest != null &&
+            this.game.getBoard().isTravelable(u, primaryDest)
+        ) {
+            issueOrders(primary);
+            return;
+        }
+
+        // Try first fallback
+        Location fallback1Dest = getDestinationForOrder(currentLoc, fallback1);
+        if (
+            fallback1Dest != null &&
+            this.game.getBoard().isTravelable(u, fallback1Dest)
+        ) {
+            issueOrders(fallback1);
+            return;
+        }
+
+        // Try second fallback
+        Location fallback2Dest = getDestinationForOrder(currentLoc, fallback2);
+        if (
+            fallback2Dest != null &&
+            this.game.getBoard().isTravelable(u, fallback2Dest)
+        ) {
+            issueOrders(fallback2);
+            return;
+        }
+
+        // No valid moves, just issue the primary order anyway (will fail as expected)
+        issueOrders(primary);
+    }
+
+    /**
+     * Gets the destination location for a given directional order type.
+     */
+    private Location getDestinationForOrder(
+        Location from,
+        OrderType orderType
+    ) {
+        Direction dir = null;
+        switch (orderType) {
+            case MOVE_NORTH_EAST:
+                dir = Direction.NORTH_EAST;
+                break;
+            case MOVE_NORTH_WEST:
+                dir = Direction.NORTH_WEST;
+                break;
+            case MOVE_EAST:
+                dir = Direction.EAST;
+                break;
+            case MOVE_SOUTH_EAST:
+                dir = Direction.SOUTH_EAST;
+                break;
+            case MOVE_SOUTH_WEST:
+                dir = Direction.SOUTH_WEST;
+                break;
+            case MOVE_WEST:
+                dir = Direction.WEST;
+                break;
+            default:
+                return null;
+        }
+
+        return from.relative(dir);
     }
 
     public void moveSouthEast() {

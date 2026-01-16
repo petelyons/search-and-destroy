@@ -15,6 +15,7 @@ import com.developingstorm.games.sad.orders.Disband;
 import com.developingstorm.games.sad.orders.Explore;
 import com.developingstorm.games.sad.orders.HeadHome;
 import com.developingstorm.games.sad.orders.Move;
+import com.developingstorm.games.sad.orders.Patrol;
 import com.developingstorm.games.sad.orders.Sentry;
 import com.developingstorm.games.sad.orders.SkipTurn;
 import com.developingstorm.games.sad.orders.Unload;
@@ -375,8 +376,24 @@ public class GameStateSerializer {
         // Rebuild the city location lookup HashMap so isCity() works correctly
         game.getBoard().rebuildCityLookup();
 
+        // Rebuild player cities lists - clear old cities and add loaded ones
+        for (Player p : players) {
+            p.getCities().clear();
+        }
+        for (City city : existingCities) {
+            Player cityOwner = city.getOwner();
+            if (cityOwner != null) {
+                cityOwner.getCities().add(city);
+            }
+        }
+
         // Set current player
         game.currentPlayer = players[currentPlayerIndex];
+
+        // Second pass: restore edicts now that all cities are loaded
+        for (City city : existingCities) {
+            city.restoreEdictsSecondPass();
+        }
 
         logger.info("Game loaded successfully: turn {}", savedTurn);
         return game;
@@ -487,6 +504,83 @@ public class GameStateSerializer {
                     return new SkipTurn(game, unit);
                 case UNLOAD:
                     return new Unload(game, unit);
+                case PATROL:
+                    if (
+                        orderData != null &&
+                        orderData.getArray("waypoints") != null
+                    ) {
+                        Object[] waypointsArray = orderData.getArray(
+                            "waypoints"
+                        );
+                        List<Location> waypoints = new ArrayList<>();
+                        for (Object wpObj : waypointsArray) {
+                            JsonObj wpJson = (JsonObj) wpObj;
+                            int x = wpJson.getInteger("x");
+                            int y = wpJson.getInteger("y");
+                            waypoints.add(Location.get(x, y));
+                        }
+
+                        String modeStr = orderData.getString("mode");
+                        Patrol.PatrolMode mode = Patrol.PatrolMode.valueOf(
+                            modeStr
+                        );
+
+                        Patrol patrol = new Patrol(game, unit, waypoints, mode);
+
+                        // Restore patrol state using reflection
+                        try {
+                            java.lang.reflect.Field currentWaypointField =
+                                Patrol.class.getDeclaredField(
+                                    "currentWaypointIndex"
+                                );
+                            currentWaypointField.setAccessible(true);
+                            currentWaypointField.setInt(
+                                patrol,
+                                orderData.getInteger("currentWaypointIndex")
+                            );
+
+                            java.lang.reflect.Field reverseField =
+                                Patrol.class.getDeclaredField(
+                                    "reverseDirection"
+                                );
+                            reverseField.setAccessible(true);
+                            reverseField.setBoolean(
+                                patrol,
+                                orderData.getBoolean("reverseDirection")
+                            );
+                        } catch (Exception e) {
+                            logger.warn(
+                                "Failed to restore patrol state for unit {}: {}",
+                                unit.id,
+                                e.getMessage()
+                            );
+                        }
+
+                        return patrol;
+                    }
+                    logger.warn(
+                        "Patrol order missing waypoints data for unit {}",
+                        unit.id
+                    );
+                    return null;
+                case ATTACK:
+                    if (orderData != null) {
+                        Integer targetX = orderData.getInteger("targetX");
+                        Integer targetY = orderData.getInteger("targetY");
+                        if (targetX != null && targetY != null) {
+                            Location targetLoc = Location.get(targetX, targetY);
+                            return new com.developingstorm.games.sad.orders.Attack(
+                                game,
+                                unit,
+                                targetLoc
+                            );
+                        }
+                    }
+                    logger.warn(
+                        "Attack order missing target data for unit {}",
+                        unit.id
+                    );
+                    return null;
                 case DISBAND:
                     // Disband has protected constructor - skip restoration
                     // Unit will simply not have an order when loaded

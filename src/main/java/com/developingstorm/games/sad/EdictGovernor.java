@@ -143,7 +143,28 @@ public class EdictGovernor {
     }
 
     public Object toJson() {
-        // TODO Auto-generated method stub
-        return null;
+        com.developingstorm.games.sad.util.json.JsonObj json =
+            new com.developingstorm.games.sad.util.json.JsonObj();
+
+        // Serialize air path destination
+        if (this.airPath != null && this.airPath.destination() != null) {
+            json.put("airPathDest", this.airPath.destination().toJsonLink());
+        }
+
+        // Serialize land path destination
+        if (this.landPath != null && this.landPath.destination() != null) {
+            json.put("landPathDest", this.landPath.destination().toJsonLink());
+        }
+
+        // Serialize sea path destination
+        if (this.seaPath != null && this.seaPath.destination() != null) {
+            json.put("seaPathDest", this.seaPath.destination().toJsonLink());
+        }
+
+        // Serialize boolean flags for air patrol and auto sentry
+        json.put("hasAirPatrol", this.airPatrol != null);
+        json.put("hasAutoSentry", this.autoSentry != null);
+
+        return json;
     }
 }

@@ -8,13 +8,20 @@ import com.developingstorm.games.sad.util.Log;
  * Extracted from Game.java to improve maintainability.
  */
 class MovementResolver {
+
     private final Game game;
     private final Board board;
     private final CityManager cityManager;
     private final CombatResolver combatResolver;
     private final UnitManager unitManager;
 
-    MovementResolver(Game game, Board board, CityManager cityManager, CombatResolver combatResolver, UnitManager unitManager) {
+    MovementResolver(
+        Game game,
+        Board board,
+        CityManager cityManager,
+        CombatResolver combatResolver,
+        UnitManager unitManager
+    ) {
         this.game = game;
         this.board = board;
         this.cityManager = cityManager;
@@ -77,7 +84,13 @@ class MovementResolver {
         }
 
         // Delegate city interaction to CityManager
-        ResponseCode cityResponse = cityManager.handleCityInteraction(u, dest, ourCity, unownedCity, enemyCity);
+        ResponseCode cityResponse = cityManager.handleCityInteraction(
+            u,
+            dest,
+            ourCity,
+            unownedCity,
+            enemyCity
+        );
         if (cityResponse != null) {
             return cityResponse;
         }
@@ -92,7 +105,30 @@ class MovementResolver {
                     return rc;
                 }
             }
-            Log.debug(u, "Move - CANCEL");
+
+            // Log specific reason why move cannot execute
+            String reason;
+            if (!board.onBoard(dest)) {
+                reason = "destination " + dest + " is off the board";
+            } else if (u.getTravel() == Travel.LAND && board.isWater(dest)) {
+                reason = "land unit cannot move to water at " + dest;
+            } else if (
+                u.getTravel() == Travel.SEA &&
+                board.isLand(dest) &&
+                !board.isCity(dest)
+            ) {
+                reason =
+                    "sea unit cannot move to land at " + dest + " (not a city)";
+            } else {
+                reason =
+                    "terrain at " +
+                    dest +
+                    " is not travelable for " +
+                    u.getTravel() +
+                    " unit";
+            }
+
+            Log.warn(u, "Move CANCELLED: " + reason);
             return ResponseCode.CANCEL_ORDER;
         }
 
@@ -137,10 +173,12 @@ class MovementResolver {
             if (blocking.turn().isDone()) {
                 Log.debug(
                     u,
-                    "Destination blocked by unit that has already moved. Cancelling:" +
+                    "Destination blocked by unit that has already moved. Clearing obstruction and yielding:" +
                         blocking
                 );
-                return ResponseCode.TURN_COMPLETE;
+                // The blocking unit has moved but is still here - this shouldn't happen
+                // Yield to allow path recalculation
+                return ResponseCode.YIELD_PASS;
             } else {
                 blocker.pushPendingPlay(blocking);
                 Log.debug(

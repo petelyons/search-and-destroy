@@ -1,6 +1,7 @@
 package com.developingstorm.games.sad;
 
 import com.developingstorm.games.hexboard.Location;
+import com.developingstorm.games.sad.orders.Attack;
 import com.developingstorm.games.sad.orders.Explore;
 import com.developingstorm.games.sad.orders.HeadHome;
 import com.developingstorm.games.sad.orders.Move;
@@ -10,6 +11,7 @@ import com.developingstorm.games.sad.orders.MoveNorthWest;
 import com.developingstorm.games.sad.orders.MoveSouthEast;
 import com.developingstorm.games.sad.orders.MoveSouthWest;
 import com.developingstorm.games.sad.orders.MoveWest;
+import com.developingstorm.games.sad.orders.Patrol;
 import com.developingstorm.games.sad.orders.Sentry;
 import com.developingstorm.games.sad.orders.SkipTurn;
 import com.developingstorm.games.sad.orders.Unload;
@@ -321,6 +323,13 @@ public abstract class Unit {
             throw new SaDException("This unit shouldn't be moving! " + this);
         }
 
+        // If this unit is being carried, remove it from the transport
+        if (this.onboard != null) {
+            Unit transport = this.onboard;
+            transport.removeCarried(this);
+            Log.info(this, "Unloaded from transport " + transport);
+        }
+
         this.life.move();
 
         changeLoc(loc);
@@ -513,13 +522,64 @@ public abstract class Unit {
 
     public void unload() {
         if (carries == null) {
+            Log.debug(this, "Unload called but carries is null");
             return;
         }
 
-        for (Unit u : this.carries) {
-            u.activate();
-            this.owner.pushPendingOrders(u);
+        if (this.carries.isEmpty()) {
+            Log.debug(this, "Unload called but no units are being carried");
+            return;
         }
+
+        // Count available adjacent hexes for unloading
+        int availableSpaces = 0;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx == 0 && dy == 0) continue;
+                Location adjacent = Location.get(
+                    this.loc.x + dx,
+                    this.loc.y + dy
+                );
+                if (this.game.getBoard().onBoard(adjacent)) {
+                    // Check if any carried unit can move to this location
+                    for (Unit u : this.carries) {
+                        if (this.game.getBoard().isTravelable(u, adjacent)) {
+                            availableSpaces++;
+                            break; // Found space for at least one unit type
+                        }
+                    }
+                }
+            }
+        }
+
+        if (availableSpaces == 0) {
+            Log.warn(
+                this,
+                "Cannot unload - no adjacent space available for carried units to move"
+            );
+            return;
+        }
+
+        Log.info(
+            this,
+            "Unloading " +
+                this.carries.size() +
+                " units (spaces available: " +
+                availableSpaces +
+                ")"
+        );
+
+        // Only activate ONE unit at a time to avoid race conditions
+        // as spaces get filled by units that have already moved off
+        Unit firstUnit = this.carries.get(0);
+        Log.info(this, "  Activating first carried unit: " + firstUnit);
+        firstUnit.activate();
+        this.owner.pushPendingOrders(firstUnit);
+
+        Log.info(
+            this,
+            "Unload complete, activated 1 of " + this.carries.size() + " units"
+        );
     }
 
     public void removeCarried(Unit u) {
@@ -574,9 +634,25 @@ public abstract class Unit {
             if (carriableWeight() > 0 && carriedWeight() < carriableWeight()) {
                 List<Unit> ul = this.game.unitsAtLocation(this.loc);
                 for (Unit u : ul) {
-                    if (u.isCarried() == false) {
+                    // Don't try to load ourselves
+                    if (u == this) {
+                        continue;
+                    }
+                    // Only load units that are not already on a transport (this or another)
+                    if (u.isCarried() == false && u.onboard == null) {
                         if (canCarry(u)) {
+                            Log.debug(
+                                this,
+                                "Auto-loading unit: " + u.toUIString()
+                            );
                             addCarried(u);
+                            // Wake transport if now full
+                            if (
+                                carriedWeight() >= carriableWeight() &&
+                                inSentryMode()
+                            ) {
+                                this.life.wake();
+                            }
                         }
                     }
                 }
@@ -605,6 +681,14 @@ public abstract class Unit {
 
     public void assignOrder(Order order) {
         this.order = order;
+        // Wake up sleeping units when a new order is assigned
+        // (except for sentry orders which intentionally put units to sleep)
+        if (!order.getType().equals(OrderType.SENTRY)) {
+            this.life.wake();
+            // Reset turn state so unit can execute the new order this turn
+            // This is important for edicts that apply to units that have already completed their turn
+            this.turn.updateOrderState();
+        }
     }
 
     public Location getClosestLocation(
@@ -755,6 +839,17 @@ public abstract class Unit {
         return new SkipTurn(this.game, this);
     }
 
+    public Patrol newPatrolOrder(
+        List<Location> waypoints,
+        Patrol.PatrolMode mode
+    ) {
+        return new Patrol(this.game, this, waypoints, mode);
+    }
+
+    public Attack newAttackOrder(Location targetLocation) {
+        return new Attack(this.game, this, targetLocation);
+    }
+
     /**
      * Construct and order given an OrderType and an optional parameter.
      *
@@ -767,12 +862,16 @@ public abstract class Unit {
      * @return
      */
     public Order newOrder(OrderType order, Object p1) {
+        return newOrder(order, p1, false); // Default: no avoidance
+    }
+
+    public Order newOrder(OrderType order, Object p1, boolean avoidEnemies) {
         if (order.equals(OrderType.EXPLORE)) {
             return newExploreOrder();
         } else if (order.equals(OrderType.HEAD_HOME)) {
             return newHeadHomeOrder();
         } else if (order.equals(OrderType.MOVE)) {
-            return newMoveOrder((Location) p1);
+            return new Move(this.game, this, (Location) p1, avoidEnemies);
         } else if (order.equals(OrderType.SENTRY)) {
             return newSentryOrder();
         } else if (order.equals(OrderType.UNLOAD)) {
@@ -791,6 +890,8 @@ public abstract class Unit {
             return newMoveSouthEast();
         } else if (order.equals(OrderType.SKIPTURN)) {
             return newSkipTurn();
+        } else if (order.equals(OrderType.ATTACK)) {
+            return newAttackOrder((Location) p1);
         } else {
             throw new SaDException("Unknown order type:" + order.toString());
         }
@@ -828,8 +929,18 @@ public abstract class Unit {
     }
 
     public void activate() {
+        Log.info(this, "Activating unit - clearing orders and waking");
         clearOrders();
         this.life.wake();
+        // Update turn state - since we just cleared orders, this will set state to AWAITING_ORDERS
+        // This ensures isDone() returns false so the unit can be selected for orders
+        this.turn.updateOrderState();
+        Log.info(
+            this,
+            "Turn state updated - unit is now awaiting orders (isDone=" +
+                this.turn.isDone() +
+                ")"
+        );
     }
 
     public boolean isInfantry() {

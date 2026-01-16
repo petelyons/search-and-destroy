@@ -11,6 +11,7 @@ public enum OrderType {
     HEAD_HOME("Head Home"),
     SKIPTURN("Skip Turn"),
     UNLOAD("UnLoad"),
+    PATROL("Patrol"),
     MOVE_NORTH("North"),
     MOVE_SOUTH("South"),
     MOVE_EAST("East"),
@@ -19,7 +20,8 @@ public enum OrderType {
     MOVE_NORTH_WEST("NorthWest"),
     MOVE_SOUTH_EAST("SouthEast"),
     MOVE_SOUTH_WEST("SouthWest"),
-    DISBAND("Disband");
+    DISBAND("Disband"),
+    ATTACK("Attack");
 
     private final String displayName;
 

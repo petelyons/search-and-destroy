@@ -63,18 +63,30 @@ public class UnitStats {
     }
 
     public void increment(Type t) {
+        if (t == null) {
+            return;
+        }
         this.counts[t.getId()]++;
     }
 
     public void decrement(Type t) {
+        if (t == null) {
+            return;
+        }
         this.counts[t.getId()]--;
     }
 
     public void incrementProduction(Type t) {
+        if (t == null) {
+            return;
+        }
         this.inProduction[t.getId()]++;
     }
 
     public void decrementProduction(Type t) {
+        if (t == null) {
+            return;
+        }
         this.inProduction[t.getId()]--;
     }
 

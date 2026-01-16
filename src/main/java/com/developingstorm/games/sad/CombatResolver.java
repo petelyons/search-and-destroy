@@ -1,6 +1,7 @@
 package com.developingstorm.games.sad;
 
 import com.developingstorm.games.hexboard.Location;
+import com.developingstorm.games.sad.combat.UnitMatchups;
 import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.RandomUtil;
 
@@ -8,7 +9,7 @@ import com.developingstorm.util.RandomUtil;
  * Resolves combat between units and cities.
  * Extracted from Game.java to improve maintainability.
  */
-class CombatResolver {
+public class CombatResolver {
 
     private final Game game;
     private final UnitManager unitManager;
@@ -26,7 +27,7 @@ class CombatResolver {
      * Resolves combat between two units.
      * @return true if attacker wins, false if defender wins
      */
-    synchronized boolean resolveUnitAttack(Unit atk, Unit def) {
+    public synchronized boolean resolveUnitAttack(Unit atk, Unit def) {
         Type at = atk.getType();
         // Type dt = def.getType();
 
@@ -40,12 +41,31 @@ class CombatResolver {
             int attackStrength;
             // attacker hit
             if (RandomUtil.nextBoolean()) {
-                attackStrength = at.getAttack();
+                // Apply effectiveness multiplier based on unit matchup
+                int baseAttack = at.getAttack();
+                double multiplier = UnitMatchups.getEffectivenessMultiplier(
+                    at,
+                    def.getType()
+                );
+                attackStrength = (int) Math.ceil(baseAttack * multiplier);
 
                 getGameListener().hitLocation(def.getLocation());
                 if (attackStrength == 0 && def.getAttack() == 0) {
                     attackStrength = 1;
                 }
+
+                Log.debug(
+                    atk,
+                    "Attacks " +
+                        def +
+                        " with " +
+                        attackStrength +
+                        " damage (" +
+                        UnitMatchups.getMatchupDescription(at, def.getType()) +
+                        " " +
+                        multiplier +
+                        "x)"
+                );
 
                 if (def.life().attack(attackStrength)) {
                     attackerWon = true;
@@ -55,12 +75,33 @@ class CombatResolver {
 
             // defender hit
             if (RandomUtil.nextBoolean()) {
-                attackStrength = def.getAttack();
+                // Apply effectiveness multiplier for defender's counterattack
+                int baseAttack = def.getAttack();
+                double multiplier = UnitMatchups.getEffectivenessMultiplier(
+                    def.getType(),
+                    at
+                );
+                attackStrength = (int) Math.ceil(baseAttack * multiplier);
+
                 getGameListener().hitLocation(atk.getLocation());
 
                 if (attackStrength == 0 && def.getAttack() == 0) {
                     attackStrength = 1;
                 }
+
+                Log.debug(
+                    def,
+                    "Counterattacks " +
+                        atk +
+                        " with " +
+                        attackStrength +
+                        " damage (" +
+                        UnitMatchups.getMatchupDescription(def.getType(), at) +
+                        " " +
+                        multiplier +
+                        "x)"
+                );
+
                 if (atk.life().attack(attackStrength)) {
                     attackerWon = false;
                     break;

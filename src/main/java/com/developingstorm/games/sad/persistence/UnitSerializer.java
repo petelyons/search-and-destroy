@@ -7,6 +7,7 @@ import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.orders.DirectionalMove;
 import com.developingstorm.games.sad.orders.Move;
+import com.developingstorm.games.sad.orders.Patrol;
 import com.developingstorm.games.sad.util.json.JsonObj;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -107,6 +108,43 @@ public class UnitSerializer {
 
                 if (dir != null) {
                     orderData.put("direction", dir.name());
+                }
+            }
+
+            if (order instanceof Patrol) {
+                // For Patrol orders
+                Patrol patrol = (Patrol) order;
+
+                // Serialize waypoints
+                List<Location> waypoints = patrol.getWaypoints();
+                Object[] waypointsArray = new Object[waypoints.size()];
+                for (int i = 0; i < waypoints.size(); i++) {
+                    JsonObj wpJson = new JsonObj();
+                    wpJson.put("x", waypoints.get(i).x);
+                    wpJson.put("y", waypoints.get(i).y);
+                    waypointsArray[i] = wpJson;
+                }
+                orderData.put("waypoints", waypointsArray);
+
+                // Serialize patrol mode
+                orderData.put("mode", patrol.getMode().name());
+
+                // Serialize current state
+                orderData.put(
+                    "currentWaypointIndex",
+                    patrol.getCurrentWaypointIndex()
+                );
+                orderData.put("reverseDirection", patrol.isReverseDirection());
+            }
+
+            if (order instanceof com.developingstorm.games.sad.orders.Attack) {
+                // For Attack orders
+                com.developingstorm.games.sad.orders.Attack attack =
+                    (com.developingstorm.games.sad.orders.Attack) order;
+                Location target = attack.getTargetLocation();
+                if (target != null) {
+                    orderData.put("targetX", target.x);
+                    orderData.put("targetY", target.y);
                 }
             }
         } catch (Exception e) {

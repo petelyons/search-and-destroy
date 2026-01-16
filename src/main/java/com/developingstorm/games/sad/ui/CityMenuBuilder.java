@@ -95,7 +95,7 @@ public class CityMenuBuilder {
 
         UnitStats stats = c.getOwner().unitStats();
 
-        selectProduction(c.getProduction());
+        // Note: selectProduction() is called in fillMenu() after ButtonGroup is created
         INFANTRY_SEL.setText(formatName(Type.INFANTRY, stats));
         INFANTRY_SEL.addActionListener(e -> this.c.produce(Type.INFANTRY));
 
@@ -296,6 +296,11 @@ public class CityMenuBuilder {
 
         menuItem = UNITS_SEL;
         menu.add(menuItem);
+
+        // Select the current production AFTER all items are added to ButtonGroup
+        // This prevents the ButtonGroup from auto-selecting the first item (INFANTRY)
+        // which would trigger its ActionListener and change production
+        selectProduction(c.getProduction());
     }
 
     private void selectProduction(Type t) {

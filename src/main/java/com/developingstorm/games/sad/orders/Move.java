@@ -13,6 +13,7 @@ import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.combat.EnemyDetector;
 import com.developingstorm.games.sad.util.Log;
 
 /**
@@ -23,15 +24,32 @@ public class Move extends Order {
 
     protected Path lastPath = null;
     protected Location loc;
+    private final boolean avoidEnemies; // Flag to enable enemy avoidance behavior
 
     public Move(Game g, Unit u, Location loc) {
+        this(g, u, loc, false); // Default: no avoidance for backward compatibility
+    }
+
+    public Move(Game g, Unit u, Location loc, boolean avoidEnemies) {
         super(g, u, OrderType.MOVE);
         this.loc = loc;
+        this.avoidEnemies = avoidEnemies;
     }
 
     protected Move(Game g, Unit u, OrderType t, Location loc) {
+        this(g, u, t, loc, false);
+    }
+
+    protected Move(
+        Game g,
+        Unit u,
+        OrderType t,
+        Location loc,
+        boolean avoidEnemies
+    ) {
         super(g, u, t);
         this.loc = loc;
+        this.avoidEnemies = avoidEnemies;
     }
 
     public OrderResponse executeInternal() {
@@ -39,6 +57,16 @@ public class Move extends Order {
 
         if (loc == null) {
             throw new SaDException("No Move Order");
+        }
+
+        // Check if unit is still on a transport
+        if (this.unit.isCarried()) {
+            Log.info(
+                this.unit,
+                "Unit is on transport " +
+                    this.unit.onboard +
+                    ", executing move will unload"
+            );
         }
 
         Location dest = loc;
@@ -51,13 +79,28 @@ public class Move extends Order {
             if (lastPath == null) {
                 lastPath = this.unit.getPath(this.loc);
                 if (lastPath == null || this.lastPath.isEmpty()) {
-                    Log.error("No path available!!!");
-
+                    // Log specific reason for path failure
                     if (MapState.isBlocked(this.loc)) {
-                        Log.error("The destination is blocked. Invalid move!");
+                        Log.error(
+                            this.unit,
+                            "Move CANCELLED: destination " +
+                                this.loc +
+                                " is blocked"
+                        );
                     } else if (MapState.isBlocked(this.unit.getLocation())) {
                         Log.error(
-                            "The starting location is blocked. Invalid move!"
+                            this.unit,
+                            "Move CANCELLED: starting location " +
+                                this.unit.getLocation() +
+                                " is blocked"
+                        );
+                    } else {
+                        Log.error(
+                            this.unit,
+                            "Move CANCELLED: no path available from " +
+                                this.unit.getLocation() +
+                                " to " +
+                                this.loc
                         );
                     }
                     resp = ResponseCode.CANCEL_ORDER;
@@ -66,13 +109,71 @@ public class Move extends Order {
             }
 
             while (this.unit.life().movesLeft() > 0 && !this.unit.isDead()) {
+                // ENEMY DETECTION: Check for threats before each step
+                if (this.avoidEnemies) {
+                    int detectionRange = this.unit.getType().getDist() * 2;
+                    Unit enemyThreat = EnemyDetector.detectNearbyEnemy(
+                        this.unit,
+                        this.game,
+                        detectionRange
+                    );
+
+                    if (enemyThreat != null) {
+                        // Check if we should engage or avoid
+                        boolean shouldEngage = EnemyDetector.shouldEngageEnemy(
+                            this.unit,
+                            enemyThreat,
+                            this.game,
+                            0.7
+                        );
+
+                        if (!shouldEngage) {
+                            // Avoid: Clear path to force recalculation around threat
+                            Log.info(
+                                this.unit,
+                                "Move: avoiding enemy " +
+                                    enemyThreat +
+                                    " at " +
+                                    enemyThreat.getLocation() +
+                                    " - ending turn to avoid infinite loop"
+                            );
+                            this.lastPath = null;
+
+                            // Complete turn instead of yielding to avoid infinite loop
+                            // The unit will try again next turn when the tactical situation may have changed
+                            return new OrderResponse(
+                                ResponseCode.TURN_COMPLETE,
+                                this,
+                                null
+                            );
+                        } else {
+                            // Favorable matchup: continue toward destination
+                            Log.info(
+                                this.unit,
+                                "Move: willing to engage enemy " +
+                                    enemyThreat +
+                                    " (favorable odds)"
+                            );
+                        }
+                    }
+                }
+
                 dest = this.lastPath.next(this.unit.getLocation());
                 if (dest == null) {
                     int finalMove = this.unit.getLocation().distance(this.loc);
                     if (finalMove == 1) {
                         dest = loc;
                     } else {
-                        Log.error(this.unit, "Cannot find next move");
+                        Log.error(
+                            this.unit,
+                            "Move CANCELLED: cannot find next step in path from " +
+                                this.unit.getLocation() +
+                                " to " +
+                                this.loc +
+                                " (distance: " +
+                                finalMove +
+                                ")"
+                        );
                         return new OrderResponse(
                             ResponseCode.CANCEL_ORDER,
                             this,
@@ -104,7 +205,13 @@ public class Move extends Order {
                     this.lastPath = null; // Clear path to force recalculation
                     return new OrderResponse(resp, this, null);
                 } else {
-                    Log.debug("Converting response to CANCEL_ORDER:" + resp);
+                    Log.warn(
+                        this.unit,
+                        "Move CANCELLED: unexpected response code " +
+                            resp +
+                            " while moving to " +
+                            dest
+                    );
                     resp = ResponseCode.CANCEL_ORDER;
                     return new OrderResponse(resp, this, null);
                 }
@@ -130,9 +237,14 @@ public class Move extends Order {
             if (resp == ResponseCode.TURN_COMPLETE) {
                 Log.info(this.unit, "Unit reports turn complete");
             } else if (resp == ResponseCode.DIED) {
-                Log.info(this.unit, "DIED DURING MOVE!");
+                Log.info(this.unit, "Unit died during move");
+            } else if (resp == ResponseCode.CANCEL_ORDER) {
+                Log.warn(this.unit, "Move CANCELLED by resolveMove");
             } else if (resp != ResponseCode.STEP_COMPLETE) {
-                Log.info(this.unit, "Bad move:" + resp);
+                Log.warn(
+                    this.unit,
+                    "Move returned unexpected response: " + resp
+                );
             }
             if (this.unit.life().movesLeft() > 0) {
                 resp = ResponseCode.ORDER_COMPLETE;

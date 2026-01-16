@@ -56,6 +56,28 @@ public class UIController {
         }
     }
 
+    static class PatrolMode extends Mode {
+
+        PatrolMode(SaDFrame frame, Game game) {
+            this.commander = new PatrolCommander(frame, game);
+            this.controller = new PatrolModeController(
+                frame,
+                (PatrolCommander) this.commander
+            );
+        }
+    }
+
+    static class AttackMode extends Mode {
+
+        AttackMode(SaDFrame frame, Game game) {
+            this.commander = new AttackCommander(frame, game);
+            this.controller = new AttackModeController(
+                frame,
+                (AttackCommander) this.commander
+            );
+        }
+    }
+
     private UIMode modeMode;
     private Mode mode;
     private SaDFrame frame;
@@ -75,6 +97,8 @@ public class UIController {
         this.modes.put(UIMode.GAME, new GameMode(this.frame, this.game));
         this.modes.put(UIMode.PATHS, new PathsMode(this.frame, this.game));
         this.modes.put(UIMode.EXPLORE, new ExploreMode(this.frame, this.game));
+        this.modes.put(UIMode.PATROL, new PatrolMode(this.frame, this.game));
+        this.modes.put(UIMode.ATTACK, new AttackMode(this.frame, this.game));
 
         switchMode(UIMode.GAME);
 
@@ -177,5 +201,15 @@ public class UIController {
     public PathsCommander getPathsCommander() {
         Mode mode = this.modes.get(UIMode.PATHS);
         return (PathsCommander) mode.commander;
+    }
+
+    public PatrolCommander getPatrolCommander() {
+        Mode mode = this.modes.get(UIMode.PATROL);
+        return (PatrolCommander) mode.commander;
+    }
+
+    public AttackCommander getAttackCommander() {
+        Mode mode = this.modes.get(UIMode.ATTACK);
+        return (AttackCommander) mode.commander;
     }
 }

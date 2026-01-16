@@ -1,3 +1,9 @@
 package com.developingstorm.games.sad.ui;
 
-public enum UIMode {GAME, PATHS, EXPLORE}
+public enum UIMode {
+    GAME,
+    PATHS,
+    EXPLORE,
+    PATROL,
+    ATTACK,
+}

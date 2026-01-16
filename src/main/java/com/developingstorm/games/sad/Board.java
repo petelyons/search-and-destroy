@@ -197,6 +197,15 @@ public class Board extends HexBoard {
         return (City) this.ctoks.get(loc);
     }
 
+    public City getCityByName(String name) {
+        for (City city : this.cities) {
+            if (city.getName().equals(name)) {
+                return city;
+            }
+        }
+        return null;
+    }
+
     public boolean isCity(Location loc) {
         return (getCity(loc) != null);
     }

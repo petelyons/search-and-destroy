@@ -213,6 +213,10 @@ public class Game implements UnitLens, LocationLens {
         return board;
     }
 
+    public CombatResolver getCombatResolver() {
+        return combatResolver;
+    }
+
     public Player[] getPlayers() {
         return players;
     }
@@ -425,6 +429,11 @@ public class Game implements UnitLens, LocationLens {
     public void selectUnit(Unit u) {
         if (u != null) selectedUnit = u;
         this.gameListener.selectUnit(u);
+    }
+
+    public void deselectUnit() {
+        selectedUnit = null;
+        this.gameListener.selectUnit(null);
     }
 
     public void play() {

@@ -21,6 +21,8 @@ public class OrderMenuBuilder {
     private final JMenuItem EXPLORE_SEL = new JMenuItem("Explore");
     private final JMenuItem UNLOAD_SEL = new JMenuItem("Unload");
     private final JMenuItem HEAD_HOME_SEL = new JMenuItem("Head Home");
+    private final JMenuItem PATROL_SEL = new JMenuItem("Define Patrol...");
+    private final JMenuItem ATTACK_SEL = new JMenuItem("Bombard...");
 
     private List<Unit> units;
     private Game game;
@@ -44,6 +46,16 @@ public class OrderMenuBuilder {
         UNLOAD_SEL.addActionListener(e -> this.commander.unload());
         EXPLORE_SEL.addActionListener(e -> this.commander.explore());
         HEAD_HOME_SEL.addActionListener(e -> this.commander.headHome());
+        PATROL_SEL.addActionListener(e -> {
+            if (this.units.size() == 1) {
+                this.frame.startPatrolMode(this.units.get(0));
+            }
+        });
+        ATTACK_SEL.addActionListener(e -> {
+            if (this.units.size() == 1) {
+                this.frame.startAttackMode(this.units.get(0));
+            }
+        });
     }
 
     public JPopupMenu build() {
@@ -66,6 +78,18 @@ public class OrderMenuBuilder {
 
         menuItem = HEAD_HOME_SEL;
         ordersPopup.add(menuItem);
+
+        menuItem = PATROL_SEL;
+        ordersPopup.add(menuItem);
+
+        // Add bombardment option for battleships and cruisers
+        if (this.units.size() == 1) {
+            Unit u = this.units.get(0);
+            if (u.isBattleship() || u.isCruiser()) {
+                menuItem = ATTACK_SEL;
+                ordersPopup.add(menuItem);
+            }
+        }
 
         if (this.units.size() == 1) {
             Unit u = (Unit) this.units.get(0);

@@ -155,12 +155,27 @@ public class MapState implements AStarState {
                 return false;
             }
             if (travel != Travel.LAND && isNonPlayersCity(loc)) {
-                return true;
+                // Allow enemy cities as destinations (for bombing) if this is the goal
+                if (goal != null && loc.equals(goal)) {
+                    return false;
+                }
+                // FIX: Air units can fly over/through enemy cities (not just to them)
+                if (travel == Travel.AIR) {
+                    return false; // Air units can pass through enemy cities
+                }
+                return true; // Sea units still blocked by enemy cities (except goal)
             }
             List<Unit> list = game.unitsAtLocation(loc);
             if (!(list == null || list.isEmpty())) {
                 Unit u = list.get(0);
+                // FIX: Air units can fly over friendly units
+                // Only block if same travel type (land blocks land, sea blocks sea)
                 if (u != null && player.equals(u.getOwner())) {
+                    // Air units can fly over anyone
+                    if (travel == Travel.AIR) {
+                        return false;
+                    }
+                    // Ground/sea units blocked by friendly units of same type
                     return true;
                 }
             }

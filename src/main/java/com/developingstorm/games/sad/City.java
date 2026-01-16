@@ -17,6 +17,7 @@ public class City {
     private volatile Game game;
     private volatile boolean productionCompletedThisTurn;
     private EdictGovernor edicts;
+    private transient JsonObj savedEdictsJson; // Temporary storage for edict restoration
 
     public City(Location loc, Game game) {
         name = GameNames.getName();
@@ -34,6 +35,11 @@ public class City {
     public City(Game g, JsonObj json) {
         game = g;
         board = this.game.getBoard();
+        name = json.getString("name");
+        // For backward compatibility with old saves that didn't store city names
+        if (name == null) {
+            name = GameNames.getName();
+        }
         String ownerName = json.getString("owner");
         owner = (ownerName != null) ? this.game.getPlayer(ownerName) : null;
         String productionType = json.getString("produces");
@@ -42,6 +48,82 @@ public class City {
         round = json.getLong("round");
         productionStart = json.getLong("ps");
         productionCompletedThisTurn = json.getBoolean("prodcomplete");
+
+        // Initialize edicts - if owner exists, create EdictGovernor
+        if (owner != null) {
+            edicts = new EdictGovernor(owner, this);
+
+            // Restore edict settings if they were saved
+            JsonObj edictsJson = json.getObj("edicts");
+            if (edictsJson != null) {
+                restoreEdicts(edictsJson);
+            }
+        }
+    }
+
+    /**
+     * Restores edict settings from saved JSON data.
+     * This is called after the game is fully loaded so city references can be resolved.
+     */
+    private void restoreEdicts(JsonObj edictsJson) {
+        // Note: City references need to be resolved after all cities are loaded
+        // Store the JSON for later restoration in a second pass
+        this.savedEdictsJson = edictsJson;
+    }
+
+    /**
+     * Second pass to restore edicts after all cities are loaded.
+     * Called from GameStateSerializer after all cities exist.
+     */
+    public void restoreEdictsSecondPass() {
+        if (this.savedEdictsJson == null || this.edicts == null) {
+            return;
+        }
+
+        // Restore air path destination
+        String airPathDestName = this.savedEdictsJson.getString("airPathDest");
+        if (airPathDestName != null) {
+            City dest = this.game.getBoard().getCityByName(airPathDestName);
+            if (dest != null) {
+                this.edicts.setAirPathDest(dest);
+            }
+        }
+
+        // Restore land path destination
+        String landPathDestName = this.savedEdictsJson.getString(
+            "landPathDest"
+        );
+        if (landPathDestName != null) {
+            City dest = this.game.getBoard().getCityByName(landPathDestName);
+            if (dest != null) {
+                this.edicts.setLandPathDest(dest);
+            }
+        }
+
+        // Restore sea path destination
+        String seaPathDestName = this.savedEdictsJson.getString("seaPathDest");
+        if (seaPathDestName != null) {
+            City dest = this.game.getBoard().getCityByName(seaPathDestName);
+            if (dest != null) {
+                this.edicts.setSeaPathDest(dest);
+            }
+        }
+
+        // Restore air patrol
+        Boolean hasAirPatrol = this.savedEdictsJson.getBoolean("hasAirPatrol");
+        if (hasAirPatrol != null && hasAirPatrol) {
+            this.edicts.setAirPatrol();
+        }
+
+        // Restore auto sentry
+        Boolean hasAutoSentry = this.savedEdictsJson.getBoolean(
+            "hasAutoSentry"
+        );
+        if (hasAutoSentry != null && hasAutoSentry) {
+            this.edicts.setAutoSentry();
+        }
+
+        this.savedEdictsJson = null; // Clear after restoration
     }
 
     @SuppressWarnings("boxing")

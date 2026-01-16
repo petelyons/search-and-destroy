@@ -6,7 +6,6 @@ import com.developingstorm.games.astar.AStarState;
 import com.developingstorm.games.astar.AStarWatcher;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.util.Log;
-
 import java.util.Iterator;
 import java.util.List;
 
@@ -30,7 +29,17 @@ class PathCalculator {
         Location to,
         Travel travel
     ) {
-        Path p = calcTravelPath(game, board, gameListener, player, from, to, travel, false, true);
+        Path p = calcTravelPath(
+            game,
+            board,
+            gameListener,
+            player,
+            from,
+            to,
+            travel,
+            false,
+            true
+        );
         return p;
     }
 
@@ -77,7 +86,8 @@ class PathCalculator {
 
         AStarNode s = new AStarNode(start, 1);
         AStarNode g = new AStarNode(goal, 1);
-        AStarWatcher watcher = gameListener != null ? gameListener.getWatcher() : null;
+        AStarWatcher watcher =
+            gameListener != null ? gameListener.getWatcher() : null;
         AStar astar = new AStar(
             s,
             g,

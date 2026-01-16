@@ -84,6 +84,7 @@ public class Player implements UnitLens, LocationLens {
     }
 
     public void pushPendingOrders(Unit u) {
+        Log.info(this, "Pushing unit to pending orders: " + u);
         this.pendingOrders.push(u);
     }
 
@@ -704,17 +705,38 @@ public class Player implements UnitLens, LocationLens {
             );
         }
 
+        Log.info(
+            this,
+            "unitsNeedOrders() called, checking pendingOrders queue"
+        );
         Unit pending = popPendingOrders();
         while (pending != null) {
+            Log.info(
+                this,
+                "  Checking pending unit: " +
+                    pending +
+                    " hasOrders=" +
+                    pending.hasOrders() +
+                    " isDone=" +
+                    pending.turn().isDone()
+            );
             if (pending.hasOrders() || pending.turn().isDone()) {
+                Log.info(
+                    this,
+                    "    Skipping this unit (already has orders or turn is done)"
+                );
                 pending = popPendingOrders();
             } else {
+                Log.info(this, "    Found unit that needs orders!");
                 break;
             }
         }
 
         if (pending != null) {
+            Log.info(this, "Selecting unit from pendingOrders: " + pending);
             this.game.selectUnit(pending);
+        } else {
+            Log.info(this, "No units in pendingOrders need orders");
         }
 
         pending = this.game.selectedUnit();
@@ -935,7 +957,8 @@ public class Player implements UnitLens, LocationLens {
         //   forEachUnit((Unit u)->{Log.info(u, (u.life().hasMoves() ? "HAS MOVES" : "NO MOVES")); });
 
         forEachUnit((Unit u) -> {
-            if (u.life().hasMoves()) {
+            // Exclude carried units - they are cargo and only execute via pendingPlay queue
+            if (u.life().hasMoves() && !u.isCarried()) {
                 units.add(u);
             }
         });
@@ -972,12 +995,11 @@ public class Player implements UnitLens, LocationLens {
 
             Unit pending = popPendingPlay();
             // Move the unit the user interacted with
-            if (
-                pending != null &&
-                pending.hasOrders() &&
-                unplayed.contains(pending)
-            ) {
-                unplayed.remove(pending);
+            if (pending != null && pending.hasOrders()) {
+                if (unplayed.contains(pending)) {
+                    unplayed.remove(pending);
+                }
+                // Execute turn for pending unit even if carried (not in unplayed list)
                 pending.turn().attemptTurn();
             }
 
