@@ -123,6 +123,19 @@ public class City {
             this.edicts.setAutoSentry();
         }
 
+        // Restore city air patrol
+        JsonObj cityAirPatrolJson = this.savedEdictsJson.getObj(
+            "cityAirPatrol"
+        );
+        if (cityAirPatrolJson != null) {
+            com.developingstorm.games.sad.edicts.CityAirPatrol cityAirPatrol =
+                com.developingstorm.games.sad.edicts.CityAirPatrol.fromJson(
+                    this,
+                    cityAirPatrolJson
+                );
+            this.edicts.setCityAirPatrol(cityAirPatrol);
+        }
+
         this.savedEdictsJson = null; // Clear after restoration
     }
 

@@ -23,8 +23,12 @@ import com.developingstorm.games.sad.util.json.JsonFormatter;
 import com.developingstorm.games.sad.util.json.JsonObj;
 import com.developingstorm.games.sad.util.json.JsonParser;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,6 +36,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,11 +110,22 @@ public class GameStateSerializer {
         }
         root.put("cities", citiesArray);
 
+        // Continents (save names so they persist across saves)
+        java.util.Set<com.developingstorm.games.sad.Continent> allContinents =
+            game.getBoard().getContinents();
+        Object[] continentsArray = new Object[allContinents.size()];
+        int contIndex = 0;
+        for (com.developingstorm.games.sad.Continent continent : allContinents) {
+            continentsArray[contIndex++] = continent.toJson();
+        }
+        root.put("continents", continentsArray);
+
         logger.info(
-            "Game state serialized: {} players, {} units, {} cities",
+            "Game state serialized: {} players, {} units, {} cities, {} continents",
             players.length,
             allUnits.size(),
-            allCities.size()
+            allCities.size(),
+            allContinents.size()
         );
 
         return root;
@@ -145,7 +163,7 @@ public class GameStateSerializer {
     }
 
     /**
-     * Saves game state to a file in the user's home directory.
+     * Saves game state to a ZIP archive file.
      *
      * @param game the game to save
      * @param saveName the name for this save (without extension)
@@ -156,40 +174,59 @@ public class GameStateSerializer {
         Path saveDir = Paths.get(SAVE_DIR);
         Files.createDirectories(saveDir);
 
-        // Generate filenames with human-readable timestamp
+        // Generate filename with human-readable timestamp
         SimpleDateFormat dateFormat = new SimpleDateFormat(
             "yyyy-MM-dd_HH-mm-ss"
         );
         String timestamp = dateFormat.format(new Date());
-        String filename = saveName + "_" + timestamp + ".json";
-        String mapFilename = saveName + "_" + timestamp + "_map.txt";
+        String filename = saveName + "_" + timestamp + ".sav";
         Path savePath = saveDir.resolve(filename);
-        Path mapPath = saveDir.resolve(mapFilename);
 
         logger.info("Saving game to: {}", savePath);
 
         // Serialize game state
         JsonObj gameState = serializeGame(game);
 
-        // Store map filename in game state
+        // Store map filename in game state (for internal reference)
         JsonObj boardInfo = gameState.getObj("board");
-        boardInfo.put("mapFile", mapFilename);
+        boardInfo.put("mapFile", "map.txt");
+        boardInfo.put("saveName", saveName); // Store the base save name
 
         String json = JsonFormatter.format(gameState);
 
-        // Write JSON to file
-        try (FileWriter writer = new FileWriter(savePath.toFile())) {
-            writer.write(json);
-        }
+        // Create ZIP archive containing game state and map
+        try (
+            FileOutputStream fos = new FileOutputStream(savePath.toFile());
+            ZipOutputStream zos = new ZipOutputStream(fos)
+        ) {
+            // Add game state JSON
+            ZipEntry gameEntry = new ZipEntry("game.json");
+            zos.putNextEntry(gameEntry);
+            zos.write(json.getBytes(StandardCharsets.UTF_8));
+            zos.closeEntry();
 
-        // Save map file alongside game state
-        game.getBoard().map.saveMap(mapPath.toString());
+            // Add map file
+            ZipEntry mapEntry = new ZipEntry("map.txt");
+            zos.putNextEntry(mapEntry);
+
+            // Save map to temp file first, then add to ZIP
+            Path tempMapFile = Files.createTempFile("map", ".txt");
+            try {
+                game.getBoard().map.saveMap(tempMapFile.toString());
+                byte[] mapData = Files.readAllBytes(tempMapFile);
+                zos.write(mapData);
+            } finally {
+                Files.deleteIfExists(tempMapFile);
+            }
+
+            zos.closeEntry();
+        }
 
         logger.info("Game saved successfully to: {}", savePath);
     }
 
     /**
-     * Loads game state from a JSON file.
+     * Loads game state from a ZIP archive or legacy JSON file.
      *
      * @param saveFile the save file to load
      * @param ctx the hex board context for reconstruction
@@ -200,8 +237,47 @@ public class GameStateSerializer {
         throws IOException, com.developingstorm.exceptions.InvalidMapException {
         logger.info("Loading game from: {}", saveFile);
 
-        // Read JSON file
-        String json = new String(Files.readAllBytes(saveFile.toPath()));
+        // Check if this is a new ZIP format or legacy JSON format
+        boolean isZipFormat = saveFile.getName().endsWith(".sav");
+
+        String json = null;
+        String mapData = null;
+
+        if (isZipFormat) {
+            // Load from ZIP archive
+            try (
+                FileInputStream fis = new FileInputStream(saveFile);
+                ZipInputStream zis = new ZipInputStream(fis)
+            ) {
+                ZipEntry entry;
+                while ((entry = zis.getNextEntry()) != null) {
+                    if (entry.getName().equals("game.json")) {
+                        json = new String(
+                            readAllBytes(zis),
+                            StandardCharsets.UTF_8
+                        );
+                    } else if (entry.getName().equals("map.txt")) {
+                        mapData = new String(
+                            readAllBytes(zis),
+                            StandardCharsets.UTF_8
+                        );
+                    }
+                    zis.closeEntry();
+                }
+
+                if (json == null) {
+                    throw new GameException("ZIP archive missing game.json");
+                }
+                if (mapData == null) {
+                    throw new GameException("ZIP archive missing map.txt");
+                }
+            }
+        } else {
+            // Legacy format: Read JSON file
+            json = new String(Files.readAllBytes(saveFile.toPath()));
+            mapData = null; // Will load from separate map file
+        }
+
         JsonObj root = (JsonObj) JsonParser.parse(json);
 
         // Validate version and check for backward compatibility
@@ -228,19 +304,28 @@ public class GameStateSerializer {
         int savedTurn = root.getInteger("turn");
         int currentPlayerIndex = root.getInteger("currentPlayerIndex");
 
-        // Load map file
-        String mapFileName = saveFile.getName().replace(".json", "_map.txt");
-        File mapFile = new File(saveFile.getParent(), mapFileName);
-        if (!mapFile.exists()) {
-            throw new GameException(
-                "Map file not found: " + mapFile.getAbsolutePath()
+        // Load map
+        com.developingstorm.games.hexboard.HexBoardMap gridMap;
+        if (isZipFormat) {
+            // Map data already loaded from ZIP - load from string using StringReader
+            gridMap = com.developingstorm.games.hexboard.HexBoardMap.loadMap(
+                new StringReader(mapData)
             );
-        }
-
-        com.developingstorm.games.hexboard.HexBoardMap gridMap =
-            com.developingstorm.games.hexboard.HexBoardMap.loadMap(
+        } else {
+            // Legacy format: Load map from separate file
+            String mapFileName = saveFile
+                .getName()
+                .replace(".json", "_map.txt");
+            File mapFile = new File(saveFile.getParent(), mapFileName);
+            if (!mapFile.exists()) {
+                throw new GameException(
+                    "Map file not found: " + mapFile.getAbsolutePath()
+                );
+            }
+            gridMap = com.developingstorm.games.hexboard.HexBoardMap.loadMap(
                 mapFile.getAbsolutePath()
             );
+        }
 
         // Deserialize players
         Object[] playersArray = root.getArray("players");
@@ -323,6 +408,11 @@ public class GameStateSerializer {
             // Restore unit state
             unit.life.hits = unitData.hits;
             unit.dist = unitData.dist;
+            unit.setUnloadingMode(unitData.unloadingMode);
+
+            // Restore production location
+            unit.productionContinentName = unitData.productionContinentName;
+            unit.productionCityName = unitData.productionCityName;
 
             unitMap.put(unitData.id, unit);
         }
@@ -376,6 +466,26 @@ public class GameStateSerializer {
         // Rebuild the city location lookup HashMap so isCity() works correctly
         game.getBoard().rebuildCityLookup();
 
+        // Restore continent names
+        Object[] continentsArray = root.getArray("continents");
+        if (continentsArray != null) {
+            java.util.Set<
+                com.developingstorm.games.sad.Continent
+            > existingContinents = game.getBoard().getContinents();
+            for (int i = 0; i < continentsArray.length; i++) {
+                JsonObj continentJson = (JsonObj) continentsArray[i];
+                int continentId = continentJson.getInteger("id");
+
+                // Find the continent with this ID and restore its name
+                for (com.developingstorm.games.sad.Continent continent : existingContinents) {
+                    if (continent.getID() == continentId) {
+                        continent.fromJson(continentJson);
+                        break;
+                    }
+                }
+            }
+        }
+
         // Rebuild player cities lists - clear old cities and add loaded ones
         for (Player p : players) {
             p.getCities().clear();
@@ -393,6 +503,21 @@ public class GameStateSerializer {
         // Second pass: restore edicts now that all cities are loaded
         for (City city : existingCities) {
             city.restoreEdictsSecondPass();
+        }
+
+        // Recalculate visibility for all players based on loaded units and cities
+        // This ensures fog of war is correct when the game loads
+        logger.info("Recalculating visibility for all players after load");
+        for (Player player : players) {
+            // Adjust visibility for all cities owned by this player
+            for (City city : player.getCities()) {
+                player.adjustVisibility(city);
+            }
+
+            // Adjust visibility for all units owned by this player
+            for (Unit unit : player.getUnits()) {
+                player.adjustVisibility(unit);
+            }
         }
 
         logger.info("Game loaded successfully: turn {}", savedTurn);
@@ -441,7 +566,10 @@ public class GameStateSerializer {
 
         if (Files.exists(saveDir) && Files.isDirectory(saveDir)) {
             File dir = saveDir.toFile();
-            File[] files = dir.listFiles((d, name) -> name.endsWith(".json"));
+            // Include both new .sav files and legacy .json files
+            File[] files = dir.listFiles(
+                (d, name) -> name.endsWith(".sav") || name.endsWith(".json")
+            );
             if (files != null) {
                 for (File file : files) {
                     saveFiles.add(file);
@@ -453,10 +581,108 @@ public class GameStateSerializer {
     }
 
     /**
+     * Helper method to read all bytes from a ZipInputStream.
+     */
+    private byte[] readAllBytes(ZipInputStream zis) throws IOException {
+        java.io.ByteArrayOutputStream buffer =
+            new java.io.ByteArrayOutputStream();
+        byte[] temp = new byte[4096];
+        int bytesRead;
+        while ((bytesRead = zis.read(temp)) != -1) {
+            buffer.write(temp, 0, bytesRead);
+        }
+        return buffer.toByteArray();
+    }
+
+    /**
      * Gets the recommended save directory path.
      */
     public static String getSaveDirectory() {
         return Paths.get(SAVE_DIR).toAbsolutePath().toString();
+    }
+
+    /**
+     * Extracts the base save name from a save file.
+     * For new format (.sav): reads from game state
+     * For legacy format: parses from filename
+     *
+     * @param saveFile the save file
+     * @return the base save name (without timestamp)
+     */
+    public String extractSaveName(File saveFile) {
+        try {
+            String fileName = saveFile.getName();
+            boolean isZipFormat = fileName.endsWith(".sav");
+
+            if (isZipFormat) {
+                // Read from ZIP archive
+                try (
+                    FileInputStream fis = new FileInputStream(saveFile);
+                    ZipInputStream zis = new ZipInputStream(fis)
+                ) {
+                    ZipEntry entry;
+                    while ((entry = zis.getNextEntry()) != null) {
+                        if (entry.getName().equals("game.json")) {
+                            String json = new String(
+                                readAllBytes(zis),
+                                StandardCharsets.UTF_8
+                            );
+                            JsonObj root = (JsonObj) JsonParser.parse(json);
+                            JsonObj boardInfo = root.getObj("board");
+                            String saveName = boardInfo.getString("saveName");
+                            if (saveName != null) {
+                                return saveName;
+                            }
+                            break;
+                        }
+                        zis.closeEntry();
+                    }
+                }
+            }
+
+            // Fallback: extract from filename
+            return extractGameNameFromFilename(fileName);
+        } catch (Exception e) {
+            logger.warn(
+                "Failed to extract save name from {}: {}",
+                saveFile.getName(),
+                e.getMessage()
+            );
+            // Last resort: use filename without extension
+            String name = saveFile.getName();
+            int dotIndex = name.lastIndexOf('.');
+            return dotIndex > 0 ? name.substring(0, dotIndex) : name;
+        }
+    }
+
+    /**
+     * Extracts game name from filename by removing timestamp suffix.
+     */
+    private String extractGameNameFromFilename(String filename) {
+        // Remove extension
+        filename = filename.replace(".sav", "").replace(".json", "");
+
+        // Remove timestamp pattern: _yyyy-MM-dd_HH-mm-ss
+        int lastUnderscore = filename.lastIndexOf('_');
+        if (lastUnderscore > 0) {
+            String potentialTimestamp = filename.substring(lastUnderscore + 1);
+            // Check if it looks like HH-mm-ss
+            if (potentialTimestamp.matches("\\d{2}-\\d{2}-\\d{2}")) {
+                filename = filename.substring(0, lastUnderscore);
+                // Remove date part too
+                lastUnderscore = filename.lastIndexOf('_');
+                if (lastUnderscore > 0) {
+                    String potentialDate = filename.substring(
+                        lastUnderscore + 1
+                    );
+                    if (potentialDate.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                        filename = filename.substring(0, lastUnderscore);
+                    }
+                }
+            }
+        }
+
+        return filename;
     }
 
     /**
@@ -578,6 +804,44 @@ public class GameStateSerializer {
                     }
                     logger.warn(
                         "Attack order missing target data for unit {}",
+                        unit.id
+                    );
+                    return null;
+                case ESCORT:
+                    if (orderData != null) {
+                        Long escortedUnitId = orderData.getLong(
+                            "escortedUnitId"
+                        );
+                        if (escortedUnitId != null) {
+                            // Find the escorted unit by ID
+                            Unit escortedUnit = null;
+                            for (Player p : game.getPlayers()) {
+                                for (Unit u : p.getUnits()) {
+                                    if (u.id == escortedUnitId) {
+                                        escortedUnit = u;
+                                        break;
+                                    }
+                                }
+                                if (escortedUnit != null) break;
+                            }
+
+                            if (escortedUnit != null) {
+                                return new com.developingstorm.games.sad.orders.Escort(
+                                    game,
+                                    unit,
+                                    escortedUnit
+                                );
+                            } else {
+                                logger.warn(
+                                    "Escort order: escorted unit {} not found for unit {}",
+                                    escortedUnitId,
+                                    unit.id
+                                );
+                            }
+                        }
+                    }
+                    logger.warn(
+                        "Escort order missing escorted unit data for unit {}",
                         unit.id
                     );
                     return null;

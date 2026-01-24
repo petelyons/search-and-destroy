@@ -19,6 +19,7 @@ public class MapState implements AStarState {
     static Game game;
     static boolean checkedBlocked;
     static boolean canExplore;
+    static Location startLocation; // Track starting location to allow pathfinding from blocked hex
 
     public static void start(
         Game game,
@@ -29,6 +30,19 @@ public class MapState implements AStarState {
         boolean checkBlocked,
         boolean canExplore
     ) {
+        start(game, b, travel, player, goal, checkBlocked, canExplore, null);
+    }
+
+    public static void start(
+        Game game,
+        Board b,
+        Travel travel,
+        Player player,
+        Location goal,
+        boolean checkBlocked,
+        boolean canExplore,
+        Location from
+    ) {
         MapState.game = game;
         MapState.b = b;
         MapState.travel = travel;
@@ -37,6 +51,7 @@ public class MapState implements AStarState {
         MapState.player = player;
         MapState.checkedBlocked = checkBlocked;
         MapState.canExplore = canExplore;
+        MapState.startLocation = from;
     }
 
     /*
@@ -78,20 +93,24 @@ public class MapState implements AStarState {
     }
 
     public static MapState get(Location loc) {
+        // Allow A* to start from blocked location (Phase 4 fix)
+        boolean isStarting = (startLocation != null &&
+            loc.equals(startLocation));
+
         if (player.isExplored(loc) || canExplore) {
             if (travel == Travel.SEA) {
                 if (b.isWater(loc) || isPlayersCity(loc)) {
-                    if (!isBlocked(loc)) {
+                    if (isStarting || !isBlocked(loc)) {
                         return new MapState(loc);
                     }
                     return null;
                 }
             } else if (travel == Travel.LAND) {
-                if (!isBlocked(loc)) {
+                if (isStarting || !isBlocked(loc)) {
                     return new MapState(loc);
                 }
                 return null;
-            } else if (!isBlocked(loc)) {
+            } else if (isStarting || !isBlocked(loc)) {
                 return new MapState(loc);
             }
             return null;
@@ -168,6 +187,12 @@ public class MapState implements AStarState {
             List<Unit> list = game.unitsAtLocation(loc);
             if (!(list == null || list.isEmpty())) {
                 Unit u = list.get(0);
+
+                // Allow moving to goal location even if enemy unit is there (for attack)
+                if (goal != null && loc.equals(goal)) {
+                    return false;
+                }
+
                 // FIX: Air units can fly over friendly units
                 // Only block if same travel type (land blocks land, sea blocks sea)
                 if (u != null && player.equals(u.getOwner())) {
@@ -176,6 +201,15 @@ public class MapState implements AStarState {
                         return false;
                     }
                     // Ground/sea units blocked by friendly units of same type
+                    return true;
+                }
+
+                // Enemy units: Air units can fly over them, but other units are blocked
+                if (u != null && !player.equals(u.getOwner())) {
+                    if (travel == Travel.AIR) {
+                        return false; // Air units can fly over enemy units
+                    }
+                    // Land/Sea units blocked by enemy units (must attack, not path through)
                     return true;
                 }
             }

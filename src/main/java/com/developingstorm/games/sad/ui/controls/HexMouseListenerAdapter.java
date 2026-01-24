@@ -21,8 +21,19 @@ public class HexMouseListenerAdapter implements MouseListener {
     @Override
     public void mousePressed(MouseEvent e) {
         BoardHex hex = this.commander.trans(e.getPoint());
-        if (isChooseEvent(e)) {
-            this.commander.choose(hex);
+        System.out.println(
+            "mousePressed: button=" +
+                e.getButton() +
+                " isPopup=" +
+                e.isPopupTrigger() +
+                " hex=" +
+                (hex != null ? hex.getLocation() : "null")
+        );
+        // Handle popup trigger on pressed (for some platforms like macOS)
+        if (e.isPopupTrigger()) {
+            if (hex != null) {
+                this.commander.choose(hex);
+            }
             return;
         }
         this.extListener.hexMousePressed(e, hex);
@@ -31,8 +42,18 @@ public class HexMouseListenerAdapter implements MouseListener {
     @Override
     public void mouseReleased(final MouseEvent e) {
         BoardHex hex = this.commander.trans(e.getPoint());
+        System.out.println(
+            "mouseReleased: button=" +
+                e.getButton() +
+                " isPopup=" +
+                e.isPopupTrigger() +
+                " hex=" +
+                (hex != null ? hex.getLocation() : "null")
+        );
         if (isChooseEvent(e)) {
-            this.commander.choose(hex);
+            if (hex != null) {
+                this.commander.choose(hex);
+            }
             return;
         }
         this.extListener.hexMouseReleased(e, hex);

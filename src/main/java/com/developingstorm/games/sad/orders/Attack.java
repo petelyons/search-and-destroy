@@ -33,14 +33,20 @@ public class Attack extends Order {
 
         // Check if unit can attack (must be battleship or cruiser)
         if (!this.unit.isBattleship() && !this.unit.isCruiser()) {
-            Log.warn(this.unit, "Only battleships and cruisers can perform bombardment attacks");
+            Log.warn(
+                this.unit,
+                "Only battleships and cruisers can perform bombardment attacks"
+            );
             return new OrderResponse(ResponseCode.CANCEL_ORDER, this, null);
         }
 
         // Check if target is adjacent
         int distance = this.unit.getLocation().distance(targetLocation);
         if (distance != 1) {
-            Log.warn(this.unit, "Target must be in an adjacent hex for bombardment");
+            Log.warn(
+                this.unit,
+                "Target must be in an adjacent hex for bombardment"
+            );
             return new OrderResponse(ResponseCode.CANCEL_ORDER, this, null);
         }
 
@@ -54,7 +60,10 @@ public class Attack extends Order {
         // Find an enemy land unit to attack
         Unit targetUnit = null;
         for (Unit u : targetUnits) {
-            if (u.getOwner() != this.unit.getOwner() && u.getTravel() == com.developingstorm.games.sad.Travel.LAND) {
+            if (
+                u.getOwner() != this.unit.getOwner() &&
+                u.getTravel() == com.developingstorm.games.sad.Travel.LAND
+            ) {
                 targetUnit = u;
                 break;
             }
@@ -65,22 +74,37 @@ public class Attack extends Order {
             return new OrderResponse(ResponseCode.CANCEL_ORDER, this, null);
         }
 
-        // Perform the bombardment attack
-        Log.info(this.unit, "Bombarding " + targetUnit + " at " + targetLocation);
+        // Perform the bombardment attack (one-way, no return fire)
+        Log.info(
+            this.unit,
+            "Bombarding " + targetUnit + " at " + targetLocation
+        );
 
-        boolean attackWon = this.game.getCombatResolver().resolveUnitAttack(this.unit, targetUnit);
+        boolean targetDestroyed =
+            this.game.getCombatResolver().resolveBombardment(
+                this.unit,
+                targetUnit
+            );
 
-        if (attackWon) {
-            Log.info(this.unit, "Bombardment successful - destroyed " + targetUnit);
+        if (targetDestroyed) {
+            Log.info(
+                this.unit,
+                "Bombardment successful - destroyed " + targetUnit
+            );
             this.game.killUnit(targetUnit);
         } else {
-            Log.info(this.unit, "Bombardment failed - unit destroyed");
-            this.game.killUnit(this.unit);
-            return new OrderResponse(ResponseCode.DIED, this, null);
+            Log.info(
+                this.unit,
+                "Bombardment damaged " + targetUnit + " but did not destroy it"
+            );
         }
 
-        // Attack completes the unit's turn
-        return new OrderResponse(ResponseCode.ORDER_AND_TURN_COMPLETE, this, null);
+        // Bombardment completes the unit's turn (ship never takes damage)
+        return new OrderResponse(
+            ResponseCode.ORDER_AND_TURN_COMPLETE,
+            this,
+            null
+        );
     }
 
     public Location getTargetLocation() {

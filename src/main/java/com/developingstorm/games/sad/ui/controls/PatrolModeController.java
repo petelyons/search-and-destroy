@@ -118,6 +118,24 @@ public class PatrolModeController extends BaseController {
                                     loc
                                 );
                                 updateStatusMessage();
+
+                                // Check if we clicked back at the start location
+                                // If so, complete the patrol automatically
+                                java.util.List<Location> waypoints =
+                                    PatrolModeController.this.commander.getWaypoints();
+                                if (waypoints.size() >= 3) {
+                                    // Need at least start + 1 waypoint + back to start
+                                    Location firstWaypoint = waypoints.get(0);
+                                    Location lastWaypoint = waypoints.get(
+                                        waypoints.size() - 1
+                                    );
+                                    if (firstWaypoint.equals(lastWaypoint)) {
+                                        Log.info(
+                                            "Returned to start location - completing patrol"
+                                        );
+                                        createPatrol();
+                                    }
+                                }
                             } else {
                                 String msg = "Invalid waypoint";
                                 if (
@@ -227,6 +245,8 @@ public class PatrolModeController extends BaseController {
 
         if (this.commander.createPatrol()) {
             Log.info("Patrol created successfully");
+            // Clear patrol creation visuals before returning to game mode
+            this.commander.clearPatrolCreationVisuals();
             this.frame.returnGameMode();
         } else {
             JOptionPane.showMessageDialog(

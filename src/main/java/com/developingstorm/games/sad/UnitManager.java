@@ -4,7 +4,6 @@ import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.types.*;
 import com.developingstorm.games.sad.util.Log;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -16,6 +15,7 @@ import java.util.Set;
  * Extracted from Game.java to improve maintainability.
  */
 class UnitManager {
+
     private final Game game;
     private final HexBoardMap gridMap;
     private final ArrayList<Unit> allUnits;
@@ -33,7 +33,9 @@ class UnitManager {
         this.locations = (Set<Unit>[][]) new Set[w][h];
         for (int i = 0; i < w; i++) {
             for (int j = 0; j < h; j++) {
-                this.locations[i][j] = Collections.synchronizedSet(new HashSet<>());
+                this.locations[i][j] = Collections.synchronizedSet(
+                    new HashSet<>()
+                );
             }
         }
     }
@@ -76,8 +78,41 @@ class UnitManager {
         } else {
             throw new SaDException("Unsupported type");
         }
+
+        // Assign names based on unit type
+        if (isShipType(type)) {
+            u.name = ShipNames.getName(type);
+        } else if (UnitNames.shouldNameUnit(type)) {
+            u.name = UnitNames.getName(owner, type);
+        }
+
+        // Track production location
+        City productionCity = game.getBoard().getCity(location);
+        if (productionCity != null) {
+            u.productionCityName = productionCity.getName();
+        }
+
+        Continent productionContinent = game.getBoard().getContinent(location);
+        if (productionContinent != null) {
+            u.productionContinentName = productionContinent.getName();
+        }
+
         allUnits.add(u);
         return u;
+    }
+
+    /**
+     * Checks if a type is a naval vessel.
+     */
+    private boolean isShipType(Type type) {
+        return (
+            type == Type.DESTROYER ||
+            type == Type.CRUISER ||
+            type == Type.BATTLESHIP ||
+            type == Type.CARRIER ||
+            type == Type.SUBMARINE ||
+            type == Type.TRANSPORT
+        );
     }
 
     /**
@@ -85,11 +120,25 @@ class UnitManager {
      */
     synchronized void killUnit(Unit u, boolean showDeath) {
         Log.debug(game, "Killing Unit: " + u);
+
+        // Release unit name back to pool
+        if (u.name != null) {
+            if (isShipType(u.getType())) {
+                ShipNames.releaseName(u.getType(), u.name);
+            }
+            // Note: Land/air unit names aren't released as they're player-specific
+        }
+
         u.kill();
         u.getOwner().removeUnit(u);
         allUnits.remove(u);
         game.getGameListener().killUnit(u, showDeath);
         removeUnitFromBoard(u);
+
+        // Remove from all players' last-seen tracking
+        for (Player p : game.getPlayers()) {
+            p.removeLastSeenEnemy(u.id);
+        }
     }
 
     /**

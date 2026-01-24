@@ -102,46 +102,26 @@ public class Patrol extends Order {
 
     @Override
     protected OrderResponse executeInternal() {
-        // Check for enemy units before moving
-        Unit enemyTarget = detectNearbyEnemy();
-        if (enemyTarget != null) {
-            // Decide whether to attack or avoid based on combat odds
-            if (shouldEngageEnemy(enemyTarget)) {
-                Log.info(this.unit, "Patrol: engaging enemy " + enemyTarget);
-                // Attack the enemy - create a temporary move to intercept
-                Location enemyLoc = enemyTarget.getLocation();
-                this.currentMove = new Move(this.game, this.unit, enemyLoc);
-                OrderResponse response = this.currentMove.execute();
+        Log.info(
+            this.unit,
+            "Patrol executing - waypoint " +
+                this.currentWaypointIndex +
+                "/" +
+                this.waypoints.size() +
+                ", moves: " +
+                this.unit.life().movesLeft()
+        );
 
-                // After attack attempt, resume patrol
-                if (
-                    response.getCode() == ResponseCode.ORDER_COMPLETE ||
-                    response.getCode() == ResponseCode.ORDER_AND_TURN_COMPLETE
-                ) {
-                    this.currentMove = null;
-                    if (
-                        this.unit.life().movesLeft() > 0 && !this.unit.isDead()
-                    ) {
-                        return executeInternal();
-                    } else {
-                        return new OrderResponse(
-                            ResponseCode.TURN_COMPLETE,
-                            this,
-                            null
-                        );
-                    }
-                }
-                return response;
-            } else {
-                Log.info(
-                    this.unit,
-                    "Patrol: avoiding enemy " +
-                        enemyTarget +
-                        " (unfavorable odds)"
-                );
-                // Continue patrol, avoiding the enemy
-            }
+        // Check for enemy units before moving
+        // Skip enemy detection for now to avoid recursion issues
+        // TODO: Implement proper enemy engagement with visited tracking
+        /*
+        Unit enemyTarget = detectNearbyEnemy();
+        if (enemyTarget != null && shouldEngageEnemy(enemyTarget)) {
+            Log.info(this.unit, "Patrol: engaging enemy " + enemyTarget);
+            // Attack logic would go here
         }
+        */
 
         // If we have a current move in progress, continue it
         if (this.currentMove != null) {

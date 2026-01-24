@@ -42,6 +42,13 @@ public class Battleplan {
 
     private Set<Location> expandUnloadingPoints;
 
+    // Strategic intelligence systems
+    private ThreatMap threatMap;
+
+    private StrategyMemory strategyMemory;
+
+    private TargetPrioritizer targetPrioritizer;
+
     public Battleplan(final Game game, final Robot p) {
         this.game = game;
         this.board = game.getBoard();
@@ -66,6 +73,11 @@ public class Battleplan {
         loadingPoints = calcLoadingLocations();
         defenseUnloadingPoints = calcDefenseUnloadingLocations();
         expandUnloadingPoints = calcExpandUnloadingLocations();
+
+        // Initialize strategic intelligence systems
+        this.threatMap = new ThreatMap(game, player);
+        this.strategyMemory = new StrategyMemory();
+        this.targetPrioritizer = new TargetPrioritizer(game, player, threatMap);
     }
 
     private static final String CRLF = "\r\n";
@@ -298,11 +310,49 @@ public class Battleplan {
 
     public Type productionChoice(City city) {
         Continent cont = city.getContinent();
+
+        // Check if this city is under immediate threat
+        double threatLevel = threatMap.getThreatLevel(city.getLocation());
+        boolean underThreat =
+            threatLevel > 3.0 || threatMap.isThreatenedCity(city.getLocation());
+
+        // Emergency production under threat: prioritize defensive units
+        if (underThreat) {
+            // Check what kind of threat we're facing
+            List<Unit> nearbyEnemies = threatMap.getNearbyEnemies(
+                city.getLocation(),
+                3
+            );
+            boolean airThreat = false;
+            boolean navalThreat = false;
+
+            for (Unit enemy : nearbyEnemies) {
+                if (enemy.getTravel() == Travel.AIR) {
+                    airThreat = true;
+                } else if (enemy.getTravel() == Travel.SEA) {
+                    navalThreat = true;
+                }
+            }
+
+            // Respond to specific threats
+            if (airThreat && city.isCoastal()) {
+                return Type.DESTROYER; // AA defense
+            } else if (airThreat) {
+                return Type.FIGHTER; // Air defense
+            } else if (navalThreat && city.isCoastal()) {
+                return Type.DESTROYER; // Naval defense
+            } else {
+                return Type.INFANTRY; // Ground defense
+            }
+        }
+
+        // Normal production for secure continents
         if (this.secureContinents.contains(cont)) {
             Type t = supplyBasedProductionChoice(city);
             return t;
         }
 
+        // Default to infantry for contested areas
         return Type.INFANTRY;
     }
 
@@ -316,5 +366,46 @@ public class Battleplan {
 
     Robot getPlayer() {
         return player;
+    }
+
+    // Strategic intelligence accessors
+    public ThreatMap getThreatMap() {
+        return threatMap;
+    }
+
+    public StrategyMemory getStrategyMemory() {
+        return strategyMemory;
+    }
+
+    public TargetPrioritizer getTargetPrioritizer() {
+        return targetPrioritizer;
+    }
+
+    /**
+     * Get the best city target for a given unit based on strategic priorities
+     */
+    public City getBestCityTarget(Unit unit) {
+        return targetPrioritizer.getBestCityTarget(unit);
+    }
+
+    /**
+     * Get the best enemy unit target for a given unit
+     */
+    public Unit getBestEnemyTarget(Unit unit) {
+        return targetPrioritizer.getBestUnitTarget(unit);
+    }
+
+    /**
+     * Get all prioritized city targets in order of importance
+     */
+    public List<TargetPrioritizer.CityTarget> getPrioritizedCities() {
+        return targetPrioritizer.prioritizeCities();
+    }
+
+    /**
+     * Get all prioritized enemy unit targets in order of importance
+     */
+    public List<TargetPrioritizer.UnitTarget> getPrioritizedEnemyUnits() {
+        return targetPrioritizer.prioritizeEnemyUnits();
     }
 }

@@ -34,9 +34,9 @@ public class PathFinder {
             return null;
         }
 
-        // Always check blocked for air/sea units to avoid unowned cities
-        boolean checkBlocked =
-            (travel == Travel.AIR || travel == Travel.SEA) || this.obstructed;
+        // Always check blocked during pathfinding to avoid pathing through friendly units
+        // This allows A* visualization to show the actual path and prevents movement failures
+        boolean checkBlocked = true;
         Path p = this.game.calcTravelPath(
             this.unit.getOwner(),
             start,

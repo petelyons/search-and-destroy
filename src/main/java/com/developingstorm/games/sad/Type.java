@@ -3,182 +3,181 @@ package com.developingstorm.games.sad;
 import com.developingstorm.games.sad.ui.GameIcons;
 
 public enum Type {
-    /* DST HT CST VDST MX CRY W ATK */
     INFANTRY(
-        "Infantry",
-        "I",
-        Travel.LAND,
-        1,
-        2,
-        5,
-        Vision.SURFACE,
-        1,
-        -1,
-        null,
-        0,
-        1,
-        1,
-        GameIcons.iARMY
+        builder()
+            .description("Infantry")
+            .abr("I")
+            .travel(Travel.LAND)
+            .dist(1)
+            .hits(2)
+            .cost(5)
+            .vision(Vision.SURFACE)
+            .visionDistance(1)
+            .maxFuelMultiplier(-1)
+            .carryCount(0)
+            .weight(1)
+            .attack(1)
+            .iconID(GameIcons.iARMY)
     ),
     ARMOR(
-        "Armor",
-        "A",
-        Travel.LAND,
-        2,
-        4,
-        10,
-        Vision.SURFACE,
-        1,
-        -1,
-        null,
-        0,
-        2,
-        2,
-        GameIcons.iTANK
+        builder()
+            .description("Armor")
+            .abr("A")
+            .travel(Travel.LAND)
+            .dist(2)
+            .hits(4)
+            .cost(10)
+            .vision(Vision.SURFACE)
+            .visionDistance(1)
+            .maxFuelMultiplier(-1)
+            .carryCount(0)
+            .weight(2)
+            .attack(2)
+            .iconID(GameIcons.iTANK)
     ),
     FIGHTER(
-        "Fighter",
-        "F",
-        Travel.AIR,
-        5,
-        2,
-        10,
-        Vision.SURFACE,
-        3,
-        4,
-        null,
-        0,
-        1,
-        1,
-        GameIcons.iFIGHTER
+        builder()
+            .description("Fighter")
+            .abr("F")
+            .travel(Travel.AIR)
+            .dist(5)
+            .hits(2)
+            .cost(10)
+            .vision(Vision.SURFACE)
+            .visionDistance(3)
+            .maxFuelMultiplier(4)
+            .carryCount(0)
+            .weight(1)
+            .attack(1)
+            .iconID(GameIcons.iFIGHTER)
     ),
     BOMBER(
-        "Bomber",
-        "B",
-        Travel.AIR,
-        4,
-        2,
-        15,
-        Vision.SURFACE,
-        3,
-        8,
-        null,
-        0,
-        0,
-        3,
-        GameIcons.iBOMBER
+        builder()
+            .description("Bomber")
+            .abr("B")
+            .travel(Travel.AIR)
+            .dist(4)
+            .hits(2)
+            .cost(15)
+            .vision(Vision.SURFACE)
+            .visionDistance(3)
+            .maxFuelMultiplier(8)
+            .carryCount(0)
+            .weight(0)
+            .attack(3)
+            .iconID(GameIcons.iBOMBER)
     ),
     CARGO(
-        "Cargo Plane",
-        "C",
-        Travel.AIR,
-        3,
-        2,
-        15,
-        Vision.SURFACE,
-        5,
-        6,
-        null,
-        1,
-        0,
-        0,
-        GameIcons.iCARGO
+        builder()
+            .description("Cargo Plane")
+            .abr("C")
+            .travel(Travel.AIR)
+            .dist(3)
+            .hits(2)
+            .cost(15)
+            .vision(Vision.SURFACE)
+            .visionDistance(5)
+            .maxFuelMultiplier(6)
+            .carryCount(1)
+            .weight(0)
+            .attack(0)
+            .iconID(GameIcons.iCARGO)
     ),
     DESTROYER(
-        "Destroyer",
-        "DE",
-        Travel.SEA,
-        3,
-        3,
-        20,
-        Vision.COMPLETE,
-        2,
-        -1,
-        null,
-        0,
-        0,
-        3,
-        GameIcons.iDESTROYER
+        builder()
+            .description("Destroyer")
+            .abr("DE")
+            .travel(Travel.SEA)
+            .dist(3)
+            .hits(3)
+            .cost(20)
+            .vision(Vision.COMPLETE)
+            .visionDistance(2)
+            .maxFuelMultiplier(-1)
+            .carryCount(0)
+            .weight(0)
+            .attack(3)
+            .iconID(GameIcons.iDESTROYER)
     ),
     TRANSPORT(
-        "Transport",
-        "TR",
-        Travel.SEA,
-        2,
-        2,
-        30,
-        Vision.SURFACE,
-        1,
-        -1,
-        null,
-        6,
-        0,
-        0,
-        GameIcons.iTRANSPORT
+        builder()
+            .description("Transport")
+            .abr("TR")
+            .travel(Travel.SEA)
+            .dist(2)
+            .hits(2)
+            .cost(30)
+            .vision(Vision.SURFACE)
+            .visionDistance(1)
+            .maxFuelMultiplier(-1)
+            .carryCount(6)
+            .weight(0)
+            .attack(0)
+            .iconID(GameIcons.iTRANSPORT)
     ),
     SUBMARINE(
-        "Submarine",
-        "SU",
-        Travel.SEA,
-        2,
-        4,
-        30,
-        Vision.WATER,
-        2,
-        -1,
-        null,
-        0,
-        0,
-        4,
-        GameIcons.iSUBMARINE
+        builder()
+            .description("Submarine")
+            .abr("SU")
+            .travel(Travel.SEA)
+            .dist(2)
+            .hits(4)
+            .cost(30)
+            .vision(Vision.WATER)
+            .visionDistance(2)
+            .maxFuelMultiplier(-1)
+            .carryCount(0)
+            .weight(0)
+            .attack(4)
+            .iconID(GameIcons.iSUBMARINE)
     ),
     CRUISER(
-        "Cruiser",
-        "CR",
-        Travel.SEA,
-        2,
-        8,
-        40,
-        Vision.COMPLETE,
-        3,
-        -1,
-        null,
-        0,
-        0,
-        3,
-        GameIcons.iCRUISER
+        builder()
+            .description("Cruiser")
+            .abr("CR")
+            .travel(Travel.SEA)
+            .dist(2)
+            .hits(8)
+            .cost(40)
+            .vision(Vision.COMPLETE)
+            .visionDistance(3)
+            .maxFuelMultiplier(-1)
+            .carryCount(0)
+            .weight(0)
+            .attack(3)
+            .iconID(GameIcons.iCRUISER)
     ),
     CARRIER(
-        "Aircraft Carrier",
-        "AC",
-        Travel.SEA,
-        2,
-        6,
-        50,
-        Vision.SURFACE,
-        2,
-        -1,
-        null,
-        6,
-        0,
-        1,
-        GameIcons.iAIRCRAFTCARRIER
+        builder()
+            .description("Aircraft Carrier")
+            .abr("AC")
+            .travel(Travel.SEA)
+            .dist(2)
+            .hits(6)
+            .cost(50)
+            .vision(Vision.SURFACE)
+            .visionDistance(2)
+            .maxFuelMultiplier(-1)
+            .carryCount(6)
+            .weight(0)
+            .attack(1)
+            .iconID(GameIcons.iAIRCRAFTCARRIER)
     ),
     BATTLESHIP(
-        "Battleship",
-        "BA",
-        Travel.SEA,
-        2,
-        12,
-        50,
-        Vision.SURFACE,
-        2,
-        -1,
-        null,
-        0,
-        0,
-        4,
-        GameIcons.iBATTLESHIP
+        builder()
+            .description("Battleship")
+            .abr("BA")
+            .travel(Travel.SEA)
+            .dist(2)
+            .hits(12)
+            .cost(50)
+            .vision(Vision.SURFACE)
+            .visionDistance(2)
+            .maxFuelMultiplier(-1)
+            .carryCount(0)
+            .weight(0)
+            .attack(4)
+            .iconID(GameIcons.iBATTLESHIP)
     );
 
     static {
@@ -203,36 +202,116 @@ public enum Type {
     private final int iconID;
     private final int weight;
 
-    Type(
-        String desc,
-        String abr,
-        Travel t,
-        int dist,
-        int hits,
-        int cost,
-        Vision vis,
-        int vdist,
-        int maxf,
-        Type[] carryTypes,
-        int carryCount,
-        int weight,
-        int attack,
-        int iconID
-    ) {
-        this.description = desc;
-        this.travel = t;
-        this.dist = dist;
-        this.hits = hits;
-        this.cost = cost;
-        this.vis = vis;
-        this.vdist = vdist;
-        this.max = maxf * dist;
-        this.carryTypes = carryTypes;
-        this.carryCount = carryCount;
-        this.weight = weight;
-        this.attack = attack;
-        this.iconID = iconID;
-        this.abr = abr;
+    Type(Builder builder) {
+        this.description = builder.description;
+        this.abr = builder.abr;
+        this.travel = builder.travel;
+        this.dist = builder.dist;
+        this.hits = builder.hits;
+        this.cost = builder.cost;
+        this.vis = builder.vision;
+        this.vdist = builder.visionDistance;
+        this.max =
+            builder.maxFuelMultiplier < 0
+                ? -1
+                : builder.maxFuelMultiplier * builder.dist;
+        this.carryTypes = builder.carryTypes;
+        this.carryCount = builder.carryCount;
+        this.weight = builder.weight;
+        this.attack = builder.attack;
+        this.iconID = builder.iconID;
+    }
+
+    private static Builder builder() {
+        return new Builder();
+    }
+
+    private static class Builder {
+
+        private String description;
+        private String abr;
+        private Travel travel;
+        private int hits;
+        private int dist;
+        private int cost;
+        private Vision vision;
+        private int visionDistance;
+        private int maxFuelMultiplier;
+        private Type[] carryTypes;
+        private int carryCount;
+        private int attack;
+        private int iconID;
+        private int weight;
+
+        Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        Builder abr(String abr) {
+            this.abr = abr;
+            return this;
+        }
+
+        Builder travel(Travel travel) {
+            this.travel = travel;
+            return this;
+        }
+
+        Builder dist(int dist) {
+            this.dist = dist;
+            return this;
+        }
+
+        Builder hits(int hits) {
+            this.hits = hits;
+            return this;
+        }
+
+        Builder cost(int cost) {
+            this.cost = cost;
+            return this;
+        }
+
+        Builder vision(Vision vision) {
+            this.vision = vision;
+            return this;
+        }
+
+        Builder visionDistance(int visionDistance) {
+            this.visionDistance = visionDistance;
+            return this;
+        }
+
+        Builder maxFuelMultiplier(int maxFuelMultiplier) {
+            this.maxFuelMultiplier = maxFuelMultiplier;
+            return this;
+        }
+
+        Builder carryTypes(Type[] carryTypes) {
+            this.carryTypes = carryTypes;
+            return this;
+        }
+
+        Builder carryCount(int carryCount) {
+            this.carryCount = carryCount;
+            return this;
+        }
+
+        Builder weight(int weight) {
+            this.weight = weight;
+            return this;
+        }
+
+        Builder attack(int attack) {
+            this.attack = attack;
+            return this;
+        }
+
+        Builder iconID(int iconID) {
+            this.iconID = iconID;
+            return this;
+        }
     }
 
     public String getAbr() {

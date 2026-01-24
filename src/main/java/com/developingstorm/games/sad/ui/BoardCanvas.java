@@ -22,6 +22,7 @@ import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.Vision;
 import com.developingstorm.games.sad.orders.Patrol;
 import com.developingstorm.games.sad.ui.sprites.ExplosionSprite;
 import java.awt.Color;
@@ -98,6 +99,7 @@ public class BoardCanvas extends HexCanvas {
     private List<Sprite> airPaths;
     private List<Sprite> groundPaths;
     private List<Sprite> patrolPaths;
+    private List<Sprite> patrolSegments; // Segments being created in patrol mode
 
     Set<PathError> pathErrors;
 
@@ -119,6 +121,7 @@ public class BoardCanvas extends HexCanvas {
         this.airPaths = null;
         this.groundPaths = null;
         this.patrolPaths = null;
+        this.patrolSegments = null;
 
         this.pathErrors = new HashSet<PathError>();
     }
@@ -407,6 +410,11 @@ public class BoardCanvas extends HexCanvas {
                 continue;
             }
 
+            // Skip dead units (Phase 3)
+            if (unit.isDead()) {
+                continue;
+            }
+
             Order order = unit.getOrder();
             if (order != null && order.getType() == OrderType.PATROL) {
                 Patrol patrol = (Patrol) order;
@@ -437,7 +445,44 @@ public class BoardCanvas extends HexCanvas {
                     Point p1 = hex1.center();
                     Point p2 = hex2.center();
 
-                    LineSprite line = new LineSprite(lineColor, 2.0f);
+                    LineSprite line = new LineSprite(lineColor, 1.0f);
+                    line.setLine(p1, p2);
+                    this.patrolPaths.add(line);
+                }
+            }
+        }
+
+        // Show city air patrols (Phase 2)
+        for (City city : this.game.getBoard().getCities()) {
+            if (city.getOwner() != player) {
+                continue;
+            }
+
+            com.developingstorm.games.sad.edicts.CityAirPatrol cityAirPatrol =
+                city.getGovernor().getCityAirPatrol();
+
+            if (cityAirPatrol != null) {
+                List<Location> waypoints = cityAirPatrol.getWaypoints();
+
+                if (waypoints.size() < 2) {
+                    continue;
+                }
+
+                // Use CYAN color to match air unit path color
+                Color lineColor = Color.CYAN;
+
+                // Draw dashed lines between consecutive waypoints
+                for (int i = 0; i < waypoints.size() - 1; i++) {
+                    Location loc1 = waypoints.get(i);
+                    Location loc2 = waypoints.get(i + 1);
+
+                    BoardHex hex1 = this.board.get(loc1);
+                    BoardHex hex2 = this.board.get(loc2);
+
+                    Point p1 = hex1.center();
+                    Point p2 = hex2.center();
+
+                    LineSprite line = new LineSprite(lineColor, 1.0f, true); // Dashed line
                     line.setLine(p1, p2);
                     this.patrolPaths.add(line);
                 }
@@ -445,6 +490,53 @@ public class BoardCanvas extends HexCanvas {
         }
 
         addSprites(this.patrolPaths);
+    }
+
+    /**
+     * Sets the patrol segments being created in patrol mode.
+     * Shows completed line segments while the user is defining a patrol path.
+     */
+    public void setPatrolSegments(
+        List<Location> waypoints,
+        Color color,
+        boolean dashed
+    ) {
+        removeSprites(this.patrolSegments);
+
+        if (waypoints == null || waypoints.size() < 2) {
+            this.patrolSegments = null;
+            return;
+        }
+
+        this.patrolSegments = new ArrayList<Sprite>();
+
+        // Draw all segments except the last one (which will be animated to cursor)
+        for (int i = 0; i < waypoints.size() - 1; i++) {
+            Location loc1 = waypoints.get(i);
+            Location loc2 = waypoints.get(i + 1);
+
+            BoardHex hex1 = this.board.get(loc1);
+            BoardHex hex2 = this.board.get(loc2);
+
+            if (hex1 != null && hex2 != null) {
+                Point p1 = hex1.center();
+                Point p2 = hex2.center();
+
+                LineSprite line = new LineSprite(color, 1.0f, dashed);
+                line.setLine(p1, p2);
+                this.patrolSegments.add(line);
+            }
+        }
+
+        addSprites(this.patrolSegments);
+    }
+
+    /**
+     * Clears the patrol segments display
+     */
+    public void clearPatrolSegments() {
+        removeSprites(this.patrolSegments);
+        this.patrolSegments = null;
     }
 
     private void drawUnit(
@@ -486,6 +578,39 @@ public class BoardCanvas extends HexCanvas {
                 24,
                 null
             );
+        }
+
+        // Draw fuel indicator for air units
+        if (u.getTravel() == Travel.AIR) {
+            int maxFuel = u.life().getMaxFuel();
+            if (maxFuel > 0) {
+                int currentFuel = u.life().getFuel();
+
+                // Draw 4 small lines representing fuel quarters
+                // All white = full fuel, all black = 1 or less fuel remaining
+                // Position in lower-left corner, inset by 1 pixel
+                int lineStartX = center.x - 11; // Left edge of tile (12 - 1)
+                int lineStartY = center.y + 9; // Bottom edge of tile (12 - 3 line length)
+                int lineLength = 3;
+
+                for (int i = 0; i < 4; i++) {
+                    // Calculate which quarter this line represents
+                    float quarterThreshold = (maxFuel * (4 - i)) / 4.0f;
+
+                    // Line is white if fuel is above this quarter, black if below
+                    if (currentFuel >= quarterThreshold) {
+                        g.setColor(Color.WHITE);
+                    } else {
+                        g.setColor(Color.BLACK);
+                    }
+
+                    // Draw vertical line with no spacing between lines
+                    int x = lineStartX + i;
+                    g.drawLine(x, lineStartY, x, lineStartY + lineLength);
+                }
+
+                g.setColor(oldColor);
+            }
         }
     }
 
@@ -558,6 +683,86 @@ public class BoardCanvas extends HexCanvas {
         }
     }
 
+    /**
+     * Draws last-seen enemy position indicators for fog-of-war awareness.
+     * Shows ghost outlines of enemy units at their last observed locations.
+     */
+    private void drawLastSeenEnemyPositions(Graphics2D g) {
+        if (this.game == null || this.lens == null) {
+            return;
+        }
+
+        Player currentPlayer = this.game.currentPlayer();
+        if (currentPlayer == null) {
+            return;
+        }
+
+        int currentTurn = this.game.getTurn();
+
+        for (Player.LastSeenInfo info : currentPlayer.getLastSeenEnemies()) {
+            Location loc = info.location;
+
+            // Only show in explored but not currently visible areas
+            if (!this.lens.isExplored(loc)) {
+                continue;
+            }
+
+            // Don't show if we can currently see a unit there
+            Unit visibleAtLoc = currentPlayer.visibleUnit(loc);
+            if (visibleAtLoc != null) {
+                continue;
+            }
+
+            // Don't show if location is currently visible (just no unit there)
+            if (currentPlayer.getVisibility(loc) != Vision.NONE) {
+                continue;
+            }
+
+            // Calculate age-based transparency
+            int age = currentTurn - info.turnSeen;
+            float alpha = Math.max(0.15f, 0.5f - (age * 0.05f));
+
+            // Draw ghost indicator
+            BoardHex hex = this.board.get(loc);
+            if (hex == null) continue;
+
+            Point center = hex.center();
+
+            // Save original composite
+            java.awt.Composite originalComposite = g.getComposite();
+
+            // Set transparency
+            g.setComposite(
+                java.awt.AlphaComposite.getInstance(
+                    java.awt.AlphaComposite.SRC_OVER,
+                    alpha
+                )
+            );
+
+            // Get owner color
+            Color ownerColor = this.ctx.getPlayerColor(info.owner);
+
+            // Draw double-ring outline (not filled) to distinguish from real units
+            g.setColor(ownerColor);
+            g.drawOval(center.x - 10, center.y - 10, 20, 20);
+            g.drawOval(center.x - 11, center.y - 11, 22, 22);
+
+            // For very recent sightings, draw a faint filled circle inside
+            if (age <= 2) {
+                g.setComposite(
+                    java.awt.AlphaComposite.getInstance(
+                        java.awt.AlphaComposite.SRC_OVER,
+                        alpha * 0.3f
+                    )
+                );
+                g.fillOval(center.x - 8, center.y - 8, 16, 16);
+            }
+
+            // Restore original composite
+            g.setComposite(originalComposite);
+        }
+    }
+
     protected void drawPathsBoard(int z, Graphics2D g) {
         super.drawBoard(z, g);
 
@@ -572,6 +777,10 @@ public class BoardCanvas extends HexCanvas {
                 drawContinentNumbers(g);
             }
             drawCities(g);
+
+            // Draw last-seen enemy positions before real units (so they appear underneath)
+            drawLastSeenEnemyPositions(g);
+
             drawUnits(g);
 
             // draw selected unit on-top

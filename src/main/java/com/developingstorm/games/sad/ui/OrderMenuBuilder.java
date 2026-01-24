@@ -23,6 +23,7 @@ public class OrderMenuBuilder {
     private final JMenuItem HEAD_HOME_SEL = new JMenuItem("Head Home");
     private final JMenuItem PATROL_SEL = new JMenuItem("Define Patrol...");
     private final JMenuItem ATTACK_SEL = new JMenuItem("Bombard...");
+    private final JMenuItem ESCORT_SEL = new JMenuItem("Escort...");
 
     private List<Unit> units;
     private Game game;
@@ -56,6 +57,11 @@ public class OrderMenuBuilder {
                 this.frame.startAttackMode(this.units.get(0));
             }
         });
+        ESCORT_SEL.addActionListener(e -> {
+            if (this.units.size() == 1) {
+                this.frame.startEscortMode(this.units.get(0));
+            }
+        });
     }
 
     public JPopupMenu build() {
@@ -87,6 +93,12 @@ public class OrderMenuBuilder {
             Unit u = this.units.get(0);
             if (u.isBattleship() || u.isCruiser()) {
                 menuItem = ATTACK_SEL;
+                ordersPopup.add(menuItem);
+            }
+
+            // Add escort option for sea units
+            if (u.getTravel() == com.developingstorm.games.sad.Travel.SEA) {
+                menuItem = ESCORT_SEL;
                 ordersPopup.add(menuItem);
             }
         }

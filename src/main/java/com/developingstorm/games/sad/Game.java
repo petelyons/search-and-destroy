@@ -79,6 +79,11 @@ public class Game implements UnitLens, LocationLens {
             this.selectedUnit = null;
             this.gridMap = grid;
 
+            // Reset all naming pools for new game
+            ShipNames.reset();
+            UnitNames.reset();
+            UnitNames.autoAssignThemes(players.length);
+
             // Initialize unit manager
             unitManager = new UnitManager(this, grid);
 
@@ -209,6 +214,12 @@ public class Game implements UnitLens, LocationLens {
         }
     }
 
+    public void trackLocation(Location loc) {
+        if (this.gameListener != null && loc != null) {
+            this.gameListener.trackLocation(loc);
+        }
+    }
+
     public Board getBoard() {
         return board;
     }
@@ -235,6 +246,15 @@ public class Game implements UnitLens, LocationLens {
 
     public List<Unit> units() {
         return unitManager.getAllUnits();
+    }
+
+    public Unit getUnitById(long unitId) {
+        for (Unit u : unitManager.getAllUnits()) {
+            if (u.id == unitId) {
+                return u;
+            }
+        }
+        return null;
     }
 
     public void killUnit(Unit u) {
@@ -328,6 +348,14 @@ public class Game implements UnitLens, LocationLens {
         return movementResolver.resolveMove(u, dest);
     }
 
+    public ResponseCode resolveMove(
+        Unit u,
+        final Location dest,
+        final Location finalDest
+    ) {
+        return movementResolver.resolveMove(u, dest, finalDest);
+    }
+
     public Player nextPlayer() {
         for (int x = 0; x < this.players.length; x++) {
             if (this.players[x] == this.currentPlayer) {
@@ -352,6 +380,14 @@ public class Game implements UnitLens, LocationLens {
                 notify();
             }
         }
+    }
+
+    /**
+     * Signals the game thread to continue (public wrapper for use by edicts).
+     * Call this after automatically assigning orders to units that were waiting for player input.
+     */
+    public void continueGame() {
+        signalGameThread();
     }
 
     public synchronized Unit selectedUnit() {

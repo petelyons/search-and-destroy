@@ -21,7 +21,8 @@ public enum OrderType {
     MOVE_SOUTH_EAST("SouthEast"),
     MOVE_SOUTH_WEST("SouthWest"),
     DISBAND("Disband"),
-    ATTACK("Attack");
+    ATTACK("Attack"),
+    ESCORT("Escort");
 
     private final String displayName;
 

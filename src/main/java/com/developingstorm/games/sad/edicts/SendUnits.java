@@ -41,6 +41,7 @@ public class SendUnits extends Edict {
     @Override
     public void execute(Game game) {
         List<Unit> units = unitsMatchingTravel(this.travel);
+        boolean assignedOrders = false;
         if (!units.isEmpty()) {
             for (Unit u : units) {
                 Log.debug(u, "Applying send edict. " + this.travel);
@@ -49,10 +50,15 @@ public class SendUnits extends Edict {
                 // If this unit was waiting for player orders, deselect it and queue for execution
                 if (game.selectedUnit() == u) {
                     game.deselectUnit();
+                    assignedOrders = true;
                 }
                 // Push to pendingPlay so it executes the edict order immediately
                 u.getOwner().pushPendingPlay(u);
             }
+        }
+        // Wake up the game thread if we assigned orders to a unit that was waiting
+        if (assignedOrders) {
+            game.continueGame();
         }
     }
 

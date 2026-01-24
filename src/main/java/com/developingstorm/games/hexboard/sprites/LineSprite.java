@@ -27,6 +27,10 @@ public class LineSprite extends StrokeSprite {
     }
 
     public LineSprite(Color color, float width) {
+        this(color, width, false);
+    }
+
+    public LineSprite(Color color, float width, boolean dashed) {
         this.start = null;
         this.end = null;
 
@@ -34,23 +38,44 @@ public class LineSprite extends StrokeSprite {
         setZPos(2);
         setRepeat(true);
 
-        initFrames(1, color, width);
+        initFrames(1, color, width, dashed);
     }
 
     private void initFrames(int count, Color color, float width) {
+        initFrames(count, color, width, false);
+    }
+
+    private void initFrames(
+        int count,
+        Color color,
+        float width,
+        boolean dashed
+    ) {
         setFrames(count);
         this.strokes = new BasicStroke[count];
         this.colors = new Color[count];
 
         for (int x = 0; x < count; x++) {
-            this.strokes[x] = new BasicStroke(width);
+            if (dashed) {
+                // Create dashed stroke: dash pattern [10px dash, 5px gap]
+                float[] dashPattern = { 5.0f, 5.0f };
+                this.strokes[x] = new BasicStroke(
+                    width,
+                    BasicStroke.CAP_BUTT,
+                    BasicStroke.JOIN_MITER,
+                    10.0f,
+                    dashPattern,
+                    10.0f
+                );
+            } else {
+                this.strokes[x] = new BasicStroke(width);
+            }
             this.colors[x] = color;
         }
     }
 
     @Override
-    protected void handleFrameChange(int old, int current) {
-    }
+    protected void handleFrameChange(int old, int current) {}
 
     @Override
     protected void handleDraw(long time, Image[] images, Graphics2D g) {

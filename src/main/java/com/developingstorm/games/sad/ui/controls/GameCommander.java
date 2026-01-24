@@ -86,6 +86,12 @@ public class GameCommander extends BaseCommander {
         }
     }
 
+    public void trackLocation(Location loc) {
+        if (loc != null) {
+            this.game.trackLocation(loc);
+        }
+    }
+
     public void move(Location loc) {
         issueOrders(OrderType.MOVE, loc);
         showLine(null, null);
@@ -151,6 +157,10 @@ public class GameCommander extends BaseCommander {
             }
 
             Unit active = this.game.selectedUnit();
+
+            // Refresh patrol paths display since orders changed
+            this.canvas.showPatrolPaths(this.game.currentPlayer());
+            this.canvas.repaint();
         });
     }
 
@@ -361,6 +371,30 @@ public class GameCommander extends BaseCommander {
         issueOrders(OrderType.HEAD_HOME);
     }
 
+    public void escort(Unit unitToEscort) {
+        this.game.postAndRunGameAction(() -> {
+            if (this.commandedUnits != null) {
+                for (Unit u : this.commandedUnits) {
+                    Log.debug(
+                        "UI",
+                        "Issuing Order:ESCORT to special context:" + u
+                    );
+                    u.orderEscort(unitToEscort);
+                    u.getOwner().pushPendingPlay(u);
+                }
+            } else if (this.game.selectedUnit() != null) {
+                Log.debug(
+                    "UI",
+                    "Issuing Order:ESCORT to selected unit:" +
+                        this.game.selectedUnit()
+                );
+                Unit selected = this.game.selectedUnit();
+                selected.orderEscort(unitToEscort);
+            }
+            this.game.resume(null);
+        });
+    }
+
     @Override
     public Location getCurrentLocation() {
         if (this.game.selectedUnit() != null) {
@@ -377,7 +411,7 @@ public class GameCommander extends BaseCommander {
         JPopupMenu pm = null;
         Location loc = hex.getLocation();
 
-        if (u.getLocation().equals(loc)) {
+        if (u != null && u.getLocation().equals(loc)) {
             ArrayList<Unit> ulist = new ArrayList<Unit>();
             ulist.add(u);
 
@@ -438,10 +472,24 @@ public class GameCommander extends BaseCommander {
     }
 
     public void setAirPatrol(City c) {
-        // TODO Auto-generated method stub
+        this.game.postAndRunGameAction(() -> {
+            if (c.getGovernor().hasAirPatrol()) {
+                c.getGovernor().clearAirPatrol();
+            } else {
+                c.getGovernor().setAirPatrol();
+            }
+            // Refresh the display to show/hide patrol lines
+            this.frame.getCanvas().repaint();
+        });
     }
 
     public void setAutoSentry(City c) {
-        // TODO Auto-generated method stub
+        this.game.postAndRunGameAction(() -> {
+            if (c.getGovernor().hasAutoSentry()) {
+                c.getGovernor().clearAutoSenty();
+            } else {
+                c.getGovernor().setAutoSentry();
+            }
+        });
     }
 }

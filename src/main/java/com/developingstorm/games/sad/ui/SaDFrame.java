@@ -6,6 +6,7 @@ import com.developingstorm.games.hexboard.Hex;
 import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.Board;
+import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.CombatResult;
 import com.developingstorm.games.sad.Debug;
 import com.developingstorm.games.sad.Game;
@@ -14,6 +15,7 @@ import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Robot;
 import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.Vision;
 import com.developingstorm.games.sad.persistence.GameStateSerializer;
 import com.developingstorm.games.sad.ui.NewGameDialog.NewGameValues;
 import com.developingstorm.games.sad.ui.controls.PathsCommander;
@@ -235,6 +237,45 @@ public class SaDFrame extends JFrame {
     public SaDFrame() {
         setTitle("Search And Destroy");
 
+        // Set application icon
+        try {
+            java.net.URL iconURL = getClass().getResource(
+                "/images/battleship.gif"
+            );
+            if (iconURL != null) {
+                java.awt.Image icon =
+                    java.awt.Toolkit.getDefaultToolkit().getImage(iconURL);
+                setIconImage(icon);
+
+                // Set dock icon on macOS
+                try {
+                    // Use reflection to avoid compile-time dependency on macOS-specific classes
+                    Class<?> taskbarClass = Class.forName("java.awt.Taskbar");
+                    if (
+                        (Boolean) taskbarClass
+                            .getMethod("isTaskbarSupported")
+                            .invoke(null)
+                    ) {
+                        Object taskbar = taskbarClass
+                            .getMethod("getTaskbar")
+                            .invoke(null);
+                        taskbarClass
+                            .getMethod("setIconImage", java.awt.Image.class)
+                            .invoke(taskbar, icon);
+                    }
+                } catch (Exception macEx) {
+                    // Not on macOS or Taskbar API not available, ignore
+                    System.out.println(
+                        "Taskbar API not available: " + macEx.getMessage()
+                    );
+                }
+            }
+        } catch (Exception e) {
+            System.err.println(
+                "Could not load application icon: " + e.getMessage()
+            );
+        }
+
         addWindowListener(
             new WindowAdapter() {
                 public void windowClosing(WindowEvent e) {
@@ -351,6 +392,45 @@ public class SaDFrame extends JFrame {
                     SaDFrame.this.unitTracked = u;
                     EventQueue.invokeLater(() -> {
                         SaDFrame.this.ubar.setUnit(u);
+                        SaDFrame.this.unitDetailsDialog.updateUnit(u);
+                    });
+                }
+
+                @Override
+                public void trackLocation(Location loc) {
+                    EventQueue.invokeLater(() -> {
+                        if (loc == null) {
+                            return;
+                        }
+
+                        // Check if location is visible to current player
+                        Player currentPlayer =
+                            SaDFrame.this.game.currentPlayer();
+                        Vision visibility = currentPlayer.getVisibility(loc);
+                        if (visibility == Vision.NONE) {
+                            return; // Don't show info for unexplored locations
+                        }
+
+                        City city = SaDFrame.this.board.getCity(loc);
+                        List<Unit> unitsAtLocation =
+                            SaDFrame.this.game.unitsAtLocation(loc);
+
+                        // Show both units and city if both are present
+                        if (city != null && !unitsAtLocation.isEmpty()) {
+                            SaDFrame.this.unitDetailsDialog.updateUnitAndCity(
+                                unitsAtLocation.get(0),
+                                city
+                            );
+                        } else if (city != null) {
+                            SaDFrame.this.unitDetailsDialog.updateCity(
+                                city,
+                                unitsAtLocation
+                            );
+                        } else if (!unitsAtLocation.isEmpty()) {
+                            SaDFrame.this.unitDetailsDialog.updateUnit(
+                                unitsAtLocation.get(0)
+                            );
+                        }
                     });
                 }
 
@@ -359,8 +439,27 @@ public class SaDFrame extends JFrame {
                     SaDFrame.this.unitChanged = u;
 
                     EventQueue.invokeLater(() -> {
+                        System.out.println(
+                            "SaDFrame.selectUnit called with: " +
+                                (u != null
+                                    ? u.name + " (id=" + u.id + ")"
+                                    : "null")
+                        );
                         SaDFrame.this.ubar.setUnit(u);
-                        SaDFrame.this.unitDetailsDialog.updateUnit(u);
+                        // Check if unit is in a city
+                        City cityAtLocation = (u != null)
+                            ? SaDFrame.this.board.getCity(u.getLocation())
+                            : null;
+                        System.out.println(
+                            "City at location: " +
+                                (cityAtLocation != null
+                                    ? cityAtLocation.getName()
+                                    : "none")
+                        );
+                        SaDFrame.this.unitDetailsDialog.updateUnit(
+                            u,
+                            cityAtLocation
+                        );
                         SaDFrame.this.board.clearSelected();
 
                         if (Debug.getDebugExplore()) {
@@ -715,48 +814,24 @@ public class SaDFrame extends JFrame {
                     System.err.println("=== onLoadGame called to stderr ===");
                     try {
                         Log.info("onLoadGame called");
-                        System.out.println("About to show file dialog");
-                        FileDialog loadFileDialog = new FileDialog(
-                            SaDFrame.this,
-                            "Load Game",
-                            FileDialog.LOAD
-                        );
-                        loadFileDialog.setDirectory("./saves");
-                        loadFileDialog.setFile("*.json");
-                        loadFileDialog.setVisible(true);
+                        System.out.println("About to show load dialog");
 
-                        String fileName = loadFileDialog.getFile();
-                        System.out.println("Selected file: " + fileName);
-                        Log.info("Selected file: " + fileName);
-                        if (fileName == null) {
+                        // Use new SaveGameDialog
+                        SaveGameDialog loadDialog = new SaveGameDialog(
+                            SaDFrame.this,
+                            GameStateSerializer.getSaveDirectory()
+                        );
+                        loadDialog.setVisible(true);
+
+                        java.io.File saveFile = loadDialog.getSelectedFile();
+                        System.out.println("Selected file: " + saveFile);
+                        Log.info("Selected file: " + saveFile);
+                        if (saveFile == null) {
                             System.out.println("User cancelled file selection");
                             Log.info("User cancelled file selection");
                             return; // User cancelled
                         }
 
-                        System.out.println(
-                            "File name is not null, checking extension"
-                        );
-                        if (!fileName.endsWith(".json")) {
-                            System.out.println(
-                                "Invalid file extension: " + fileName
-                            );
-                            Log.warn("Invalid file extension: " + fileName);
-                            JOptionPane.showMessageDialog(
-                                SaDFrame.this,
-                                "Please select a JSON save file.",
-                                "Invalid File",
-                                JOptionPane.WARNING_MESSAGE
-                            );
-                            return;
-                        }
-
-                        String directory = loadFileDialog.getDirectory();
-                        System.out.println("Directory: " + directory);
-                        java.io.File saveFile = new java.io.File(
-                            directory,
-                            fileName
-                        );
                         System.out.println(
                             "Full save file path: " + saveFile.getAbsolutePath()
                         );
@@ -795,6 +870,11 @@ public class SaDFrame extends JFrame {
                         );
                         Log.info("Game loaded successfully from file");
 
+                        // Extract and store the save name for future saves
+                        String saveName = serializer.extractSaveName(saveFile);
+                        SaDFrame.this.currentSaveName = saveName;
+                        Log.info("Extracted save name: " + saveName);
+
                         // Stop the current game if one is running
                         System.out.println(
                             "Stopping current game if running..."
@@ -823,6 +903,55 @@ public class SaDFrame extends JFrame {
                                     SaDFrame.this.unitTracked = u;
                                     EventQueue.invokeLater(() -> {
                                         SaDFrame.this.ubar.setUnit(u);
+                                        SaDFrame.this.unitDetailsDialog.updateUnit(
+                                            u
+                                        );
+                                    });
+                                }
+
+                                @Override
+                                public void trackLocation(Location loc) {
+                                    EventQueue.invokeLater(() -> {
+                                        if (loc == null) {
+                                            return;
+                                        }
+
+                                        // Check if location is visible to current player
+                                        Player currentPlayer =
+                                            SaDFrame.this.game.currentPlayer();
+                                        Vision visibility =
+                                            currentPlayer.getVisibility(loc);
+                                        if (visibility == Vision.NONE) {
+                                            return; // Don't show info for unexplored locations
+                                        }
+
+                                        City city = SaDFrame.this.board.getCity(
+                                            loc
+                                        );
+                                        List<Unit> unitsAtLocation =
+                                            SaDFrame.this.game.unitsAtLocation(
+                                                loc
+                                            );
+
+                                        // Show both units and city if both are present
+                                        if (
+                                            city != null &&
+                                            !unitsAtLocation.isEmpty()
+                                        ) {
+                                            SaDFrame.this.unitDetailsDialog.updateUnitAndCity(
+                                                unitsAtLocation.get(0),
+                                                city
+                                            );
+                                        } else if (city != null) {
+                                            SaDFrame.this.unitDetailsDialog.updateCity(
+                                                city,
+                                                unitsAtLocation
+                                            );
+                                        } else if (!unitsAtLocation.isEmpty()) {
+                                            SaDFrame.this.unitDetailsDialog.updateUnit(
+                                                unitsAtLocation.get(0)
+                                            );
+                                        }
                                     });
                                 }
 
@@ -830,9 +959,31 @@ public class SaDFrame extends JFrame {
                                 public void selectUnit(Unit u) {
                                     SaDFrame.this.unitChanged = u;
                                     EventQueue.invokeLater(() -> {
+                                        System.out.println(
+                                            "SaDFrame.selectUnit(loaded game) called with: " +
+                                                (u != null
+                                                    ? u.name +
+                                                      " (id=" +
+                                                      u.id +
+                                                      ")"
+                                                    : "null")
+                                        );
                                         SaDFrame.this.ubar.setUnit(u);
+                                        // Check if unit is in a city
+                                        City cityAtLocation = (u != null)
+                                            ? SaDFrame.this.board.getCity(
+                                                  u.getLocation()
+                                              )
+                                            : null;
+                                        System.out.println(
+                                            "City at location: " +
+                                                (cityAtLocation != null
+                                                    ? cityAtLocation.getName()
+                                                    : "none")
+                                        );
                                         SaDFrame.this.unitDetailsDialog.updateUnit(
-                                            u
+                                            u,
+                                            cityAtLocation
                                         );
                                         SaDFrame.this.board.clearSelected();
                                         if (Debug.getDebugExplore()) {
@@ -1191,9 +1342,17 @@ public class SaDFrame extends JFrame {
     public void startAttackMode(Unit unit) {
         this.controller.switchMode(UIMode.ATTACK);
         this.controller.getAttackCommander().setUnit(unit);
+        this.controller.getAttackController().activate();
+    }
+
+    public void startEscortMode(Unit unit) {
+        this.controller.switchMode(UIMode.ESCORT);
+        this.controller.getEscortCommander().setUnit(unit);
     }
 
     public void returnGameMode() {
+        // Clear any mode-specific state before switching
+        this.controller.getCurrentController().clearAction();
         this.controller.switchMode(UIMode.GAME);
         selectPlayer(this.game.currentPlayer());
     }

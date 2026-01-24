@@ -35,9 +35,23 @@ class MovementResolver {
      */
     private static ResponseCode resolveLoad(Unit u, Unit t) {
         if (t.getOwner() == u.getOwner()) {
+            // Don't try to load a unit that's already on this transport
+            if (u.isCarried() && u.onboard == t) {
+                return null;
+            }
             if (t.canCarry(u)) {
+                // If unit is on another transport, unload it first
+                if (u.onboard != null) {
+                    Unit oldTransport = u.onboard;
+                    oldTransport.removeCarried(u);
+                    Log.info(
+                        u,
+                        "Unloaded from " + oldTransport + " to load onto " + t
+                    );
+                }
                 t.addCarried(u);
-                return ResponseCode.YIELD_PASS;
+                // Unit is now loaded and in sentry mode - complete its turn
+                return ResponseCode.ORDER_AND_TURN_COMPLETE;
             }
         }
         return null;
@@ -48,6 +62,19 @@ class MovementResolver {
      * Handles city interaction, blocking, loading, and combat.
      */
     ResponseCode resolveMove(Unit u, final Location dest) {
+        return resolveMove(u, dest, null);
+    }
+
+    /**
+     * Resolves a unit's move to a destination location.
+     * Handles city interaction, blocking, loading, and combat.
+     * @param finalDest The final destination of the movement order (null if not part of multi-step movement)
+     */
+    ResponseCode resolveMove(
+        Unit u,
+        final Location dest,
+        final Location finalDest
+    ) {
         if (u.getLocation().equals(dest)) {
             throw new SaDException("Unit already at location!");
         }
@@ -101,7 +128,7 @@ class MovementResolver {
             if (blocking != null) {
                 ResponseCode rc = resolveLoad(u, blocking);
                 if (rc != null) {
-                    Log.warn(u, "resolve load problem! " + rc);
+                    Log.info(u, "Loaded onto transport " + blocking);
                     return rc;
                 }
             }
@@ -158,13 +185,31 @@ class MovementResolver {
         // Try to load onto blocking unit
         ResponseCode rc = resolveLoad(u, blocking);
         if (rc != null) {
-            Log.warn(u, "resolve load problem 2! " + rc + " " + blocking);
+            Log.info(u, "Loaded onto transport " + blocking);
             return rc;
         }
 
         // Check if blocked by friendly unit
         Player blocker = blocking.getOwner();
         if (blocker.equals(u.getOwner())) {
+            // Air units can fly over friendly units
+            if (u.getTravel() == Travel.AIR) {
+                Log.debug(u, "Air unit flying over friendly unit: " + blocking);
+                int pre = u.life().movesLeft();
+                u.move(dest);
+                int post = u.life().movesLeft();
+                if (post >= pre) {
+                    throw new SaDException("Unit didn't move!");
+                }
+                if (u.life().movesLeft() > 0) {
+                    Log.debug(u, "Moved - step complete");
+                    return ResponseCode.STEP_COMPLETE;
+                } else {
+                    Log.debug(u, "Moved - turn complete");
+                    return ResponseCode.TURN_COMPLETE;
+                }
+            }
+
             if (!u.turn().isKnownObstruction(dest)) {
                 u.turn().addObstruction(dest);
                 return ResponseCode.YIELD_PASS;
@@ -187,6 +232,26 @@ class MovementResolver {
                         blocking
                 );
                 return ResponseCode.YIELD_PASS;
+            }
+        }
+
+        // Enemy unit - check if air unit can fly over (only if not the final destination)
+        boolean isFinalDestination = (finalDest != null &&
+            dest.equals(finalDest));
+        if (u.getTravel() == Travel.AIR && !isFinalDestination) {
+            Log.debug(u, "Air unit flying over enemy unit: " + blocking);
+            int pre = u.life().movesLeft();
+            u.move(dest);
+            int post = u.life().movesLeft();
+            if (post >= pre) {
+                throw new SaDException("Unit didn't move!");
+            }
+            if (u.life().movesLeft() > 0) {
+                Log.debug(u, "Moved - step complete");
+                return ResponseCode.STEP_COMPLETE;
+            } else {
+                Log.debug(u, "Moved - turn complete");
+                return ResponseCode.TURN_COMPLETE;
             }
         }
 

@@ -192,7 +192,7 @@ public class Move extends Order {
                         " to " +
                         this.loc
                 );
-                resp = this.game.resolveMove(this.unit, dest);
+                resp = this.game.resolveMove(this.unit, dest, this.loc);
                 if (resp == ResponseCode.STEP_COMPLETE) {
                     continue;
                 } else if (resp == ResponseCode.TURN_COMPLETE) {
@@ -226,6 +226,19 @@ public class Move extends Order {
             }
             return new OrderResponse(resp, this, null);
         } else {
+            // Check if unit has moves left before attempting single-step move
+            if (!this.unit.life().hasMoves()) {
+                Log.debug(
+                    this.unit,
+                    "No moves left, completing turn without moving"
+                );
+                return new OrderResponse(
+                    ResponseCode.ORDER_AND_TURN_COMPLETE,
+                    this,
+                    null
+                );
+            }
+
             Log.info(
                 this.unit,
                 "Attempting move from " +
@@ -233,7 +246,7 @@ public class Move extends Order {
                     " to " +
                     dest
             );
-            resp = this.game.resolveMove(this.unit, dest);
+            resp = this.game.resolveMove(this.unit, dest, this.loc);
             if (resp == ResponseCode.TURN_COMPLETE) {
                 Log.info(this.unit, "Unit reports turn complete");
             } else if (resp == ResponseCode.DIED) {

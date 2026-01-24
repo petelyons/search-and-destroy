@@ -50,7 +50,12 @@ public abstract class Unit {
     public volatile long id;
     private volatile UnitTurnState turn;
     private boolean isDead = false; //Used to prevent endless looping during kill processing u->game->u->game->u->game...
+    private volatile boolean unloadingMode = false; // Transport is actively unloading troops
     public Life life;
+
+    // Production location tracking
+    public volatile String productionContinentName;
+    public volatile String productionCityName;
 
     public class Life {
 
@@ -121,6 +126,14 @@ public abstract class Unit {
                 return true;
             }
             return this.fuel > 0;
+        }
+
+        public int getFuel() {
+            return this.fuel;
+        }
+
+        public int getMaxFuel() {
+            return Unit.this.type.getFuel();
         }
 
         public boolean hasMoves() {
@@ -261,9 +274,20 @@ public abstract class Unit {
             return "None";
         }
         StringBuffer sb = new StringBuffer();
-        for (Unit u : this.carries) {
+        sb.append(this.carries.size());
+        sb.append(" unit");
+        if (this.carries.size() != 1) {
+            sb.append("s");
+        }
+        sb.append(" (");
+        for (int i = 0; i < this.carries.size(); i++) {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            Unit u = this.carries.get(i);
             sb.append(u.getType().getAbr());
         }
+        sb.append(")");
         return sb.toString();
     }
 
@@ -330,9 +354,9 @@ public abstract class Unit {
             Log.info(this, "Unloaded from transport " + transport);
         }
 
-        this.life.move();
-
         changeLoc(loc);
+
+        this.life.move();
         this.owner.adjustVisibility(this);
         this.game.trackUnit(this);
 
@@ -349,6 +373,10 @@ public abstract class Unit {
 
             // If this is a transport not along coast, carried units should be in sentry
             if (this.isTransport() && !isAlongCoast()) {
+                // Clear unloading mode when leaving coast
+                if (this.unloadingMode) {
+                    setUnloadingMode(false);
+                }
                 for (Unit u2 : this.carries) {
                     if (!u2.inSentryMode()) {
                         u2.orderSentry();
@@ -362,6 +390,26 @@ public abstract class Unit {
             City city = this.board.getCity(loc);
             if (city != null && city.getOwner() == getOwner()) {
                 this.turn.clearOrderAndCompleteTurn();
+            }
+        }
+
+        // Auto-load onto transport if moving into same hex
+        if (this.travel == Travel.LAND && !this.isCarried()) {
+            // Look for a friendly transport at this location
+            List<Unit> unitsHere = this.game.unitsAtLocation(loc);
+            for (Unit otherUnit : unitsHere) {
+                if (
+                    otherUnit != this &&
+                    otherUnit.getOwner() == this.owner &&
+                    otherUnit.isTransport() &&
+                    otherUnit.canLoad(this)
+                ) {
+                    // Auto-load onto the transport
+                    otherUnit.load(this);
+                    Log.info(this, "Auto-loaded onto transport at " + loc);
+                    this.turn.clearOrderAndCompleteTurn();
+                    break; // Only load onto one transport
+                }
             }
         }
 
@@ -413,6 +461,19 @@ public abstract class Unit {
 
     public boolean isDead() {
         return this.life.hasDied() || isDead;
+    }
+
+    public boolean isUnloadingMode() {
+        return this.unloadingMode;
+    }
+
+    public void setUnloadingMode(boolean unloading) {
+        this.unloadingMode = unloading;
+        if (unloading) {
+            Log.info(this, "Entering unloading mode");
+        } else {
+            Log.info(this, "Exiting unloading mode");
+        }
     }
 
     @Override
@@ -490,6 +551,37 @@ public abstract class Unit {
         return (this.type.canCarry(t));
     }
 
+    /**
+     * Check if this unit can load another unit
+     */
+    public boolean canLoad(Unit u) {
+        if (!canCarry()) {
+            return false;
+        }
+        if (!canCarry(u.getType())) {
+            return false;
+        }
+        if (carriedWeight() + u.getType().getWeight() > carriableWeight()) {
+            return false;
+        }
+        // Cargo planes can only load in cities
+        if (this.type == Type.CARGO) {
+            City city = this.board.getCity(this.loc);
+            return city != null && city.getOwner() == this.owner;
+        }
+        return true;
+    }
+
+    /**
+     * Load a unit onto this carrier/transport
+     */
+    public void load(Unit u) {
+        if (!canLoad(u)) {
+            throw new SaDException("Cannot load unit: " + u);
+        }
+        addCarried(u);
+    }
+
     public void addCarried(Unit u) {
         addCarried(u, true);
     }
@@ -540,7 +632,9 @@ public abstract class Unit {
                     this.loc.x + dx,
                     this.loc.y + dy
                 );
-                if (this.game.getBoard().onBoard(adjacent)) {
+                if (
+                    adjacent != null && this.game.getBoard().onBoard(adjacent)
+                ) {
                     // Check if any carried unit can move to this location
                     for (Unit u : this.carries) {
                         if (this.game.getBoard().isTravelable(u, adjacent)) {
@@ -679,6 +773,10 @@ public abstract class Unit {
         assignOrder(newMoveOrder(loc));
     }
 
+    public void orderEscort(Unit unitToEscort) {
+        assignOrder(newEscortOrder(unitToEscort));
+    }
+
     public void assignOrder(Order order) {
         this.order = order;
         // Wake up sleeping units when a new order is assigned
@@ -805,6 +903,16 @@ public abstract class Unit {
 
     public Sentry newSentryOrder() {
         return new Sentry(this.game, this);
+    }
+
+    public com.developingstorm.games.sad.orders.Escort newEscortOrder(
+        Unit unitToEscort
+    ) {
+        return new com.developingstorm.games.sad.orders.Escort(
+            this.game,
+            this,
+            unitToEscort
+        );
     }
 
     public Unload newUnloadOrder() {
@@ -995,7 +1103,7 @@ public abstract class Unit {
      * Checks if this unit (typically a transport on water) is along the coast.
      * Returns true if any adjacent hex is land.
      */
-    private boolean isAlongCoast() {
+    public boolean isAlongCoast() {
         if (!this.board.isWater(this.loc)) {
             return false;
         }

@@ -32,6 +32,10 @@ public class UnitSerializer {
         json.put("type", unit.getType().name());
         json.put("name", unit.name);
 
+        // Production location
+        json.put("productionContinentName", unit.productionContinentName);
+        json.put("productionCityName", unit.productionCityName);
+
         // Ownership and location
         json.put("ownerIndex", unit.getOwner().id);
         JsonObj locJson = new JsonObj();
@@ -42,6 +46,7 @@ public class UnitSerializer {
         // State
         json.put("hits", unit.life.hits);
         json.put("dist", unit.dist);
+        json.put("unloadingMode", unit.isUnloadingMode());
 
         // Carrying units
         List<Unit> carrying = unit.carries;
@@ -174,6 +179,10 @@ public class UnitSerializer {
         data.id = json.getLong("id");
         data.typeName = json.getString("type");
         data.name = json.getString("name");
+        data.productionContinentName = json.getString(
+            "productionContinentName"
+        );
+        data.productionCityName = json.getString("productionCityName");
         data.ownerIndex = json.getInteger("ownerIndex");
 
         JsonObj locJson = json.getObj("location");
@@ -182,6 +191,9 @@ public class UnitSerializer {
 
         data.hits = json.getInteger("hits");
         data.dist = json.getInteger("dist");
+
+        Boolean unloadingMode = json.getBoolean("unloadingMode");
+        data.unloadingMode = (unloadingMode != null) ? unloadingMode : false;
 
         // Extract carrying IDs (to be resolved later)
         Object[] carryingArray = json.getArray("carrying");
@@ -222,11 +234,14 @@ public class UnitSerializer {
         public long id;
         public String typeName;
         public String name;
+        public String productionContinentName;
+        public String productionCityName;
         public int ownerIndex;
         public int x;
         public int y;
         public int hits;
         public int dist;
+        public boolean unloadingMode;
         public List<Long> carryingIds;
         public Long onboardId;
         public String orderType;

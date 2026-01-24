@@ -20,6 +20,7 @@ public class Continent {
     private final List<City> cities;
     private final List<City> coastalCities;
     private final List<City> inlandCities;
+    private String name;
 
     Continent(Board b, int id) {
         this.board = b;
@@ -29,10 +30,19 @@ public class Continent {
         this.coastWater = new HashSet<Location>();
         this.coastalCities = new ArrayList<City>();
         this.inlandCities = new ArrayList<City>();
+        this.name = ContinentNames.getName();
     }
 
     public String toString() {
-        return "Ct-" + id;
+        return name != null ? name : "Ct-" + id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void add(Location loc) {
@@ -124,5 +134,28 @@ public class Continent {
 
     public List<City> inlandCities() {
         return inlandCities;
+    }
+
+    /**
+     * Serializes continent name to JSON for save games.
+     * Only the ID and name need to be saved - everything else is recalculated from the map.
+     */
+    public com.developingstorm.games.sad.util.json.JsonObj toJson() {
+        com.developingstorm.games.sad.util.json.JsonObj json =
+            new com.developingstorm.games.sad.util.json.JsonObj();
+        json.put("id", id);
+        json.put("name", name);
+        return json;
+    }
+
+    /**
+     * Restores continent name from JSON.
+     */
+    public void fromJson(com.developingstorm.games.sad.util.json.JsonObj json) {
+        // ID is already set during construction
+        String savedName = json.getString("name");
+        if (savedName != null) {
+            this.name = savedName;
+        }
     }
 }

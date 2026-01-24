@@ -65,7 +65,8 @@ class PathCalculator {
             player,
             to,
             checkBlocked,
-            canExplore
+            canExplore,
+            from // Pass starting location so MapState can allow starting from blocked hex
         );
 
         MapState start = MapState.getUntested(from);

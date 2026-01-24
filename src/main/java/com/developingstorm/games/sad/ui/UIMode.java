@@ -6,4 +6,5 @@ public enum UIMode {
     EXPLORE,
     PATROL,
     ATTACK,
+    ESCORT,
 }

@@ -257,6 +257,9 @@ public class Board extends HexBoard {
     }
 
     private void calcContinents() {
+        // Reset continent names pool for new map
+        ContinentNames.reset();
+
         int count = 0;
         contData = new int[this.map.getWidth()][this.map.getHeight()];
         for (int x = 0; x < this.map.getWidth(); x++) {

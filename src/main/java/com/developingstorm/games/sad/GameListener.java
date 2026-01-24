@@ -14,6 +14,8 @@ public interface GameListener {
 
     void trackUnit(Unit u);
 
+    void trackLocation(Location loc);
+
     void killUnit(Unit u, boolean showDeath);
 
     void hitLocation(Location loc);

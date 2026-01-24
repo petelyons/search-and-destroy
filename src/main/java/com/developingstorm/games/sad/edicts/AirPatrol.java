@@ -21,8 +21,18 @@ public class AirPatrol extends Edict {
     @Override
     public void execute(Game game) {
         List<Unit> units = unitsMatchingTravel(Travel.AIR);
+        boolean assignedOrders = false;
         if (!units.isEmpty()) {
             for (Unit u : units) {
+                // Only assign patrol if unit doesn't have orders (or has NONE order)
+                if (
+                    u.getOrder() != null &&
+                    u.getOrder().getType() !=
+                    com.developingstorm.games.sad.OrderType.NONE
+                ) {
+                    continue;
+                }
+
                 List<Location> locs = this.city.getLocation().getCircle(
                     u.life().turnAroundDist()
                 );
@@ -35,6 +45,7 @@ public class AirPatrol extends Edict {
                         // If this unit was waiting for player orders, deselect it and queue for execution
                         if (game.selectedUnit() == u) {
                             game.deselectUnit();
+                            assignedOrders = true;
                         }
                         // Push to pendingPlay so it executes the edict order immediately
                         u.getOwner().pushPendingPlay(u);
@@ -52,6 +63,10 @@ public class AirPatrol extends Edict {
                     );
                 }
             }
+        }
+        // Wake up the game thread if we assigned orders to a unit that was waiting
+        if (assignedOrders) {
+            game.continueGame();
         }
     }
 }

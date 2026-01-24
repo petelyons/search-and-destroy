@@ -179,6 +179,8 @@ public class CityMenuBuilder {
                 } else {
                     this.c.getGovernor().setAirPatrol();
                 }
+                // Refresh the display to show/hide patrol lines
+                this.frame.getCanvas().repaint();
             });
         });
         AUTO_SENTRY_SEL.setSelected(this.c.getGovernor().hasAutoSentry());

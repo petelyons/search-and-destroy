@@ -20,21 +20,44 @@ public class PatrolCommander extends BaseCommander {
     private Unit unit;
     private List<Location> waypoints;
     private Patrol.PatrolMode mode;
+    private City startCity; // For city air patrols
 
     public PatrolCommander(SaDFrame frame, Game game) {
         super(frame, game);
         this.waypoints = new ArrayList<>();
         this.mode = Patrol.PatrolMode.LOOP; // Default to LOOP
+        this.startCity = null;
     }
 
     public void setUnit(Unit u) {
         this.unit = u;
+        this.startCity = null;
         this.waypoints.clear();
         // Start with the unit's current location as the first waypoint
         if (u != null) {
             this.waypoints.add(u.getLocation());
             Log.info("Starting patrol at unit location: " + u.getLocation());
             updateVisualization();
+            // Clear any existing patrol segments display
+            this.canvas.clearPatrolSegments();
+        }
+    }
+
+    /**
+     * Starts creating a city air patrol without requiring a specific unit.
+     * Used when creating standing orders for a city.
+     * @param startCity The city where the patrol should start
+     */
+    public void startCityAirPatrol(City startCity) {
+        this.unit = null; // No specific unit
+        this.startCity = startCity;
+        this.waypoints.clear();
+        if (startCity != null) {
+            this.waypoints.add(startCity.getLocation());
+            Log.info("Starting city air patrol at " + startCity.getName());
+            updateVisualization();
+            // Clear any existing patrol segments display
+            this.canvas.clearPatrolSegments();
         }
     }
 
@@ -64,6 +87,8 @@ public class PatrolCommander extends BaseCommander {
         this.waypoints.add(loc);
         Log.info("Added waypoint " + this.waypoints.size() + " at " + loc);
         updateVisualization();
+        // Update the patrol segments to show completed line
+        updatePatrolSegments();
     }
 
     /**
@@ -199,17 +224,34 @@ public class PatrolCommander extends BaseCommander {
      * Creates and assigns the patrol order to the unit
      */
     public boolean createPatrol() {
+        Log.info(
+            "createPatrol() called - unit: " +
+                this.unit +
+                ", waypoints: " +
+                this.waypoints.size() +
+                ", valid: " +
+                isValidPatrol()
+        );
+
         if (!isValidPatrol()) {
-            Log.warn("Cannot create patrol: " + getValidationMessage());
+            String msg = getValidationMessage();
+            Log.warn("Cannot create patrol: " + msg);
             return false;
         }
 
         try {
             Patrol.PatrolMode mode = getMode();
+            Log.info("Creating patrol with mode: " + mode);
             Patrol patrol = this.unit.newPatrolOrder(this.waypoints, mode);
+            Log.info("Patrol order created, assigning to unit");
             this.unit.assignOrder(patrol);
+            Log.info("Patrol assigned, order is now: " + this.unit.getOrder());
+            // Push to pendingPlay so the unit executes the patrol immediately
+            this.unit.getOwner().pushPendingPlay(this.unit);
+            // Wake up the game thread to process the patrol order
+            this.game.continueGame();
             Log.info(
-                "Patrol created with " +
+                "Patrol created successfully with " +
                     this.waypoints.size() +
                     " waypoints in " +
                     mode +
@@ -218,8 +260,106 @@ public class PatrolCommander extends BaseCommander {
             return true;
         } catch (Exception e) {
             Log.error("Failed to create patrol: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
+    }
+
+    /**
+     * Creates a city-level air patrol for the current city.
+     * The patrol will be automatically assigned to fighters/bombers produced at or landing at the city.
+     * @return true if successful, false if invalid
+     */
+    public boolean createCityAirPatrol() {
+        if (this.waypoints.size() < 2) {
+            Log.warn(
+                "Cannot create city air patrol: Need at least 2 waypoints"
+            );
+            return false;
+        }
+
+        // Determine which city to assign the patrol to based on first waypoint
+        Location firstWaypoint = this.waypoints.get(0);
+        City city = this.game.getBoard().getCity(firstWaypoint);
+
+        if (city == null) {
+            Log.warn(
+                "Cannot create city air patrol: First waypoint must be a city"
+            );
+            return false;
+        }
+
+        // Verify city ownership
+        if (!city.getOwner().equals(this.game.currentPlayer())) {
+            Log.warn(
+                "Cannot create city air patrol: City is not owned by current player"
+            );
+            return false;
+        }
+
+        try {
+            Patrol.PatrolMode mode = getMode();
+
+            // Validate patrol for air units
+            Location lastWaypoint = this.waypoints.get(
+                this.waypoints.size() - 1
+            );
+
+            if (
+                mode == Patrol.PatrolMode.LOOP &&
+                !firstWaypoint.equals(lastWaypoint)
+            ) {
+                Log.warn(
+                    "Cannot create city air patrol: LOOP mode must start and end at same city"
+                );
+                return false;
+            }
+
+            if (mode == Patrol.PatrolMode.LINEAR) {
+                City lastCity = this.game.getBoard().getCity(lastWaypoint);
+                if (lastCity == null) {
+                    Log.warn(
+                        "Cannot create city air patrol: LINEAR mode endpoints must both be cities"
+                    );
+                    return false;
+                }
+            }
+
+            // Create the city air patrol edict
+            com.developingstorm.games.sad.edicts.CityAirPatrol cityAirPatrol =
+                new com.developingstorm.games.sad.edicts.CityAirPatrol(
+                    this.game.currentPlayer(),
+                    city,
+                    this.waypoints,
+                    mode
+                );
+
+            // Assign to the city
+            city.getGovernor().setCityAirPatrol(cityAirPatrol);
+
+            Log.info(
+                "City air patrol created for " +
+                    city.getName() +
+                    " with " +
+                    this.waypoints.size() +
+                    " waypoints in " +
+                    mode +
+                    " mode"
+            );
+            return true;
+        } catch (Exception e) {
+            Log.error("Failed to create city air patrol: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Clears the patrol creation visuals (arrow, segments, selected hexes)
+     */
+    public void clearPatrolCreationVisuals() {
+        this.canvas.clearSelected();
+        this.canvas.clearPatrolSegments();
+        this.canvas.clearArrow();
     }
 
     /**
@@ -227,7 +367,7 @@ public class PatrolCommander extends BaseCommander {
      */
     public void cancelPatrol() {
         this.waypoints.clear();
-        this.canvas.clearSelected();
+        clearPatrolCreationVisuals();
         this.frame.returnGameMode();
     }
 
@@ -237,6 +377,32 @@ public class PatrolCommander extends BaseCommander {
     private void updateVisualization() {
         if (this.canvas != null) {
             this.canvas.setLocationsSelected(this.waypoints, true);
+        }
+    }
+
+    /**
+     * Updates the patrol segments display showing completed lines
+     */
+    private void updatePatrolSegments() {
+        if (this.canvas != null && this.waypoints.size() >= 2) {
+            // Determine color based on unit type or default to CYAN for air
+            java.awt.Color lineColor = java.awt.Color.CYAN; // Default for air patrols
+
+            if (this.unit != null) {
+                switch (this.unit.getTravel()) {
+                    case AIR:
+                        lineColor = java.awt.Color.CYAN;
+                        break;
+                    case SEA:
+                        lineColor = java.awt.Color.BLUE;
+                        break;
+                    case LAND:
+                        lineColor = java.awt.Color.GREEN.darker().darker();
+                        break;
+                }
+            }
+
+            this.canvas.setPatrolSegments(this.waypoints, lineColor, true); // true = dashed
         }
     }
 

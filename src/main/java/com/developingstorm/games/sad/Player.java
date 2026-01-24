@@ -7,15 +7,44 @@ import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.Graph;
 import com.developingstorm.util.GraphNode;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
 
 public class Player implements UnitLens, LocationLens {
+
+    /**
+     * Tracks last known position of enemy units for fog-of-war indicators.
+     */
+    public static class LastSeenInfo {
+
+        public final Location location;
+        public final int turnSeen;
+        public final Type unitType;
+        public final Vision visionType;
+        public final Player owner;
+
+        public LastSeenInfo(
+            Location location,
+            int turnSeen,
+            Type unitType,
+            Vision visionType,
+            Player owner
+        ) {
+            this.location = location;
+            this.turnSeen = turnSeen;
+            this.unitType = unitType;
+            this.visionType = visionType;
+            this.owner = owner;
+        }
+    }
 
     public int id;
     protected Board board;
@@ -33,6 +62,9 @@ public class Player implements UnitLens, LocationLens {
     private volatile LinkedList<Unit> pendingOrders;
     private EdictFactory edictFactory;
 
+    // Last known positions of enemy units (for fog-of-war indicators)
+    private Map<Long, LastSeenInfo> lastSeenEnemies;
+
     public Player(String name, int id) {
         this.id = id;
         this.name = name;
@@ -43,6 +75,7 @@ public class Player implements UnitLens, LocationLens {
         this.enemyUnits = new HashSet<Unit>();
         this.pendingPlay = new LinkedList<>();
         this.pendingOrders = new LinkedList<>();
+        this.lastSeenEnemies = new HashMap<>();
 
         this.edictFactory = new EdictFactory(this);
     }
@@ -73,7 +106,9 @@ public class Player implements UnitLens, LocationLens {
     }
 
     public void pushPendingPlay(Unit u) {
-        this.pendingPlay.push(u);
+        if (u != null && !u.isDead()) {
+            this.pendingPlay.push(u);
+        }
     }
 
     public Unit popPendingOrders() {
@@ -199,6 +234,10 @@ public class Player implements UnitLens, LocationLens {
         return cities;
     }
 
+    public List<Unit> getUnits() {
+        return units;
+    }
+
     public List<City> getCoastalCities() {
         List<City> list = new ArrayList<City>();
         for (City c : this.cities) {
@@ -292,11 +331,25 @@ public class Player implements UnitLens, LocationLens {
                         Player p = u.getOwner();
                         if (p != this) {
                             this.enemyUnits.add(u);
+
+                            // Track last seen position for fog-of-war indicators
+                            Vision visionAtLoc = getVisibility(loc);
+                            LastSeenInfo info = new LastSeenInfo(
+                                loc,
+                                this.game.getTurn(),
+                                u.getType(),
+                                visionAtLoc,
+                                p
+                            );
+                            this.lastSeenEnemies.put(u.id, info);
                         }
                     }
                 }
             }
         }
+
+        // Clean up last-seen entries for units that are now visible or dead
+        cleanupLastSeenEnemies();
     }
 
     public Set<Unit> getKnownEnemies() {
@@ -696,6 +749,68 @@ public class Player implements UnitLens, LocationLens {
             return u;
         }
         return null;
+    }
+
+    /**
+     * Gets the collection of last-seen enemy positions for fog-of-war indicators.
+     * @return Collection of LastSeenInfo objects
+     */
+    public Collection<LastSeenInfo> getLastSeenEnemies() {
+        return this.lastSeenEnemies.values();
+    }
+
+    /**
+     * Removes a unit from the last-seen tracking (called when unit dies).
+     * @param unitId The ID of the unit to remove
+     */
+    public void removeLastSeenEnemy(long unitId) {
+        this.lastSeenEnemies.remove(unitId);
+    }
+
+    /**
+     * Cleans up stale last-seen entries:
+     * - Removes entries for dead units
+     * - Removes entries for locations that are currently visible
+     * - Removes very old entries (10+ turns)
+     */
+    private void cleanupLastSeenEnemies() {
+        int currentTurn = this.game.getTurn();
+        List<Long> toRemove = new ArrayList<>();
+
+        for (Map.Entry<
+            Long,
+            LastSeenInfo
+        > entry : this.lastSeenEnemies.entrySet()) {
+            Long unitId = entry.getKey();
+            LastSeenInfo info = entry.getValue();
+
+            // Check if unit still exists
+            Unit unit = this.game.getUnitById(unitId);
+            if (unit == null || unit.isDead()) {
+                toRemove.add(unitId);
+                continue;
+            }
+
+            // Check if location is currently visible (unit moved or we can see it)
+            if (getVisibility(info.location) != Vision.NONE) {
+                Unit visibleAtLoc = visibleUnit(info.location);
+                // If we can see a unit at that location now, remove the old marker
+                if (visibleAtLoc != null) {
+                    toRemove.add(unitId);
+                    continue;
+                }
+            }
+
+            // Remove very old entries (10+ turns old)
+            int age = currentTurn - info.turnSeen;
+            if (age > 10) {
+                toRemove.add(unitId);
+            }
+        }
+
+        for (Long unitId : toRemove) {
+            this.lastSeenEnemies.remove(unitId);
+        }
     }
 
     public void unitsNeedOrders() {

@@ -3,7 +3,6 @@ package com.developingstorm.games.sad.ui.controls;
 import com.developingstorm.games.hexboard.BoardHex;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.ui.SaDFrame;
-import java.awt.Cursor;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -11,17 +10,17 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 
 /**
- * Controller for attack/bombardment mode
+ * Controller for escort mode
  */
-public class AttackModeController extends BaseController {
+public class EscortModeController extends BaseController {
 
-    private final AttackCommander commander;
+    private final EscortCommander commander;
     private final SaDFrame frame;
     private final KeyListener keyListener;
     private final HexMouseListenerAdapter hexMouseListenerAdapter;
     private final HexMouseMotionListenerAdapter hexMouseMotionListenerAdapter;
 
-    public AttackModeController(SaDFrame frame, AttackCommander commander) {
+    public EscortModeController(SaDFrame frame, EscortCommander commander) {
         this.frame = frame;
         this.commander = commander;
 
@@ -29,7 +28,7 @@ public class AttackModeController extends BaseController {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-                    AttackModeController.this.commander.cancelAttack();
+                    EscortModeController.this.commander.cancelEscort();
                 }
             }
 
@@ -56,14 +55,14 @@ public class AttackModeController extends BaseController {
                     Location loc = hex.getLocation();
 
                     if (e.getButton() == MouseEvent.BUTTON1) {
-                        // Left click - select target
-                        AttackModeController.this.commander.selectTarget(loc);
+                        // Left click - select target to escort
+                        EscortModeController.this.commander.selectTarget(loc);
                     } else if (
                         e.getButton() == MouseEvent.BUTTON3 ||
                         e.isPopupTrigger()
                     ) {
                         // Right click - cancel
-                        AttackModeController.this.commander.cancelAttack();
+                        EscortModeController.this.commander.cancelEscort();
                     }
                 }
 
@@ -88,24 +87,15 @@ public class AttackModeController extends BaseController {
     }
 
     @Override
-    public void clearAction() {
-        // Restore default cursor when leaving attack mode
-        this.frame.getCanvas().setCursor(
-            Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR)
-        );
-    }
+    public void clearAction() {}
 
     public void activate() {
         updateStatusMessage();
-        // Set crosshair cursor to indicate targeting mode
-        this.frame.getCanvas().setCursor(
-            Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR)
-        );
     }
 
     private void updateStatusMessage() {
         String msg =
-            "Bombardment Mode: Click on a highlighted hex to attack. ESC or right-click to cancel.";
+            "Escort Mode: Click on a highlighted ship to escort. ESC or right-click to cancel.";
         // TODO: Re-enable when setStatusMessage is available
         // this.frame.setStatusMessage(msg);
     }

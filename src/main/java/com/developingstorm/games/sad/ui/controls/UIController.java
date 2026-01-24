@@ -78,6 +78,17 @@ public class UIController {
         }
     }
 
+    static class EscortMode extends Mode {
+
+        EscortMode(SaDFrame frame, Game game) {
+            this.commander = new EscortCommander(frame, game);
+            this.controller = new EscortModeController(
+                frame,
+                (EscortCommander) this.commander
+            );
+        }
+    }
+
     private UIMode modeMode;
     private Mode mode;
     private SaDFrame frame;
@@ -98,6 +109,7 @@ public class UIController {
         this.modes.put(UIMode.PATHS, new PathsMode(this.frame, this.game));
         this.modes.put(UIMode.EXPLORE, new ExploreMode(this.frame, this.game));
         this.modes.put(UIMode.PATROL, new PatrolMode(this.frame, this.game));
+        this.modes.put(UIMode.ESCORT, new EscortMode(this.frame, this.game));
         this.modes.put(UIMode.ATTACK, new AttackMode(this.frame, this.game));
 
         switchMode(UIMode.GAME);
@@ -211,5 +223,19 @@ public class UIController {
     public AttackCommander getAttackCommander() {
         Mode mode = this.modes.get(UIMode.ATTACK);
         return (AttackCommander) mode.commander;
+    }
+
+    public AttackModeController getAttackController() {
+        Mode mode = this.modes.get(UIMode.ATTACK);
+        return (AttackModeController) mode.controller;
+    }
+
+    public EscortCommander getEscortCommander() {
+        Mode mode = this.modes.get(UIMode.ESCORT);
+        return (EscortCommander) mode.commander;
+    }
+
+    public BaseController getCurrentController() {
+        return this.mode.controller;
     }
 }

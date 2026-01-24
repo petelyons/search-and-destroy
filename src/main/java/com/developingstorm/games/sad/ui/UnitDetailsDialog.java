@@ -1,7 +1,9 @@
 package com.developingstorm.games.sad.ui;
 
+import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Unit;
 import java.awt.*;
+import java.util.List;
 import javax.swing.*;
 
 /**
@@ -20,7 +22,11 @@ public class UnitDetailsDialog extends JPanel {
     private JLabel movementLabel;
     private JLabel orderLabel;
     private JLabel cargoLabel;
+    private JLabel productionLabel;
+    private JLabel turnsLabel;
+    private JLabel unitsHereLabel;
     private SaDBoardContext context;
+    private JPanel detailPanel;
 
     public UnitDetailsDialog(SaDBoardContext context) {
         super();
@@ -43,11 +49,10 @@ public class UnitDetailsDialog extends JPanel {
     }
 
     private void initComponents() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.insets = new Insets(3, 3, 3, 3);
+        this.detailPanel = new JPanel(new GridBagLayout());
+        this.detailPanel.setBorder(
+            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        );
 
         // Initialize labels
         this.iconLabel = new JLabel();
@@ -69,31 +74,11 @@ public class UnitDetailsDialog extends JPanel {
         this.movementLabel = new JLabel();
         this.orderLabel = new JLabel();
         this.cargoLabel = new JLabel();
+        this.productionLabel = new JLabel();
+        this.turnsLabel = new JLabel();
+        this.unitsHereLabel = new JLabel();
 
-        // Add icon panel at the top, centered, spanning both columns
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 2;
-        gbc.anchor = GridBagConstraints.CENTER;
-        gbc.insets = new Insets(0, 0, 10, 0);
-        panel.add(this.iconPanel, gbc);
-
-        // Reset for regular rows
-        gbc.gridwidth = 1;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.insets = new Insets(3, 3, 3, 3);
-
-        // Add rows (starting from row 1 since icon is at row 0)
-        addRow(panel, gbc, 1, "Name:", this.nameLabel);
-        addRow(panel, gbc, 2, "Type:", this.typeLabel);
-        addRow(panel, gbc, 3, "Owner:", this.ownerLabel);
-        addRow(panel, gbc, 4, "Location:", this.locationLabel);
-        addRow(panel, gbc, 5, "Health:", this.healthLabel);
-        addRow(panel, gbc, 6, "Movement:", this.movementLabel);
-        addRow(panel, gbc, 7, "Order:", this.orderLabel);
-        addRow(panel, gbc, 8, "Cargo:", this.cargoLabel);
-
-        add(panel, BorderLayout.CENTER);
+        add(this.detailPanel, BorderLayout.CENTER);
     }
 
     private void addRow(
@@ -120,6 +105,13 @@ public class UnitDetailsDialog extends JPanel {
      * Updates the dialog with information about the given unit.
      */
     public void updateUnit(Unit unit) {
+        updateUnit(unit, null);
+    }
+
+    /**
+     * Updates the dialog with information about the given unit and optional city.
+     */
+    public void updateUnit(Unit unit, City cityAtLocation) {
         System.out.println(
             "UnitDetailsDialog.updateUnit called with unit: " + unit
         );
@@ -130,6 +122,18 @@ public class UnitDetailsDialog extends JPanel {
         System.out.println(
             "Updating dialog for unit: " + unit.name + " (id=" + unit.id + ")"
         );
+
+        // Check if the unit is in a city - if so, show both unit and city info
+        if (cityAtLocation != null) {
+            updateUnitAndCity(unit, cityAtLocation);
+            return;
+        }
+
+        // Clear and rebuild panel for unit display
+        this.detailPanel.removeAll();
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(3, 3, 3, 3);
 
         // Set unit icon with player color background
         int iconIndex = unit.getType().getIcon();
@@ -149,9 +153,18 @@ public class UnitDetailsDialog extends JPanel {
         this.healthLabel.setText(
             unit.life().hits + "/" + unit.getType().getHits()
         );
-        this.movementLabel.setText(
-            unit.life().movesLeft() + "/" + unit.getType().getDist()
-        );
+        // Show movement and fuel for air units
+        String movementText =
+            unit.life().movesLeft() + "/" + unit.getType().getDist();
+        if (unit.getTravel() == com.developingstorm.games.sad.Travel.AIR) {
+            movementText +=
+                " [Fuel: " +
+                unit.life().remainingFuel() +
+                "/" +
+                unit.getMaxTravel() +
+                "]";
+        }
+        this.movementLabel.setText(movementText);
 
         String orderText = "None";
         if (unit.getOrder() != null) {
@@ -163,7 +176,221 @@ public class UnitDetailsDialog extends JPanel {
         String cargoText = getCargoText(unit);
         this.cargoLabel.setText(cargoText);
 
+        // Add icon panel at the top
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(0, 0, 10, 0);
+        this.detailPanel.add(this.iconPanel, gbc);
+
+        // Reset for regular rows
+        gbc.gridwidth = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(3, 3, 3, 3);
+
+        // Add unit information rows
+        addRow(this.detailPanel, gbc, 1, "Name:", this.nameLabel);
+        addRow(this.detailPanel, gbc, 2, "Type:", this.typeLabel);
+        addRow(this.detailPanel, gbc, 3, "Owner:", this.ownerLabel);
+        addRow(this.detailPanel, gbc, 4, "Location:", this.locationLabel);
+        addRow(this.detailPanel, gbc, 5, "Health:", this.healthLabel);
+        addRow(this.detailPanel, gbc, 6, "Movement:", this.movementLabel);
+        addRow(this.detailPanel, gbc, 7, "Order:", this.orderLabel);
+        addRow(this.detailPanel, gbc, 8, "Cargo:", this.cargoLabel);
+
         // Panel is always visible when docked
+        revalidate();
+        repaint();
+    }
+
+    /**
+     * Updates the dialog with information about both a unit and the city it's in.
+     */
+    public void updateUnitAndCity(Unit unit, City city) {
+        // Clear and rebuild panel for combined display
+        this.detailPanel.removeAll();
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(3, 3, 3, 3);
+
+        // Set unit icon with player color background
+        int iconIndex = unit.getType().getIcon();
+        Image iconImage = GameIcons.get().getImages()[iconIndex];
+        this.iconLabel.setIcon(new ImageIcon(iconImage));
+        Color playerColor = this.context.getPlayerColor(unit.getOwner());
+        this.iconPanel.setBackground(playerColor);
+
+        // Add icon panel at the top
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(0, 0, 10, 0);
+        this.detailPanel.add(this.iconPanel, gbc);
+
+        // Reset for regular rows
+        gbc.gridwidth = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(3, 3, 3, 3);
+
+        // Unit section
+        this.nameLabel.setText(
+            unit.name != null ? unit.name : "Unit #" + unit.id
+        );
+        this.typeLabel.setText(unit.getType().toString());
+        this.ownerLabel.setText(unit.getOwner().toString());
+        this.locationLabel.setText(unit.getLocation().toString());
+        this.healthLabel.setText(
+            unit.life().hits + "/" + unit.getType().getHits()
+        );
+
+        String movementText =
+            unit.life().movesLeft() + "/" + unit.getType().getDist();
+        if (unit.getTravel() == com.developingstorm.games.sad.Travel.AIR) {
+            movementText +=
+                " [Fuel: " +
+                unit.life().remainingFuel() +
+                "/" +
+                unit.getMaxTravel() +
+                "]";
+        }
+        this.movementLabel.setText(movementText);
+
+        String orderText = "None";
+        if (unit.getOrder() != null) {
+            orderText = unit.getOrder().getType().toString();
+        }
+        this.orderLabel.setText(orderText);
+        this.cargoLabel.setText(getCargoText(unit));
+
+        int row = 1;
+        addRow(this.detailPanel, gbc, row++, "Unit:", this.nameLabel);
+        addRow(this.detailPanel, gbc, row++, "Type:", this.typeLabel);
+        addRow(this.detailPanel, gbc, row++, "Owner:", this.ownerLabel);
+        addRow(this.detailPanel, gbc, row++, "Health:", this.healthLabel);
+        addRow(this.detailPanel, gbc, row++, "Movement:", this.movementLabel);
+        addRow(this.detailPanel, gbc, row++, "Order:", this.orderLabel);
+        addRow(this.detailPanel, gbc, row++, "Cargo:", this.cargoLabel);
+
+        // Add separator
+        gbc.gridx = 0;
+        gbc.gridy = row++;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(10, 0, 10, 0);
+        this.detailPanel.add(new javax.swing.JSeparator(), gbc);
+
+        // Reset
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.insets = new Insets(3, 3, 3, 3);
+
+        // City section
+        this.productionLabel.setText(
+            city.getProduction() != null
+                ? city.getProduction().toString()
+                : "None"
+        );
+        String turnsText = "-";
+        if (city.getProduction() != null) {
+            turnsText = "Building...";
+        }
+        this.turnsLabel.setText(turnsText);
+
+        addRow(
+            this.detailPanel,
+            gbc,
+            row++,
+            "City:",
+            new JLabel(city.getName() != null ? city.getName() : "Unnamed")
+        );
+        addRow(
+            this.detailPanel,
+            gbc,
+            row++,
+            "Production:",
+            this.productionLabel
+        );
+        addRow(this.detailPanel, gbc, row++, "Turns:", this.turnsLabel);
+
+        revalidate();
+        repaint();
+    }
+
+    /**
+     * Updates the dialog with information about the given city.
+     */
+    public void updateCity(City city, List<Unit> unitsAtLocation) {
+        if (city == null) {
+            clearUnit();
+            return;
+        }
+
+        // Clear and rebuild panel for city display
+        this.detailPanel.removeAll();
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(3, 3, 3, 3);
+
+        // Set city icon
+        int iconIndex = 16; // City icon index
+        Image iconImage = GameIcons.get().getImages()[iconIndex];
+        this.iconLabel.setIcon(new ImageIcon(iconImage));
+
+        // Set background color to owner's color or gray if unowned
+        Color cityColor = Color.LIGHT_GRAY;
+        if (city.getOwner() != null) {
+            cityColor = this.context.getPlayerColor(city.getOwner());
+        }
+        this.iconPanel.setBackground(cityColor);
+
+        // Set city information
+        this.nameLabel.setText(
+            city.getName() != null ? city.getName() : "Unnamed City"
+        );
+        this.ownerLabel.setText(
+            city.getOwner() != null ? city.getOwner().toString() : "Neutral"
+        );
+        this.locationLabel.setText(city.getLocation().toString());
+        this.productionLabel.setText(
+            city.getProduction() != null
+                ? city.getProduction().toString()
+                : "None"
+        );
+
+        // Calculate turns until next unit - for now just show if producing
+        String turnsText = "-";
+        if (city.getProduction() != null) {
+            turnsText = "Building...";
+        }
+        this.turnsLabel.setText(turnsText);
+
+        // Count units at this location
+        int unitCount = unitsAtLocation != null ? unitsAtLocation.size() : 0;
+        this.unitsHereLabel.setText(String.valueOf(unitCount));
+
+        // Add icon panel at the top
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(0, 0, 10, 0);
+        this.detailPanel.add(this.iconPanel, gbc);
+
+        // Reset for regular rows
+        gbc.gridwidth = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(3, 3, 3, 3);
+
+        // Add city information rows
+        addRow(this.detailPanel, gbc, 1, "Name:", this.nameLabel);
+        addRow(this.detailPanel, gbc, 2, "Owner:", this.ownerLabel);
+        addRow(this.detailPanel, gbc, 3, "Location:", this.locationLabel);
+        addRow(this.detailPanel, gbc, 4, "Production:", this.productionLabel);
+        addRow(this.detailPanel, gbc, 5, "Turns:", this.turnsLabel);
+        addRow(this.detailPanel, gbc, 6, "Units Here:", this.unitsHereLabel);
+
         revalidate();
         repaint();
     }

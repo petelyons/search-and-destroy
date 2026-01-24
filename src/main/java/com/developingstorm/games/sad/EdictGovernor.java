@@ -2,6 +2,7 @@ package com.developingstorm.games.sad;
 
 import com.developingstorm.games.sad.edicts.AirPatrol;
 import com.developingstorm.games.sad.edicts.AutoSentry;
+import com.developingstorm.games.sad.edicts.CityAirPatrol;
 import com.developingstorm.games.sad.edicts.SendAirUnits;
 import com.developingstorm.games.sad.edicts.SendLandUnits;
 import com.developingstorm.games.sad.edicts.SendSeaUnits;
@@ -20,6 +21,7 @@ public class EdictGovernor {
     private volatile SendSeaUnits seaPath;
     private volatile AirPatrol airPatrol;
     private volatile AutoSentry autoSentry;
+    private volatile CityAirPatrol cityAirPatrol; // New persistent city-level air patrol
 
     private final Game game;
 
@@ -95,10 +97,29 @@ public class EdictGovernor {
         return this.autoSentry != null;
     }
 
+    public void setCityAirPatrol(CityAirPatrol patrol) {
+        this.cityAirPatrol = patrol;
+    }
+
+    public CityAirPatrol getCityAirPatrol() {
+        return this.cityAirPatrol;
+    }
+
+    public void clearCityAirPatrol() {
+        this.cityAirPatrol = null;
+    }
+
+    public boolean hasCityAirPatrol() {
+        return this.cityAirPatrol != null;
+    }
+
     private List<Edict> getEdicts() {
         List<Edict> edicts = new ArrayList<Edict>();
         if (this.airPatrol != null) {
             edicts.add(this.airPatrol);
+        }
+        if (this.cityAirPatrol != null) {
+            edicts.add(this.cityAirPatrol);
         }
         if (this.autoSentry != null) {
             edicts.add(this.autoSentry);
@@ -164,6 +185,11 @@ public class EdictGovernor {
         // Serialize boolean flags for air patrol and auto sentry
         json.put("hasAirPatrol", this.airPatrol != null);
         json.put("hasAutoSentry", this.autoSentry != null);
+
+        // Serialize city air patrol
+        if (this.cityAirPatrol != null) {
+            json.put("cityAirPatrol", this.cityAirPatrol.toJson());
+        }
 
         return json;
     }

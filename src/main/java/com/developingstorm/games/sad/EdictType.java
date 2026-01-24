@@ -9,7 +9,8 @@ public enum EdictType {
     SEND_SEA_UNITS("SendSeaUnits"),
     SEND_AIR_UNITS("SendAirUnits"),
     AUTO_SENTRY("AutomaticSentry"),
-    AIR_PATROL("AirPatrol");
+    AIR_PATROL("AirPatrol"),
+    CITY_AIR_PATROL("CityAirPatrol");
 
     private final String displayName;
 

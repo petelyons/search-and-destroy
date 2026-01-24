@@ -9,17 +9,18 @@ import com.developingstorm.games.sad.Unit;
 
 /**
 
- * 
+ *
  */
 public class Unload extends Order {
-  
-  public Unload(Game g, Unit u) {
-    super(g, u, OrderType.UNLOAD);
-  }
 
-  public OrderResponse executeInternal() {
-    this.unit.unload();
-    return new OrderResponse(ResponseCode.ORDER_COMPLETE, this, null);
-  }
+    public Unload(Game g, Unit u) {
+        super(g, u, OrderType.UNLOAD);
+    }
 
+    public OrderResponse executeInternal() {
+        // Set unloading mode on the transport
+        this.unit.setUnloadingMode(true);
+        this.unit.unload();
+        return new OrderResponse(ResponseCode.ORDER_COMPLETE, this, null);
+    }
 }

@@ -121,6 +121,16 @@ public class UnitTurnState {
 
         this.unit.autoLoad();
 
+        // Check if unit is on a transport in unloading mode
+        if (this.unit.isCarried() && this.unit.onboard.isUnloadingMode()) {
+            // Check if there's land available to unload to
+            if (this.unit.onboard.isAlongCoast()) {
+                // Wake up the unit and activate it for unloading
+                this.unit.life().wake();
+                Log.info(this.unit, "Waking up for unloading from transport");
+            }
+        }
+
         updateOrderState();
     }
 
