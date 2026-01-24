@@ -35,8 +35,21 @@ public class GenericListDialog extends JDialog {
         String title,
         String labelText
     ) {
+        long start = System.currentTimeMillis();
         Frame frame = JOptionPane.getFrameForComponent(comp);
+        long afterGetFrame = System.currentTimeMillis();
         dialog = new GenericListDialog(frame, possibleValues, title, labelText);
+        long afterCreate = System.currentTimeMillis();
+        System.out.println(
+            "    GenericListDialog.initialize: getFrame took: " +
+                (afterGetFrame - start) +
+                "ms"
+        );
+        System.out.println(
+            "    GenericListDialog.initialize: new GenericListDialog took: " +
+                (afterCreate - afterGetFrame) +
+                "ms"
+        );
     }
 
     /**
@@ -45,17 +58,49 @@ public class GenericListDialog extends JDialog {
      * should be the component on top of which the dialog should appear.
      */
     public static Object[] showDialog(Component comp, String initialValue) {
+        long start = System.currentTimeMillis();
         if (dialog != null) {
+            long beforeSetValue = System.currentTimeMillis();
             dialog.setValue(initialValue);
+            long afterSetValue = System.currentTimeMillis();
+            System.out.println(
+                "    GenericListDialog.showDialog: setValue took: " +
+                    (afterSetValue - beforeSetValue) +
+                    "ms"
+            );
+
+            long beforeSetLocation = System.currentTimeMillis();
             dialog.setLocationRelativeTo(comp);
-            dialog.setVisible(true);
+            long afterSetLocation = System.currentTimeMillis();
+            System.out.println(
+                "    GenericListDialog.showDialog: setLocationRelativeTo took: " +
+                    (afterSetLocation - beforeSetLocation) +
+                    "ms"
+            );
+
+            long beforeSetVisible = System.currentTimeMillis();
+            dialog.setVisible(true); // This blocks until user closes dialog
+            long afterSetVisible = System.currentTimeMillis();
+            System.out.println(
+                "    GenericListDialog.showDialog: setVisible (user interaction) took: " +
+                    (afterSetVisible - beforeSetVisible) +
+                    "ms"
+            );
         } else {
             System.err.println(
                 "ListDialog requires you to call initialize " +
                     "before calling showDialog."
             );
         }
-        return dialog.getValues();
+        long beforeGetValues = System.currentTimeMillis();
+        Object[] result = dialog.getValues();
+        long afterGetValues = System.currentTimeMillis();
+        System.out.println(
+            "    GenericListDialog.showDialog: getValues took: " +
+                (afterGetValues - beforeGetValues) +
+                "ms"
+        );
+        return result;
     }
 
     private void setValue(String newValue) {
@@ -88,7 +133,9 @@ public class GenericListDialog extends JDialog {
 
         // main part of the dialog
         list = new JList<Object>(data);
-        this.list.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+        this.list.setSelectionMode(
+            ListSelectionModel.SINGLE_INTERVAL_SELECTION
+        );
         this.list.addMouseListener(
             new MouseAdapter() {
                 public void mouseClicked(MouseEvent e) {

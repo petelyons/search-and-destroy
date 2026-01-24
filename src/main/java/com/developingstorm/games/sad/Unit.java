@@ -385,10 +385,46 @@ public abstract class Unit {
             }
         }
 
-        // Land the aircraft
+        // Auto-load fighters onto carriers FIRST - fighters always load when entering carrier space
+        // This takes priority over landing in cities
+        if (
+            this.travel == Travel.AIR && this.isFighter() && !this.isCarried()
+        ) {
+            // Look for a friendly carrier at this location
+            List<Unit> unitsHere = this.game.unitsAtLocation(loc);
+            for (Unit otherUnit : unitsHere) {
+                if (
+                    otherUnit != this &&
+                    otherUnit.getOwner() == this.owner &&
+                    otherUnit.isCarrier() &&
+                    otherUnit.canLoad(this)
+                ) {
+                    // Auto-load onto the carrier
+                    otherUnit.load(this);
+                    Log.info(
+                        this,
+                        "Auto-loaded fighter onto carrier at " + loc
+                    );
+                    this.life.sleep();
+                    this.turn.clearOrderAndCompleteTurn();
+                    // Return early - fighter is now on carrier, no further processing needed
+                    return;
+                }
+            }
+        }
+
+        // Land the aircraft (only if not loaded onto carrier above)
         if (travel == Travel.AIR) {
             City city = this.board.getCity(loc);
             if (city != null && city.getOwner() == getOwner()) {
+                // If this is a fighter landing in a city producing a carrier, put it to sleep
+                if (this.isFighter() && city.getProduction() == Type.CARRIER) {
+                    this.life.sleep();
+                    Log.info(
+                        this,
+                        "Fighter put to sleep in city producing carrier"
+                    );
+                }
                 this.turn.clearOrderAndCompleteTurn();
             }
         }
@@ -623,45 +659,57 @@ public abstract class Unit {
             return;
         }
 
-        // Count available adjacent hexes for unloading
-        int availableSpaces = 0;
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                if (dx == 0 && dy == 0) continue;
-                Location adjacent = Location.get(
-                    this.loc.x + dx,
-                    this.loc.y + dy
-                );
-                if (
-                    adjacent != null && this.game.getBoard().onBoard(adjacent)
-                ) {
-                    // Check if any carried unit can move to this location
-                    for (Unit u : this.carries) {
-                        if (this.game.getBoard().isTravelable(u, adjacent)) {
-                            availableSpaces++;
-                            break; // Found space for at least one unit type
+        // Carriers can launch fighters at any time (air units can fly anywhere)
+        // Transports need adjacent land for unloading ground units
+        if (!this.isCarrier()) {
+            // Count available adjacent hexes for unloading
+            int availableSpaces = 0;
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    if (dx == 0 && dy == 0) continue;
+                    Location adjacent = Location.get(
+                        this.loc.x + dx,
+                        this.loc.y + dy
+                    );
+                    if (
+                        adjacent != null &&
+                        this.game.getBoard().onBoard(adjacent)
+                    ) {
+                        // Check if any carried unit can move to this location
+                        for (Unit u : this.carries) {
+                            if (
+                                this.game.getBoard().isTravelable(u, adjacent)
+                            ) {
+                                availableSpaces++;
+                                break; // Found space for at least one unit type
+                            }
                         }
                     }
                 }
             }
-        }
 
-        if (availableSpaces == 0) {
-            Log.warn(
+            if (availableSpaces == 0) {
+                Log.warn(
+                    this,
+                    "Cannot unload - no adjacent space available for carried units to move"
+                );
+                return;
+            }
+
+            Log.info(
                 this,
-                "Cannot unload - no adjacent space available for carried units to move"
+                "Unloading " +
+                    this.carries.size() +
+                    " units (spaces available: " +
+                    availableSpaces +
+                    ")"
             );
-            return;
+        } else {
+            Log.info(
+                this,
+                "Launching " + this.carries.size() + " fighter(s) from carrier"
+            );
         }
-
-        Log.info(
-            this,
-            "Unloading " +
-                this.carries.size() +
-                " units (spaces available: " +
-                availableSpaces +
-                ")"
-        );
 
         // Only activate ONE unit at a time to avoid race conditions
         // as spaces get filled by units that have already moved off

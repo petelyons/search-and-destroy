@@ -175,7 +175,7 @@ public class SaDFrame extends JFrame {
 
     private UnitDetailsDialog unitDetailsDialog;
 
-    private CombatResultPanel combatResultPanel;
+    private BattleHistoryPanel battleHistoryPanel;
 
     private boolean paused;
 
@@ -329,14 +329,17 @@ public class SaDFrame extends JFrame {
 
         startNewGame(vals);
 
-        // Create unit details dialog and combat result panel after ctx is initialized
+        // Create unit details dialog and battle history panel after ctx is initialized
         this.unitDetailsDialog = new UnitDetailsDialog(this.ctx);
-        this.combatResultPanel = new CombatResultPanel(this.ctx);
+        this.battleHistoryPanel = new BattleHistoryPanel(
+            this.ctx,
+            this::scrollToLocation
+        );
 
-        // Create east panel to hold both unit details and combat result
+        // Create east panel to hold both unit details and battle history
         JPanel eastPanel = new JPanel(new BorderLayout());
         eastPanel.add(BorderLayout.CENTER, this.unitDetailsDialog);
-        eastPanel.add(BorderLayout.SOUTH, this.combatResultPanel);
+        eastPanel.add(BorderLayout.SOUTH, this.battleHistoryPanel);
 
         Container pane = getContentPane();
         pane.setLayout(new BorderLayout(0, 0));
@@ -537,7 +540,7 @@ public class SaDFrame extends JFrame {
                 @Override
                 public void combatResolved(CombatResult result) {
                     EventQueue.invokeLater(() -> {
-                        SaDFrame.this.combatResultPanel.updateCombat(result);
+                        SaDFrame.this.battleHistoryPanel.addBattle(result);
                     });
                 }
             }
@@ -570,6 +573,37 @@ public class SaDFrame extends JFrame {
             SHOW_SEA_PATHS
         );
         this.canvas.repaint();
+    }
+
+    private void scrollToLocation(Location location) {
+        if (location == null || this.game == null || this.canvas == null) {
+            return;
+        }
+
+        EventQueue.invokeLater(() -> {
+            try {
+                Board board = this.game.getBoard();
+                BoardHex hex = board.get(location);
+                Point center = hex.center();
+
+                // Get the viewport
+                JViewport viewport = this.scroll.getViewport();
+                Dimension viewSize = viewport.getExtentSize();
+
+                // Calculate the position to center the hex in the viewport
+                int x = Math.max(0, center.x - viewSize.width / 2);
+                int y = Math.max(0, center.y - viewSize.height / 2);
+
+                // Scroll to the position
+                viewport.setViewPosition(new Point(x, y));
+                this.canvas.repaint();
+            } catch (Exception e) {
+                Log.error(
+                    this,
+                    "Error scrolling to location: " + e.getMessage()
+                );
+            }
+        });
     }
 
     public void initGame() {
@@ -1075,7 +1109,7 @@ public class SaDFrame extends JFrame {
                                     CombatResult result
                                 ) {
                                     EventQueue.invokeLater(() -> {
-                                        SaDFrame.this.combatResultPanel.updateCombat(
+                                        SaDFrame.this.battleHistoryPanel.addBattle(
                                             result
                                         );
                                     });

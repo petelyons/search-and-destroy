@@ -1,5 +1,7 @@
 package com.developingstorm.games.sad;
 
+import com.developingstorm.games.hexboard.Location;
+
 /**
  * Captures the result of a combat encounter between two units.
  */
@@ -22,6 +24,7 @@ public class CombatResult {
     private final int defenderMaxHits;
 
     private final boolean attackerWon;
+    private final Location battleLocation;
 
     public CombatResult(
         Unit attacker,
@@ -49,6 +52,7 @@ public class CombatResult {
         this.defenderMaxHits = defender.getType().getHits();
 
         this.attackerWon = attackerWon;
+        this.battleLocation = defender.getLocation();
     }
 
     public String getAttackerName() {
@@ -117,5 +121,9 @@ public class CombatResult {
 
     public boolean attackerWon() {
         return attackerWon;
+    }
+
+    public Location getBattleLocation() {
+        return battleLocation;
     }
 }

@@ -26,6 +26,7 @@ public class CityDialog {
     }
 
     public List<Unit> show() {
+        long start = System.currentTimeMillis();
         List<Unit> units = this.game.unitsAtLocation(this.city.getLocation());
         String[] values = new String[units.size()];
         int x = 0;
@@ -36,20 +37,47 @@ public class CityDialog {
             map.put(values[x], u);
             x++;
         }
+        long afterPrep = System.currentTimeMillis();
+        System.out.println(
+            "  CityDialog: Data preparation took: " + (afterPrep - start) + "ms"
+        );
 
+        long beforeInit = System.currentTimeMillis();
         GenericListDialog.initialize(
             this.comp,
             values,
             "Units",
             "Issue Orders to Unit(s)"
         );
+        long afterInit = System.currentTimeMillis();
+        System.out.println(
+            "  CityDialog: GenericListDialog.initialize took: " +
+                (afterInit - beforeInit) +
+                "ms"
+        );
 
+        long beforeShow = System.currentTimeMillis();
         Object[] vals = GenericListDialog.showDialog(this.comp, "");
+        long afterShow = System.currentTimeMillis();
+        System.out.println(
+            "  CityDialog: GenericListDialog.showDialog (includes user interaction) took: " +
+                (afterShow - beforeShow) +
+                "ms"
+        );
+
+        long beforeMapping = System.currentTimeMillis();
         ArrayList<Unit> list = new ArrayList<Unit>(vals.length);
         for (x = 0; x < vals.length; x++) {
             Log.debug("Looking up:" + vals[x]);
             list.add(map.get(vals[x]));
         }
+        long afterMapping = System.currentTimeMillis();
+        System.out.println(
+            "  CityDialog: Result mapping took: " +
+                (afterMapping - beforeMapping) +
+                "ms"
+        );
+
         return list;
     }
 }

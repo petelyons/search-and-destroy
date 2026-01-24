@@ -122,27 +122,66 @@ public class CityMenuBuilder {
             this.c.produce(Type.CARRIER)
         );
         UNITS_SEL.addActionListener(e -> {
+            long start = System.currentTimeMillis();
             CityDialog cd = new CityDialog(this.frame, this.game, this.c);
             List<Unit> list = cd.show();
+            long afterDialog = System.currentTimeMillis();
+            System.out.println(
+                "CityDialog took: " + (afterDialog - start) + "ms"
+            );
 
             if (!list.isEmpty()) {
+                System.out.println("Selected " + list.size() + " units");
+                long beforeCommander = System.currentTimeMillis();
                 GameCommander specialCtx =
                     this.commander.commanderForSpecifiedUnits(list);
+                long afterCommander = System.currentTimeMillis();
+                System.out.println(
+                    "Creating GameCommander took: " +
+                        (afterCommander - beforeCommander) +
+                        "ms"
+                );
 
+                long beforeBuilder = System.currentTimeMillis();
                 OrderMenuBuilder orderMenu = new OrderMenuBuilder(
                     this.frame,
                     this.game,
                     list,
                     specialCtx
                 );
+                long afterBuilder = System.currentTimeMillis();
+                System.out.println(
+                    "Creating OrderMenuBuilder took: " +
+                        (afterBuilder - beforeBuilder) +
+                        "ms"
+                );
 
+                long beforeBuild = System.currentTimeMillis();
                 JPopupMenu om = orderMenu.build();
+                long afterBuild = System.currentTimeMillis();
+                System.out.println(
+                    "Building menu took: " + (afterBuild - beforeBuild) + "ms"
+                );
+                System.out.println(
+                    "Menu has " + om.getComponentCount() + " components"
+                );
 
                 Location loc = this.c.getLocation();
                 BoardHex hex = this.game.getBoard().get(loc);
                 Point p = hex.center();
 
+                System.out.println(
+                    "About to show menu on EDT: " +
+                        javax.swing.SwingUtilities.isEventDispatchThread()
+                );
+
+                long beforeShow = System.currentTimeMillis();
                 om.show(this.frame.getCanvas(), p.x, p.y);
+                long afterShow = System.currentTimeMillis();
+                System.out.println(
+                    "Showing menu took: " + (afterShow - beforeShow) + "ms"
+                );
+                System.out.println("TOTAL TIME: " + (afterShow - start) + "ms");
             }
         });
 

@@ -6,6 +6,11 @@
   },
   {
     "label": "Run Game",
+    "command": "MAVEN_OPTS=\"-Dsun.java2d.opengl=true -Dapple.awt.graphics.UseQuartz=true -Dswing.aatext=true -Dawt.useSystemAAFontSettings=lcd -Dsun.java2d.renderer=sun.java2d.marlin.MarlinRenderingEngine\" mvn exec:java -Dexec.mainClass=SAD",
+    "use_new_terminal": true,
+  },
+  {
+    "label": "Run Game (No OpenGL)",
     "command": "mvn exec:java -Dexec.mainClass=SAD",
     "use_new_terminal": true,
   },
@@ -16,6 +21,11 @@
   },
   {
     "label": "Run JAR",
+    "command": "java -Dsun.java2d.opengl=true -Dapple.awt.graphics.UseQuartz=true -Dswing.aatext=true -Dawt.useSystemAAFontSettings=lcd -Dsun.java2d.renderer=sun.java2d.marlin.MarlinRenderingEngine -jar target/sad-game-1.0.0.jar",
+    "use_new_terminal": true,
+  },
+  {
+    "label": "Run JAR (No OpenGL)",
     "command": "java -jar target/sad-game-1.0.0.jar",
     "use_new_terminal": true,
   },

@@ -294,6 +294,18 @@ public class Game implements UnitLens, LocationLens {
 
             return list.get(0);
         }
+
+        // When multiple units at location, prioritize current player's non-carried units
+        if (this.currentPlayer != null) {
+            for (Unit u : list) {
+                if (!u.isCarried() && u.getOwner() == this.currentPlayer) {
+                    //Log.debug(u, "Selected current player's non-carried unit");
+                    return u;
+                }
+            }
+        }
+
+        // Fallback to any non-carried unit
         for (Unit u : list) {
             if (!u.isCarried()) {
                 //Log.debug(u, "Selected non carried");
