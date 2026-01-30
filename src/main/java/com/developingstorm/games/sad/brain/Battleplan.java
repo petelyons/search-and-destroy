@@ -11,6 +11,7 @@ import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.UnitStats;
+import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.CollectionUtil;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +30,8 @@ public class Battleplan {
     private final Robot player;
 
     private final Game game;
+
+    private final AIConfiguration config;
 
     private final Set<Location> loadingPoints;
 
@@ -49,10 +52,26 @@ public class Battleplan {
 
     private TargetPrioritizer targetPrioritizer;
 
-    public Battleplan(final Game game, final Robot p) {
+    // Continent-specific strategies
+    private com.developingstorm.games.sad.brain.strategy.ContinentClassifier continentClassifier;
+
+    private java.util.Map<
+        Continent,
+        com.developingstorm.games.sad.brain.strategy.ContinentStrategy
+    > continentStrategies;
+
+    // Production pairs for amphibious operations
+    private java.util.List<ProductionPair> productionPairs;
+
+    public Battleplan(
+        final Game game,
+        final Robot p,
+        final AIConfiguration config
+    ) {
         this.game = game;
         this.board = game.getBoard();
         this.player = p;
+        this.config = config;
 
         us = this.player.getStats();
 
@@ -64,7 +83,8 @@ public class Battleplan {
 
         battlezoneContinents = calcBattlezones(enemies);
         secureContinents = calcSecureContinents(colonized);
-        targetContinents = CollectionUtil.subtract(discovered, colonized);
+        // Target continents = continents with enemy or unoccupied cities
+        targetContinents = calcTargetContinents();
         defenseContinents = CollectionUtil.intersect(
             colonized,
             this.battlezoneContinents
@@ -78,6 +98,23 @@ public class Battleplan {
         this.threatMap = new ThreatMap(game, player);
         this.strategyMemory = new StrategyMemory();
         this.targetPrioritizer = new TargetPrioritizer(game, player, threatMap);
+
+        // Initialize continent-based strategies
+        this.continentClassifier =
+            new com.developingstorm.games.sad.brain.strategy.ContinentClassifier(
+                this,
+                player
+            );
+        this.continentStrategies = new java.util.HashMap<>();
+        classifyContinents();
+
+        // Initialize production pairs for amphibious operations
+        this.productionPairs = new java.util.ArrayList<>();
+        createProductionPairs();
+    }
+
+    public AIConfiguration getConfig() {
+        return config;
     }
 
     private static final String CRLF = "\r\n";
@@ -200,6 +237,33 @@ public class Battleplan {
         return unloadingPoints;
     }
 
+    /**
+     * Calculate target continents - continents with enemy or unoccupied cities.
+     * This includes continents where we already have a presence but haven't captured all cities.
+     */
+    private Set<Continent> calcTargetContinents() {
+        Set<Continent> targets = new HashSet<>();
+
+        // Check all cities on the board
+        for (City city : board.getCities()) {
+            // Skip cities we already own
+            if (city.getOwner() == this.player) {
+                continue;
+            }
+
+            // Check if we've explored this city's location
+            Location cityLoc = city.getLocation();
+            if (player.isExplored(cityLoc)) {
+                Continent cont = board.getContinent(cityLoc);
+                if (cont != null) {
+                    targets.add(cont);
+                }
+            }
+        }
+
+        return targets;
+    }
+
     private Set<Location> calcExpandUnloadingLocations() {
         Set<Location> unloadingPoints = new HashSet<Location>();
         if (!this.targetContinents.isEmpty()) {
@@ -230,7 +294,7 @@ public class Battleplan {
         return expandUnloadingPoints;
     }
 
-    private Type supplyBasedProductionChoice(City c) {
+    public Type supplyBasedProductionChoice(City c) {
         this.us.recalc();
         if (c.isCoastal()) {
             return coastalProductionChoice(c);
@@ -311,6 +375,25 @@ public class Battleplan {
     public Type productionChoice(City city) {
         Continent cont = city.getContinent();
 
+        // PRIORITY 1: Production pairs - dedicated amphibious factories
+        // These pairs ignore most other concerns and focus on invasion
+        ProductionPair pair = getProductionPair(city);
+        if (pair != null) {
+            if (city.equals(pair.getCoastalCity())) {
+                return Type.TRANSPORT;
+            } else {
+                return Type.INFANTRY;
+            }
+        }
+
+        // PRIORITY 2: Support active amphibious operations
+        // Check if we need units for planned invasions
+        Type operationNeed = getOperationProductionNeed(city);
+        if (operationNeed != null) {
+            return operationNeed;
+        }
+
+        // PRIORITY 3: Emergency defense under threat
         // Check if this city is under immediate threat
         double threatLevel = threatMap.getThreatLevel(city.getLocation());
         boolean underThreat =
@@ -346,7 +429,14 @@ public class Battleplan {
             }
         }
 
-        // Normal production for secure continents
+        // Query continent strategy for production decision
+        com.developingstorm.games.sad.brain.strategy.ContinentStrategy strategy =
+            continentStrategies.get(cont);
+        if (strategy != null) {
+            return strategy.getProductionPriority(city);
+        }
+
+        // Fallback to legacy logic if no strategy found
         if (this.secureContinents.contains(cont)) {
             Type t = supplyBasedProductionChoice(city);
             return t;
@@ -356,16 +446,28 @@ public class Battleplan {
         return Type.INFANTRY;
     }
 
-    Game getGame() {
+    public Game getGame() {
         return game;
     }
 
-    Board getBoard() {
+    public Board getBoard() {
         return board;
     }
 
-    Robot getPlayer() {
+    public Robot getPlayer() {
         return player;
+    }
+
+    public Set<Continent> getTargetContinents() {
+        return targetContinents;
+    }
+
+    public Set<Continent> getSecureContinents() {
+        return secureContinents;
+    }
+
+    public java.util.List<ProductionPair> getProductionPairs() {
+        return productionPairs;
     }
 
     // Strategic intelligence accessors
@@ -407,5 +509,148 @@ public class Battleplan {
      */
     public List<TargetPrioritizer.UnitTarget> getPrioritizedEnemyUnits() {
         return targetPrioritizer.prioritizeEnemyUnits();
+    }
+
+    /**
+     * Classify all continents and assign strategies
+     */
+    private void classifyContinents() {
+        continentStrategies.clear();
+
+        Set<Continent> allContinents = player.getDiscoveredContinents();
+        for (Continent cont : allContinents) {
+            com.developingstorm.games.sad.brain.strategy.ContinentStrategy strategy =
+                continentClassifier.classifyContinent(cont);
+            continentStrategies.put(cont, strategy);
+        }
+    }
+
+    /**
+     * Get the strategy for a specific continent
+     */
+    public com.developingstorm.games.sad.brain.strategy.ContinentStrategy getContinentStrategy(
+        Continent continent
+    ) {
+        return continentStrategies.get(continent);
+    }
+
+    /**
+     * Create production pairs: coastal cities paired with nearby inland cities
+     * for dedicated amphibious assault production.
+     */
+    private void createProductionPairs() {
+        // Get all our cities
+        java.util.List<City> coastalCities = player
+            .getCities()
+            .stream()
+            .filter(City::isCoastal)
+            .collect(java.util.stream.Collectors.toList());
+
+        java.util.List<City> inlandCities = player
+            .getCities()
+            .stream()
+            .filter(c -> !c.isCoastal())
+            .collect(java.util.stream.Collectors.toList());
+
+        // For each coastal city, find the nearest inland city
+        for (City coastal : coastalCities) {
+            City nearestInland = null;
+            int minDistance = Integer.MAX_VALUE;
+
+            for (City inland : inlandCities) {
+                // Skip if already paired
+                boolean alreadyPaired = productionPairs
+                    .stream()
+                    .anyMatch(pair -> pair.getInlandCity().equals(inland));
+                if (alreadyPaired) continue;
+
+                int distance = coastal
+                    .getLocation()
+                    .distance(inland.getLocation());
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestInland = inland;
+                }
+            }
+
+            // Create pair if we found a suitable inland city (within 10 hexes)
+            if (nearestInland != null && minDistance <= 10) {
+                ProductionPair pair = new ProductionPair(
+                    coastal,
+                    nearestInland,
+                    minDistance
+                );
+                productionPairs.add(pair);
+                Log.info("Created production pair: " + pair);
+            }
+        }
+
+        Log.info(
+            "Created " +
+                productionPairs.size() +
+                " production pairs for amphibious operations"
+        );
+    }
+
+    /**
+     * Get the production pair that includes this city, if any.
+     */
+    private ProductionPair getProductionPair(City city) {
+        return productionPairs
+            .stream()
+            .filter(pair -> pair.contains(city))
+            .findFirst()
+            .orElse(null);
+    }
+
+    /**
+     * Calculate what unit type should be produced to support active operations.
+     * Returns null if no specific operational need.
+     */
+    private Type getOperationProductionNeed(City city) {
+        // Get active invasion plans from strategy memory
+        List<StrategyMemory.InvasionPlan> activeOps =
+            strategyMemory.getActiveInvasions();
+
+        if (activeOps.isEmpty()) {
+            return null; // No operations, no specific needs
+        }
+
+        // Count what we need across all active operations
+        int neededTransports = 0;
+        int neededCargo = 0;
+
+        for (StrategyMemory.InvasionPlan op : activeOps) {
+            // Skip completed/aborted operations
+            if (
+                op.phase == StrategyMemory.OperationPhase.COMPLETED ||
+                op.phase == StrategyMemory.OperationPhase.ABORTED
+            ) {
+                continue;
+            }
+
+            // Calculate shortfall for this operation
+            int transports = op.transports.size();
+            int cargo = op.cargo.size();
+
+            if (transports < op.requiredTransports) {
+                neededTransports += (op.requiredTransports - transports);
+            }
+            if (cargo < op.requiredCargo) {
+                neededCargo += (op.requiredCargo - cargo);
+            }
+        }
+
+        // Prioritize transports first (they're the bottleneck)
+        if (neededTransports > 0 && city.isCoastal()) {
+            return Type.TRANSPORT;
+        }
+
+        // Then cargo (infantry for now, could be armor)
+        if (neededCargo > 0) {
+            return Type.INFANTRY;
+        }
+
+        return null; // Operations are fully staffed
     }
 }

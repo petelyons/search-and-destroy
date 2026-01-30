@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Console appender for normal gameplay -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Optional file appender for normal gameplay (disabled by default) -->
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>SaD.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- IMPORTANT: The Log wrapper now uses the context object's class for the logger -->
+    <!-- This means we can filter by the actual class doing the logging -->
+
+    <!-- AI-specific loggers - INFO for normal gameplay -->
+    <logger name="com.developingstorm.games.sad.brain" level="INFO" />
+    <logger name="com.developingstorm.games.sad.brain.TransportCaptain" level="INFO" />
+    <logger name="com.developingstorm.games.sad.brain.General" level="INFO" />
+    <logger name="com.developingstorm.games.sad.brain.RobotBrain" level="INFO" />
+    <logger name="com.developingstorm.games.sad.brain.Battleplan" level="INFO" />
+    <logger name="com.developingstorm.games.sad.brain.OperationsCoordinator" level="INFO" />
+
+    <!-- Game core - INFO for important game state changes -->
+    <logger name="com.developingstorm.games.sad.Game" level="INFO" />
+
+    <!-- Movement and pathing - INFO for normal gameplay -->
+    <logger name="com.developingstorm.games.sad.PathCalculator" level="INFO" />
+    <logger name="com.developingstorm.games.sad.Path" level="INFO" />
+    <logger name="com.developingstorm.games.sad.MovementResolver" level="INFO" />
+    <logger name="com.developingstorm.games.astar" level="INFO" />
+    <logger name="com.developingstorm.games.astar.AStar" level="INFO" />
+
+    <!-- Generic Log wrapper - INFO for normal gameplay -->
+    <logger name="com.developingstorm.games.sad.util.Log" level="INFO" />
+
+    <!-- Combat - INFO for normal gameplay -->
+    <logger name="com.developingstorm.games.sad.CombatResolver" level="INFO" />
+
+    <!-- Units - INFO for normal gameplay -->
+    <logger name="com.developingstorm.games.sad.Unit" level="INFO" />
+    <logger name="com.developingstorm.games.sad.UnitManager" level="INFO" />
+
+    <!-- Cities - INFO for normal gameplay -->
+    <logger name="com.developingstorm.games.sad.City" level="INFO" />
+    <logger name="com.developingstorm.games.sad.CityManager" level="INFO" />
+
+    <!-- Board and vision - INFO for normal gameplay -->
+    <logger name="com.developingstorm.games.sad.Board" level="INFO" />
+    <logger name="com.developingstorm.games.sad.VisionManager" level="INFO" />
+
+    <!-- Orders - INFO for normal gameplay -->
+    <logger name="com.developingstorm.games.sad.orders" level="INFO" />
+
+    <!-- JavaFX UI - INFO for normal gameplay -->
+    <logger name="com.developingstorm.games.sad.fx" level="INFO" />
+
+    <!-- Root logger - logs to console (stdout) for normal gameplay -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+        <!-- Uncomment to also log to file during normal gameplay -->
+        <!-- <appender-ref ref="FILE" /> -->
+    </root>
+</configuration>

@@ -343,18 +343,37 @@ public class GameStateSerializer {
 
         // Restore explored areas (v1.2+)
         if (!isOldVersion && !isVersion11) {
+            logger.info("Restoring explored areas from save file (v1.2+)");
             for (int i = 0; i < playersArray.length; i++) {
                 JsonObj playerJson = (JsonObj) playersArray[i];
                 Object[] exploredArray = playerJson.getArray("explored");
                 if (exploredArray != null) {
                     Player player = players[i];
+                    logger.info(
+                        "Restoring {} explored locations for player {}",
+                        exploredArray.length,
+                        player.getName()
+                    );
                     for (Object exploredObj : exploredArray) {
                         JsonObj exploredLoc = (JsonObj) exploredObj;
                         int x = exploredLoc.getInteger("x");
                         int y = exploredLoc.getInteger("y");
                         Location loc = Location.get(x, y);
-                        player.markExploredDirect(loc);
+                        if (loc != null) {
+                            player.markExploredDirect(loc);
+                        } else {
+                            logger.warn(
+                                "Invalid location in save file: ({}, {})",
+                                x,
+                                y
+                            );
+                        }
                     }
+                } else {
+                    logger.warn(
+                        "No explored data found for player {}",
+                        players[i].getName()
+                    );
                 }
             }
         } else {
@@ -509,6 +528,9 @@ public class GameStateSerializer {
         // This ensures fog of war is correct when the game loads
         logger.info("Recalculating visibility for all players after load");
         for (Player player : players) {
+            // Clear any stale visibility data before recalculating
+            player.clearVisibility();
+
             // Adjust visibility for all cities owned by this player
             for (City city : player.getCities()) {
                 player.adjustVisibility(city);

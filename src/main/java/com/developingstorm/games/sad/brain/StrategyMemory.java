@@ -36,7 +36,7 @@ public class StrategyMemory {
         EXPANSION, // Early game - capture neutral cities
         CONSOLIDATION, // Mid game - defend what we have
         ASSAULT, // Late game - attack enemy
-        SURVIVAL // Emergency - we're losing
+        SURVIVAL, // Emergency - we're losing
     }
 
     public enum UnitRole {
@@ -44,49 +44,132 @@ public class StrategyMemory {
         DEFENDER, // Protecting owned territory
         INVADER, // Part of invasion force
         ESCORT, // Protecting transport/carrier
-        RESERVE // Waiting for assignment
+        RESERVE, // Waiting for assignment
+    }
+
+    public enum OperationPhase {
+        PLANNING, // Coordinator is assigning units
+        PREPARING, // Units moving to rally point
+        LOADING, // Cargo boarding transports
+        TRANSIT, // Convoy moving to target
+        LANDING, // Unloading at beach
+        EXECUTING, // Units capturing target
+        COMPLETED, // Target captured
+        ABORTED, // Operation cancelled (units lost/threat too high)
     }
 
     public static class InvasionPlan {
 
         public Location targetCity;
-        public Set<Unit> assignedUnits;
+        public Set<Unit> assignedUnits; // Legacy - kept for compatibility
         public int turnCreated;
         public boolean readyToLaunch;
+
+        // New operation coordination fields
+        public Location rallyPoint; // Where cargo gathers
+        public Location unloadPoint; // Where to land
+        public OperationPhase phase; // Current operation state
+        public Unit leadTransport; // Primary transport
+        public List<Unit> transports; // All transports (for large ops)
+        public List<Unit> cargo; // Infantry/Armor to transport
+        public List<Unit> escorts; // Destroyers/cruisers
+        public int requiredCargo; // Min units needed
+        public int requiredTransports; // Min transports needed
+        public int requiredEscorts; // Min escorts needed
+        public int turnLastAdvanced; // Last turn phase changed
 
         public InvasionPlan(Location target, int turn) {
             this.targetCity = target;
             this.assignedUnits = new HashSet<>();
             this.turnCreated = turn;
             this.readyToLaunch = false;
+
+            // Initialize new fields
+            this.phase = OperationPhase.PLANNING;
+            this.transports = new ArrayList<>();
+            this.cargo = new ArrayList<>();
+            this.escorts = new ArrayList<>();
+            this.requiredCargo = 2; // Default: 2 infantry minimum
+            this.requiredTransports = 1; // Default: 1 transport
+            this.requiredEscorts = 0; // Default: no escort required
+            this.turnLastAdvanced = turn;
         }
 
         public void addUnit(Unit u) {
             this.assignedUnits.add(u);
+
+            // Also add to specific role lists
+            if (u.isTransport()) {
+                if (!this.transports.contains(u)) {
+                    this.transports.add(u);
+                    if (this.leadTransport == null) {
+                        this.leadTransport = u;
+                    }
+                }
+            } else if (u.isInfantry() || u.isArmour()) {
+                if (!this.cargo.contains(u)) {
+                    this.cargo.add(u);
+                }
+            } else if (
+                u.getType().toString().equals("DESTROYER") ||
+                u.getType().toString().equals("CRUISER")
+            ) {
+                if (!this.escorts.contains(u)) {
+                    this.escorts.add(u);
+                }
+            }
+
             checkReadiness();
         }
 
         public void removeUnit(Unit u) {
             this.assignedUnits.remove(u);
+            this.transports.remove(u);
+            this.cargo.remove(u);
+            this.escorts.remove(u);
+
+            if (this.leadTransport == u) {
+                this.leadTransport = this.transports.isEmpty()
+                    ? null
+                    : this.transports.get(0);
+            }
+
             checkReadiness();
         }
 
         private void checkReadiness() {
-            // Need at least 1 transport and 2 ground units
-            int transports = 0;
-            int groundUnits = 0;
+            // Count live units only
+            int liveTransports = 0;
+            int liveCargo = 0;
+            int liveEscorts = 0;
 
-            for (Unit u : this.assignedUnits) {
-                if (!u.isDead()) {
-                    if (u.isTransport()) {
-                        transports++;
-                    } else if (u.isInfantry() || u.isArmour()) {
-                        groundUnits++;
-                    }
-                }
+            for (Unit u : this.transports) {
+                if (!u.isDead()) liveTransports++;
+            }
+            for (Unit u : this.cargo) {
+                if (!u.isDead()) liveCargo++;
+            }
+            for (Unit u : this.escorts) {
+                if (!u.isDead()) liveEscorts++;
             }
 
-            this.readyToLaunch = (transports >= 1 && groundUnits >= 2);
+            this.readyToLaunch = (liveTransports >= this.requiredTransports &&
+                liveCargo >= this.requiredCargo &&
+                liveEscorts >= this.requiredEscorts);
+        }
+
+        public boolean isStale(int currentTurn) {
+            // Operation is stale if stuck in same phase for >20 turns
+            return (currentTurn - this.turnLastAdvanced) > 20;
+        }
+
+        public void advancePhase(OperationPhase newPhase, int currentTurn) {
+            this.phase = newPhase;
+            this.turnLastAdvanced = currentTurn;
+        }
+
+        public boolean hasUnit(Unit u) {
+            return this.assignedUnits.contains(u);
         }
     }
 
@@ -129,7 +212,10 @@ public class StrategyMemory {
 
         // Remove stale invasion plans (older than 10 turns)
         List<Location> staleInvasions = new ArrayList<>();
-        for (Map.Entry<Location, InvasionPlan> entry : this.activeInvasions.entrySet()) {
+        for (Map.Entry<
+            Location,
+            InvasionPlan
+        > entry : this.activeInvasions.entrySet()) {
             if (this.turnCounter - entry.getValue().turnCreated > 10) {
                 staleInvasions.add(entry.getKey());
             }
@@ -206,6 +292,13 @@ public class StrategyMemory {
     }
 
     /**
+     * Remove an invasion plan (e.g., when not viable)
+     */
+    public void removeInvasionPlan(Location loc) {
+        this.activeInvasions.remove(loc);
+    }
+
+    /**
      * Create or get a defense plan for a continent
      */
     public DefensePlan getOrCreateDefensePlan(Continent continent) {
@@ -270,8 +363,10 @@ public class StrategyMemory {
      * Check if we're in defensive mode
      */
     public boolean isDefending() {
-        return this.currentFocus == StrategyFocus.CONSOLIDATION ||
-            this.currentFocus == StrategyFocus.SURVIVAL;
+        return (
+            this.currentFocus == StrategyFocus.CONSOLIDATION ||
+            this.currentFocus == StrategyFocus.SURVIVAL
+        );
     }
 
     /**

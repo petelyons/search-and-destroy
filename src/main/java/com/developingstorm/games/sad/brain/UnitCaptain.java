@@ -29,10 +29,20 @@ public abstract class UnitCaptain<T extends Unit> {
 
     protected Battleplan plan;
     protected General general;
+    protected OperationsCoordinator coordinator;
 
     protected UnitCaptain(General general, Battleplan plan) {
+        this(general, plan, null);
+    }
+
+    protected UnitCaptain(
+        General general,
+        Battleplan plan,
+        OperationsCoordinator coordinator
+    ) {
         this.general = general;
         this.plan = plan;
+        this.coordinator = coordinator;
     }
 
     /**
@@ -43,24 +53,28 @@ public abstract class UnitCaptain<T extends Unit> {
     public abstract Order plan(T u);
 
     /**
-     * Build an order to find nearest unoccupied city and attack it
+     * Build an order to find best unoccupied city and move toward it.
+     * Prioritizes unoccupied cities over enemy cities using the TargetPrioritizer.
      * @param u
      * @return null if the order could not be constructed
      */
     protected Order occupyUnownedCity(Unit u) {
-        List<City> cities = u.getOwner().reachableCities(u);
-        for (City c : cities) {
-            if (c != null) {
-                Player cityOwner = c.getOwner();
-                if (cityOwner != null && !cityOwner.equals(u.getOwner())) {
-                    Log.info(u, "Moving to enemy city:" + c);
-                    return u.newMoveOrder(c.getLocation());
-                } else if (cityOwner == null) {
-                    Log.info(u, "Moving to unoccupied city:" + c);
-                    return u.newMoveOrder(c.getLocation());
-                }
+        // Use TargetPrioritizer to get the best city target for this unit
+        City bestCity = plan.getBestCityTarget(u);
+
+        if (bestCity != null) {
+            Player cityOwner = bestCity.getOwner();
+            if (cityOwner == null) {
+                Log.info(
+                    u,
+                    "Moving to prioritized unoccupied city: " + bestCity
+                );
+            } else {
+                Log.info(u, "Moving to prioritized enemy city: " + bestCity);
             }
+            return u.newMoveOrder(bestCity.getLocation());
         }
+
         return null;
     }
 
@@ -134,6 +148,75 @@ public abstract class UnitCaptain<T extends Unit> {
      * @param u
      * @return null if the order could not be constructed
      */
+    /**
+     * Move strategically toward the best city target, even if not reachable this turn.
+     * This helps units make progress toward distant unoccupied cities.
+     * For land units, if the best cities are on other continents, directs them to loading points.
+     * @param u
+     * @return null if no strategic target exists
+     */
+    protected Order moveTowardBestCity(Unit u) {
+        // Get all prioritized cities (not just reachable ones)
+        List<TargetPrioritizer.CityTarget> cityTargets =
+            plan.getPrioritizedCities();
+
+        if (cityTargets.isEmpty()) {
+            return null;
+        }
+
+        // Check if we're a land unit
+        boolean isLandUnit = u.getTravel() == Travel.LAND;
+        Continent ourContinent = isLandUnit ? u.getContinent() : null;
+
+        // Find the best city we don't own (prioritizing unoccupied)
+        City bestUnreachableCity = null;
+        for (TargetPrioritizer.CityTarget target : cityTargets) {
+            City city = target.city;
+            Location cityLoc = city.getLocation();
+
+            // Try to get a path toward this city
+            Path path = u.getPath(cityLoc);
+            if (path != null && path.length() > 0) {
+                // Move as far as we can toward this city
+                Log.info(
+                    u,
+                    "Moving toward strategic city target: " +
+                        city +
+                        " (score: " +
+                        String.format("%.1f", target.score) +
+                        ")"
+                );
+                return u.newMoveOrder(cityLoc);
+            }
+
+            // For land units: track best city on a different continent
+            if (
+                isLandUnit &&
+                bestUnreachableCity == null &&
+                ourContinent != null
+            ) {
+                Continent cityContinent = plan.getBoard().getContinent(cityLoc);
+                if (
+                    cityContinent != null && !cityContinent.equals(ourContinent)
+                ) {
+                    bestUnreachableCity = city;
+                }
+            }
+        }
+
+        // If we're a land unit and there's a high-value city on another continent,
+        // head to a loading point for transport
+        if (isLandUnit && bestUnreachableCity != null) {
+            Log.info(
+                u,
+                "Best city targets on other continent. Heading to transport loading point."
+            );
+            return goToLoadingPoint(u);
+        }
+
+        return null;
+    }
+
     protected Order explore(Unit u) {
         ArrayList<Location> frontierLocations = u.getOwner().getFrontier(u);
         Location ul = u.getLocation();
@@ -300,14 +383,30 @@ public abstract class UnitCaptain<T extends Unit> {
     }
 
     protected Order occupyLandStrategy(Unit u) {
+        // If on transport, wait in sentry mode - transport will move us off when ready
+        if (u.isCarried()) {
+            return sentry(u);
+        }
+
+        // First try to reach a city this turn
         Order order = occupyUnownedCity(u);
 
+        // If no city reachable this turn, move toward the best strategic city target
+        if (order == null) {
+            order = moveTowardBestCity(u);
+        }
+
+        // If no strategic city target, explore the frontier
         if (order == null) {
             order = explore(u);
         }
+
+        // If can't explore, go to loading point for transport
         if (order == null) {
             order = goToLoadingPoint(u);
         }
+
+        // Last resort: skip turn
         if (order == null) {
             Log.info(u, "Nothing to do");
             order = u.newSkipTurn();
@@ -428,5 +527,76 @@ public abstract class UnitCaptain<T extends Unit> {
 
         // Priority 3: Patrol current area
         return patrol(u);
+    }
+
+    /**
+     * Check if unit needs to disembark from transport
+     * @param u the unit
+     * @return true if unit is on a transport that is unloading along a coast
+     */
+    protected boolean needsToDisembark(Unit u) {
+        if (u.onboard == null) {
+            return false;
+        }
+
+        return u.onboard.isUnloadingMode() && u.onboard.isAlongCoast();
+    }
+
+    /**
+     * Find an adjacent land hex and disembark from transport
+     * @param u the unit to disembark
+     * @return a move order to disembark, or null if no valid hex found
+     */
+    protected Order disembarkFromTransport(Unit u) {
+        Location transportLoc = u.getLocation();
+        List<Location> neighbors = transportLoc.getRing(1);
+
+        // Try to find valid disembark locations
+        List<Location> validHexes = new ArrayList<>();
+
+        for (Location adjacent : neighbors) {
+            if (isValidDisembarkHex(adjacent, u)) {
+                validHexes.add(adjacent);
+            }
+        }
+
+        if (validHexes.isEmpty()) {
+            Log.warn(u, "Cannot disembark - no valid adjacent land hex");
+            return u.newSkipTurn();
+        }
+
+        // Pick the first valid hex (could be improved with priority logic)
+        Location disembarkHex = validHexes.get(0);
+        Log.info(u, "Disembarking from transport to " + disembarkHex);
+        return u.newMoveOrder(disembarkHex);
+    }
+
+    /**
+     * Check if a hex is valid for disembarking
+     * @param loc the location to check
+     * @param u the unit that wants to disembark
+     * @return true if the location is valid for disembarking
+     */
+    protected boolean isValidDisembarkHex(Location loc, Unit u) {
+        // Must be on board
+        if (!plan.getBoard().onBoard(loc)) {
+            return false;
+        }
+
+        // Must be land (or coastal city)
+        if (plan.getBoard().isWater(loc)) {
+            // Water is only OK if there's a city there (coastal city)
+            if (!plan.getBoard().isCity(loc)) {
+                return false;
+            }
+        }
+
+        // Check if hex has space (max 3 units per hex)
+        int unitsAtLocation = plan.getGame().unitsAtLocation(loc).size();
+        if (unitsAtLocation >= 3) {
+            return false;
+        }
+
+        return true;
     }
 }

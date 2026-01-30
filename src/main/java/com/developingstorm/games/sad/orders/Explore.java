@@ -33,6 +33,12 @@ public class Explore extends Order {
 
         ResponseCode resp;
         do {
+            // Check if unit has moves left at start of loop
+            if (!this.unit.life().hasMoves()) {
+                resp = ResponseCode.TURN_COMPLETE;
+                break;
+            }
+
             if (this.unit.life().mustLand() && !this.unit.hasLanded()) {
                 Log.debug(this.unit, "requires landing!");
                 OrderResponse response = headHome.execute();

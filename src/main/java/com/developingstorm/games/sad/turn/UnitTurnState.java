@@ -93,8 +93,9 @@ public class UnitTurnState {
             u.turn().completeTurn();
         }
         if (u.isDead()) {
-            Log.error(u, "Unit is dead.  Cannot be played!");
-            throw new SaDException("DEAD UNIT!");
+            Log.info(u, "Unit is dead. Skipping turn.");
+            u.turn().completeTurn();
+            return false; // Unit is dead, cannot play
         }
         Log.debug(this, "playing unit: " + u + " with order " + u.getOrder());
 
@@ -109,7 +110,10 @@ public class UnitTurnState {
 
     public void beginTurn() {
         attemptCounter = 0;
-        pathFinder = null;
+        // Clear obstructions but keep cached path for same destination
+        if (pathFinder != null) {
+            pathFinder.clearObstructions();
+        }
         this.unit.life().resetForTurn();
 
         this.unit.repairAndRefuel();

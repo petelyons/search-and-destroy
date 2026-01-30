@@ -2,6 +2,8 @@ package com.developingstorm.games.sad;
 
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.combat.UnitMatchups;
+import com.developingstorm.games.sad.events.CombatResolvedEvent;
+import com.developingstorm.games.sad.events.LocationHitEvent;
 import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.RandomUtil;
 
@@ -17,10 +19,6 @@ public class CombatResolver {
     CombatResolver(Game game, UnitManager unitManager) {
         this.game = game;
         this.unitManager = unitManager;
-    }
-
-    private GameListener getGameListener() {
-        return game.getGameListener();
     }
 
     /**
@@ -49,7 +47,10 @@ public class CombatResolver {
                 );
                 attackStrength = (int) Math.ceil(baseAttack * multiplier);
 
-                getGameListener().hitLocation(def.getLocation());
+                game
+                    .getEventBus()
+                    .publish(new LocationHitEvent(def.getLocation()));
+
                 if (attackStrength == 0 && def.getAttack() == 0) {
                     attackStrength = 1;
                 }
@@ -83,7 +84,9 @@ public class CombatResolver {
                 );
                 attackStrength = (int) Math.ceil(baseAttack * multiplier);
 
-                getGameListener().hitLocation(atk.getLocation());
+                game
+                    .getEventBus()
+                    .publish(new LocationHitEvent(atk.getLocation()));
 
                 if (attackStrength == 0 && def.getAttack() == 0) {
                     attackStrength = 1;
@@ -117,7 +120,11 @@ public class CombatResolver {
             defenderInitialHits,
             attackerWon
         );
-        getGameListener().combatResolved(result);
+
+        // Publish event with result for battle history
+        game
+            .getEventBus()
+            .publish(new CombatResolvedEvent(def.getLocation(), result));
 
         return attackerWon;
     }
@@ -150,7 +157,9 @@ public class CombatResolver {
         );
         int attackStrength = (int) Math.ceil(baseAttack * multiplier);
 
-        getGameListener().hitLocation(defender.getLocation());
+        game
+            .getEventBus()
+            .publish(new LocationHitEvent(defender.getLocation()));
 
         Log.info(
             attacker,
@@ -185,7 +194,11 @@ public class CombatResolver {
             defenderInitialHits,
             targetDestroyed
         );
-        getGameListener().combatResolved(result);
+
+        // Publish event with result for battle history
+        game
+            .getEventBus()
+            .publish(new CombatResolvedEvent(defender.getLocation(), result));
 
         return targetDestroyed;
     }
@@ -196,12 +209,14 @@ public class CombatResolver {
      */
     synchronized boolean resolveCityAttack(Unit atk, City def) {
         if (def.getOwner() == null) {
-            getGameListener().hitLocation(def.getLocation());
+            game.getEventBus().publish(new LocationHitEvent(def.getLocation()));
             return RandomUtil.nextBoolean();
         } else {
-            getGameListener().hitLocation(def.getLocation());
+            game.getEventBus().publish(new LocationHitEvent(def.getLocation()));
             for (Unit defu : def.getUnits()) {
-                getGameListener().hitLocation(defu.getLocation());
+                game
+                    .getEventBus()
+                    .publish(new LocationHitEvent(defu.getLocation()));
                 if (defu.getTravel() == Travel.LAND) {
                     if (resolveUnitAttack(atk, defu) == false) {
                         return false;

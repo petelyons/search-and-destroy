@@ -77,4 +77,16 @@ public class PathFinder {
         }
         return false;
     }
+
+    /**
+     * Clear the obstruction blacklist for a new turn.
+     * Keeps the destination and cached path, but clears temporary obstructions
+     * that may no longer be valid.
+     */
+    public void clearObstructions() {
+        if (this.blacklist != null) {
+            this.blacklist.clear();
+        }
+        this.obstructed = false;
+    }
 }

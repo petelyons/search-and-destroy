@@ -2,6 +2,9 @@ package com.developingstorm.games.astar;
 
 import com.developingstorm.games.astar.AStarWatcher.AStarRequestState;
 import com.developingstorm.games.sad.SaDException;
+import com.developingstorm.games.sad.events.DebugEventBus;
+import com.developingstorm.games.sad.events.PathfindingErrorEvent;
+import com.developingstorm.games.sad.events.PathfindingProgressEvent;
 import com.developingstorm.games.sad.util.Log;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,6 +31,7 @@ public class AStar {
     int height;
 
     private List<AStarWatcher> watchers;
+    private DebugEventBus debugEventBus;
 
     public AStar(
         AStarNode initial,
@@ -46,6 +50,30 @@ public class AStar {
             this.watchers = new ArrayList<AStarWatcher>();
             this.watchers.add(w);
         }
+    }
+
+    /**
+     * Constructor that uses debug event bus for pathfinding visualization.
+     * The debug event bus parameter can be null if debugging is not enabled,
+     * avoiding event overhead during normal gameplay.
+     *
+     * Type safety: This specifically takes DebugEventBus (not GameEventBus) to prevent
+     * accidentally publishing high-volume debug events to the production event bus.
+     *
+     * @param debugEventBus Debug event bus for pathfinding events (can be null)
+     */
+    public AStar(
+        AStarNode initial,
+        AStarNode goal,
+        int width,
+        int height,
+        DebugEventBus debugEventBus
+    ) {
+        this.initialnode = initial;
+        this.width = width;
+        this.height = height;
+        this.goalnode = goal;
+        this.debugEventBus = debugEventBus;
     }
 
     // public AStar(Node initial, Node goal, int width, int height) {
@@ -72,18 +100,37 @@ public class AStar {
         boolean knowError,
         AStarRequestState stateList
     ) {
+        // Notify legacy watchers (for backward compatibility)
         if (this.watchers != null) {
             for (AStarWatcher watcher : this.watchers) {
                 watcher.watch(knowError, stateList);
             }
         }
+
+        // Publish event via debug event bus (only when debugging is enabled)
+        if (this.debugEventBus != null && stateList != null) {
+            debugEventBus.publish(
+                new PathfindingProgressEvent(
+                    knowError,
+                    stateList.states,
+                    stateList.start,
+                    stateList.end
+                )
+            );
+        }
     }
 
     private void notifyErrorWatchers(AStarNode start, AStarNode end) {
+        // Notify legacy watchers (for backward compatibility)
         if (this.watchers != null) {
             for (AStarWatcher watcher : this.watchers) {
                 watcher.displayError(start, end);
             }
+        }
+
+        // Publish event via debug event bus (only when debugging is enabled)
+        if (this.debugEventBus != null) {
+            debugEventBus.publish(new PathfindingErrorEvent(start, end));
         }
     }
 
@@ -123,7 +170,7 @@ public class AStar {
 
             // Check if OPEN is empty, exit if this is the case
             if (this.openNodes.size() == 0) {
-                Log.error("No open nodes in A* search:" + count);
+                Log.debug("No open nodes in A* search:" + count);
                 notifyErrorWatchers(this.initialnode, this.goalnode);
 
                 // solve(true);

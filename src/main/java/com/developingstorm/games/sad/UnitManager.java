@@ -9,10 +9,16 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Manages unit lifecycle: creation, destruction, and location tracking.
  * Extracted from Game.java to improve maintainability.
+ *
+ * Thread-safety: Uses ReadWriteLock for efficient concurrent access.
+ * - Multiple readers can query locations simultaneously
+ * - Writers (move, create, kill) have exclusive access
  */
 class UnitManager {
 
@@ -20,6 +26,9 @@ class UnitManager {
     private final HexBoardMap gridMap;
     private final ArrayList<Unit> allUnits;
     private final Set<Unit>[][] locations;
+
+    // ReadWriteLock allows multiple concurrent readers but exclusive writers
+    private final ReadWriteLock locationLock = new ReentrantReadWriteLock();
 
     @SuppressWarnings("unchecked")
     UnitManager(Game game, HexBoardMap gridMap) {
@@ -132,7 +141,14 @@ class UnitManager {
         u.kill();
         u.getOwner().removeUnit(u);
         allUnits.remove(u);
-        game.getGameListener().killUnit(u, showDeath);
+        game
+            .getEventBus()
+            .publish(
+                new com.developingstorm.games.sad.events.UnitKilledEvent(
+                    u,
+                    showDeath
+                )
+            );
         removeUnitFromBoard(u);
 
         // Remove from all players' last-seen tracking
@@ -162,9 +178,14 @@ class UnitManager {
      */
     void placeUnitOnBoard(Unit u) {
         Log.info(u, "Placing unit on board");
-        Set<Unit> l = getSetofUnitsAtLocation(u.getLocation());
-        l.add(u);
-        validateLocations();
+        locationLock.writeLock().lock();
+        try {
+            Set<Unit> l = locations[u.getLocation().x][u.getLocation().y];
+            l.add(u);
+            validateLocations();
+        } finally {
+            locationLock.writeLock().unlock();
+        }
     }
 
     /**
@@ -172,26 +193,58 @@ class UnitManager {
      */
     void removeUnitFromBoard(Unit u) {
         Log.info(u, "Removing unit from board");
-        Set<Unit> l = getSetofUnitsAtLocation(u.getLocation());
-        l.remove(u);
-        validateLocations();
+        locationLock.writeLock().lock();
+        try {
+            Set<Unit> l = locations[u.getLocation().x][u.getLocation().y];
+            l.remove(u);
+            validateLocations();
+        } finally {
+            locationLock.writeLock().unlock();
+        }
     }
 
     /**
      * Updates unit's location in the tracking grid.
+     * Now uses write lock to make the entire operation atomic.
+     * Publishes UNIT_MOVED event to notify UI of the change.
      */
     void changeUnitLocation(Unit u, Location newLoc) {
-        Set<Unit> oldSet = getSetofUnitsAtLocation(u.getLocation());
-        Set<Unit> newSet = getSetofUnitsAtLocation(newLoc);
-        oldSet.remove(u);
-        newSet.add(u);
+        Location oldLoc = u.getLocation();
+
+        locationLock.writeLock().lock();
+        try {
+            Set<Unit> oldSet = getSetofUnitsAtLocation(oldLoc);
+            Set<Unit> newSet = getSetofUnitsAtLocation(newLoc);
+            oldSet.remove(u);
+            newSet.add(u);
+        } finally {
+            locationLock.writeLock().unlock();
+        }
+
+        // Publish event for UI notification
+        game
+            .getEventBus()
+            .publish(
+                new com.developingstorm.games.sad.events.UnitMovedEvent(
+                    u.id,
+                    oldLoc,
+                    newLoc
+                )
+            );
     }
 
     /**
      * Gets the set of units at a specific location.
+     * Uses read lock for thread-safe access.
+     * Note: The returned set is still synchronized for iteration safety.
      */
     Set<Unit> getSetofUnitsAtLocation(Location loc) {
-        return locations[loc.x][loc.y];
+        locationLock.readLock().lock();
+        try {
+            return locations[loc.x][loc.y];
+        } finally {
+            locationLock.readLock().unlock();
+        }
     }
 
     /**

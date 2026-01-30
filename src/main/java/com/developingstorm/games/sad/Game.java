@@ -7,6 +7,8 @@ import com.developingstorm.games.hexboard.HexBoardContext;
 import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.hexboard.LocationLens;
+import com.developingstorm.games.sad.commands.GameCommand;
+import com.developingstorm.games.sad.events.*;
 import com.developingstorm.games.sad.types.Armor;
 import com.developingstorm.games.sad.types.Battleship;
 import com.developingstorm.games.sad.types.Bomber;
@@ -33,6 +35,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.swing.JOptionPane;
 
 /**
@@ -67,6 +70,12 @@ public class Game implements UnitLens, LocationLens {
 
     private volatile boolean endPlay;
 
+    // New architecture components for UI/Game separation
+    private final GameEventBus eventBus;
+    private final DebugEventBus debugEventBus;
+    private volatile GameState gameState;
+    private final ConcurrentLinkedQueue<GameCommand> commandQueue;
+
     @SuppressWarnings("unchecked")
     public Game(Player[] players, HexBoardMap grid, HexBoardContext ctx) {
         try {
@@ -74,6 +83,12 @@ public class Game implements UnitLens, LocationLens {
             this.gameListener = null;
             this.players = players;
             this.pendingActions = new LinkedList<Runnable>();
+
+            // Initialize new architecture components
+            this.eventBus = new GameEventBus();
+            this.debugEventBus = new DebugEventBus();
+            this.gameState = GameState.RUNNING;
+            this.commandQueue = new ConcurrentLinkedQueue<>();
 
             this.turn = 0;
             this.selectedUnit = null;
@@ -165,7 +180,6 @@ public class Game implements UnitLens, LocationLens {
         return PathCalculator.calcPath(
             this,
             this.board,
-            this.gameListener,
             player,
             from,
             to,
@@ -184,7 +198,6 @@ public class Game implements UnitLens, LocationLens {
         return PathCalculator.calcTravelPath(
             this,
             this.board,
-            this.gameListener,
             player,
             from,
             to,
@@ -208,6 +221,17 @@ public class Game implements UnitLens, LocationLens {
 
     public void trackUnit(Unit u) {
         if (this.gameListener != null && u != null) {
+            // Only track units that are visible to the human player (players[0])
+            // This prevents the viewport from jumping to AI units moving in fog of war
+            if (this.players != null && this.players.length > 0) {
+                Player humanPlayer = this.players[0];
+                Vision visibility = humanPlayer.getVisibility(u.getLocation());
+                if (visibility == Vision.NONE) {
+                    // Unit is not visible to human player, don't track it
+                    return;
+                }
+            }
+
             this.gameListener.trackUnit(u);
         } else {
             Log.debug(this, "Tracking null unit");
@@ -391,6 +415,14 @@ public class Game implements UnitLens, LocationLens {
                 paused = false;
                 notify();
             }
+
+            // Also update game state
+            if (
+                this.gameState == GameState.AWAITING_ORDERS ||
+                this.gameState == GameState.PAUSED
+            ) {
+                transitionState(this.gameState, GameState.RUNNING);
+            }
         }
     }
 
@@ -433,10 +465,42 @@ public class Game implements UnitLens, LocationLens {
                 synchronized (this) {
                     Log.debug(u, "Waiting for order...");
                     paused = true;
-                    Thread t = new Thread(() -> this.gameListener.notifyWait());
-                    t.start();
-                    wait();
+
+                    // Update to new state machine
+                    transitionState(
+                        GameState.RUNNING,
+                        GameState.AWAITING_ORDERS
+                    );
+
+                    if (this.gameListener != null) {
+                        Thread t = new Thread(() ->
+                            this.gameListener.notifyWait()
+                        );
+                        t.start();
+                    }
+
+                    // Wait loop that periodically checks for commands
+                    while (
+                        this.gameState == GameState.AWAITING_ORDERS && paused
+                    ) {
+                        // Process any commands that arrived while waiting
+                        processCommands();
+
+                        // If state changed to RUNNING, break out
+                        if (this.gameState == GameState.RUNNING || !paused) {
+                            break;
+                        }
+
+                        // Wait for a short time or until notified
+                        try {
+                            wait(50); // Poll every 50ms
+                        } catch (InterruptedException e) {
+                            break;
+                        }
+                    }
+
                     processPostedGameActions();
+                    processCommands(); // Process any remaining commands
                     return;
                 }
             } catch (Exception e) {
@@ -476,12 +540,26 @@ public class Game implements UnitLens, LocationLens {
 
     public void selectUnit(Unit u) {
         if (u != null) selectedUnit = u;
-        this.gameListener.selectUnit(u);
+
+        // Publish event for new architecture
+        eventBus.publish(new UnitSelectedEvent(u));
+
+        // Legacy listener call for backward compatibility
+        if (this.gameListener != null) {
+            this.gameListener.selectUnit(u);
+        }
     }
 
     public void deselectUnit() {
         selectedUnit = null;
-        this.gameListener.selectUnit(null);
+
+        // Publish event for new architecture
+        eventBus.publish(new UnitSelectedEvent(null));
+
+        // Legacy listener call for backward compatibility
+        if (this.gameListener != null) {
+            this.gameListener.selectUnit(null);
+        }
     }
 
     public void play() {
@@ -497,14 +575,25 @@ public class Game implements UnitLens, LocationLens {
             playerChange();
 
             do {
+                // Process any pending commands at the start of each iteration
+                processCommands();
+
                 uc = this.currentPlayer.unitCount();
                 cc = this.currentPlayer.cityCount();
                 if (cc == 0 && uc == 0) {
-                    this.gameListener.gameOver(nextPlayer());
+                    if (this.gameListener != null) {
+                        this.gameListener.gameOver(nextPlayer());
+                    }
+                    eventBus.publish(new GameOverEvent(nextPlayer()));
+                    transitionState(this.gameState, GameState.GAME_OVER);
                     return;
                 } else if (cc == 0) {
                     if (!this.currentPlayer.hasUnitsThatCaptureACity()) {
-                        this.gameListener.gameOver(nextPlayer());
+                        if (this.gameListener != null) {
+                            this.gameListener.gameOver(nextPlayer());
+                        }
+                        eventBus.publish(new GameOverEvent(nextPlayer()));
+                        transitionState(this.gameState, GameState.GAME_OVER);
                         return;
                     }
                 }
@@ -514,17 +603,27 @@ public class Game implements UnitLens, LocationLens {
                 }
                 currentPlayer = nextPlayer();
 
+                // Initialize visibility for the new player BEFORE notifying UI
+                currentPlayer.startNewTurn();
+
                 if (currentPlayer == this.players[0]) {
                     Log.debug(this, "Starting turn: " + this.turn);
                     this.turn++;
-                    this.gameListener.newTurn(this.turn);
+                    if (this.gameListener != null) {
+                        this.gameListener.newTurn(this.turn);
+                    }
+                    eventBus.publish(new NewTurnEvent(this.turn));
                 }
                 processPostedGameActions();
+                processCommands(); // Process commands after each player's turn
                 playerChange();
             } while (true);
         } catch (Throwable t) {
             t.printStackTrace();
-            this.gameListener.abort();
+            if (this.gameListener != null) {
+                this.gameListener.abort();
+            }
+            eventBus.publish(new GameAbortedEvent());
         }
     }
 
@@ -608,6 +707,138 @@ public class Game implements UnitLens, LocationLens {
     public void end() {
         synchronized (this) {
             endPlay = true;
+        }
+    }
+
+    // ========== New Architecture Methods ==========
+
+    /**
+     * Get the event bus for publishing and subscribing to game events.
+     */
+    public GameEventBus getEventBus() {
+        return eventBus;
+    }
+
+    /**
+     * Get the debug event bus for high-volume debugging events like pathfinding.
+     */
+    public DebugEventBus getDebugEventBus() {
+        return debugEventBus;
+    }
+
+    /**
+     * Get the current game state.
+     */
+    public GameState getGameState() {
+        return gameState;
+    }
+
+    /**
+     * Set the game state (used by commands and internal logic).
+     */
+    public void setGameState(GameState newState) {
+        this.gameState = newState;
+    }
+
+    /**
+     * Transition from one game state to another with validation.
+     * Logs the transition and publishes appropriate events.
+     */
+    public void transitionState(GameState expectedCurrent, GameState newState) {
+        synchronized (this) {
+            if (this.gameState != expectedCurrent) {
+                Log.warn(
+                    this,
+                    "State transition warning: expected " +
+                        expectedCurrent +
+                        " but was " +
+                        this.gameState +
+                        ", transitioning to " +
+                        newState +
+                        " anyway"
+                );
+            }
+
+            GameState oldState = this.gameState;
+            this.gameState = newState;
+
+            Log.debug(this, "Game state: " + oldState + " -> " + newState);
+
+            // Publish appropriate events
+            switch (newState) {
+                case PAUSED:
+                    eventBus.publish(
+                        new AbstractGameEvent(GameEventType.GAME_PAUSED) {}
+                    );
+                    break;
+                case RUNNING:
+                    if (
+                        oldState == GameState.PAUSED ||
+                        oldState == GameState.AWAITING_ORDERS
+                    ) {
+                        eventBus.publish(
+                            new AbstractGameEvent(GameEventType.GAME_RESUMED) {}
+                        );
+                    }
+                    break;
+                case GAME_OVER:
+                    // GameOver event is published separately with winner info
+                    break;
+                case AWAITING_ORDERS:
+                    String unitMsg =
+                        selectedUnit != null
+                            ? selectedUnit.toString()
+                            : "No unit selected";
+                    eventBus.publish(new WaitingForOrdersEvent(unitMsg));
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Submit a command to be executed on the game thread.
+     * This is the primary way for UI to interact with game state.
+     * Thread-safe and non-blocking.
+     */
+    public void submitCommand(GameCommand command) {
+        if (command == null) {
+            Log.warn(this, "Attempted to submit null command");
+            return;
+        }
+        commandQueue.offer(command);
+        Log.debug(
+            this,
+            "Command queued: " + command.getClass().getSimpleName()
+        );
+    }
+
+    /**
+     * Process all pending commands from the command queue.
+     * Called by the game thread during its main loop.
+     */
+    public void processCommands() {
+        GameCommand command;
+        int processedCount = 0;
+        while ((command = commandQueue.poll()) != null) {
+            try {
+                Log.debug(
+                    this,
+                    "Executing command: " + command.getClass().getSimpleName()
+                );
+                command.execute(this);
+                processedCount++;
+            } catch (Exception e) {
+                Log.error(
+                    "Error executing command " +
+                        command.getClass().getSimpleName() +
+                        ": " +
+                        e.getMessage()
+                );
+                e.printStackTrace();
+            }
+        }
+        if (processedCount > 0) {
+            Log.debug(this, "Processed " + processedCount + " commands");
         }
     }
 }

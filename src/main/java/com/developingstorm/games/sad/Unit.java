@@ -660,8 +660,8 @@ public abstract class Unit {
         }
 
         // Carriers can launch fighters at any time (air units can fly anywhere)
-        // Transports need adjacent land for unloading ground units
-        if (!this.isCarrier()) {
+        // Transports and Cargo need adjacent land for unloading ground units
+        if (this.isTransport() || this.isCargo()) {
             // Count available adjacent hexes for unloading
             int availableSpaces = 0;
             for (int dx = -1; dx <= 1; dx++) {
@@ -711,17 +711,77 @@ public abstract class Unit {
             );
         }
 
-        // Only activate ONE unit at a time to avoid race conditions
-        // as spaces get filled by units that have already moved off
-        Unit firstUnit = this.carries.get(0);
-        Log.info(this, "  Activating first carried unit: " + firstUnit);
-        firstUnit.activate();
-        this.owner.pushPendingOrders(firstUnit);
-
-        Log.info(
-            this,
-            "Unload complete, activated 1 of " + this.carries.size() + " units"
+        // Unload all carried units that can be placed in adjacent hexes
+        int unloadedCount = 0;
+        // Use a copy of the list since we'll be modifying it during iteration
+        java.util.List<Unit> unitsToUnload = new java.util.ArrayList<>(
+            this.carries
         );
+
+        for (Unit carriedUnit : unitsToUnload) {
+            // Find an adjacent hex for this unit to move to
+            Location disembarkHex = null;
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    if (dx == 0 && dy == 0) continue;
+                    Location adjacent = Location.get(
+                        this.loc.x + dx,
+                        this.loc.y + dy
+                    );
+                    if (
+                        adjacent != null &&
+                        this.game.getBoard().onBoard(adjacent)
+                    ) {
+                        // Check if this unit can move to this location
+                        if (
+                            this.game.getBoard().isTravelable(
+                                carriedUnit,
+                                adjacent
+                            )
+                        ) {
+                            // Check if location isn't too crowded (max 3 units)
+                            if (
+                                this.game.unitsAtLocation(adjacent).size() < 3
+                            ) {
+                                disembarkHex = adjacent;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (disembarkHex != null) break;
+            }
+
+            if (disembarkHex != null) {
+                Log.info(carriedUnit, "Disembarking to " + disembarkHex);
+                // Move the unit - this will automatically remove it from the transport
+                carriedUnit.move(disembarkHex);
+                // Activate the unit so it's not in sentry mode
+                carriedUnit.activate();
+                unloadedCount++;
+            } else {
+                Log.info(
+                    carriedUnit,
+                    "No available hex to disembark - will remain on transport"
+                );
+            }
+        }
+
+        if (unloadedCount > 0) {
+            Log.info(
+                this,
+                "Unload complete, moved " +
+                    unloadedCount +
+                    " unit(s). " +
+                    this.carries.size() +
+                    " units remaining"
+            );
+        } else {
+            Log.warn(
+                this,
+                "Cannot find valid hexes to unload units - will try again next turn"
+            );
+        }
     }
 
     public void removeCarried(Unit u) {

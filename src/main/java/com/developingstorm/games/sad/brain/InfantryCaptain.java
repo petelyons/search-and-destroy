@@ -9,15 +9,46 @@ public class InfantryCaptain extends UnitCaptain<Infantry> {
         super(gen, plan);
     }
 
+    public InfantryCaptain(
+        General gen,
+        Battleplan plan,
+        OperationsCoordinator coordinator
+    ) {
+        super(gen, plan, coordinator);
+    }
+
     @Override
     public Order plan(Infantry u) {
-        // Check if we should be defending first
-        Order defensiveOrder = executeDefensiveStrategy(u);
-        if (defensiveOrder != null) {
-            return defensiveOrder;
+        // Check if assigned to an amphibious operation
+        if (coordinator != null && coordinator.isAssigned(u)) {
+            Order operationOrder = coordinator.getOperationOrder(u);
+            if (operationOrder != null) {
+                return operationOrder;
+            }
         }
 
-        // Otherwise, use normal occupation strategy
+        // Infantry can defend, but not if:
+        // - Being carried on a transport (in transit for amphibious ops)
+        // - In a city producing them (just spawned, need to get to front)
+        boolean canDefend = !u.isCarried() && !isInProducingCity(u);
+
+        if (canDefend) {
+            Order defensiveOrder = executeDefensiveStrategy(u);
+            if (defensiveOrder != null) {
+                return defensiveOrder;
+            }
+        }
+
+        // Otherwise, focus on expansion/occupation
         return occupyLandStrategy(u);
+    }
+
+    /**
+     * Check if unit is in a city that just produced it
+     */
+    private boolean isInProducingCity(Infantry u) {
+        // If unit is in a city location, it was likely just produced
+        // (units move out of cities after being produced in subsequent turns)
+        return plan.getBoard().getCity(u.getLocation()) != null;
     }
 }

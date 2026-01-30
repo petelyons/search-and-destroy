@@ -14,16 +14,33 @@ public class TransportCaptain extends UnitCaptain<Transport> {
         super(gen, plan);
     }
 
+    public TransportCaptain(
+        General gen,
+        Battleplan plan,
+        OperationsCoordinator coordinator
+    ) {
+        super(gen, plan, coordinator);
+    }
+
     @Override
     public Order plan(Transport u) {
-        Order order = null;
-
-        // If we have cargo and are at an unloading point, unload
+        // If we have cargo and are at an unloading point, unload immediately
+        // This takes priority even for operations (unloading is the goal!)
         if (u.hasCargo() && atUnloadPoint(u)) {
             return unload(u);
         }
 
-        // If we have cargo, head to unloading point
+        // Check if assigned to an amphibious operation
+        if (coordinator != null && coordinator.isAssigned(u)) {
+            Order operationOrder = coordinator.getOperationOrder(u);
+            if (operationOrder != null) {
+                return operationOrder;
+            }
+        }
+
+        Order order = null;
+
+        // If we have cargo, head to expansion unloading point (prioritize areas with unoccupied cities)
         if (u.hasCargo()) {
             // Check if we're in dangerous waters and need an escort
             if (isInDanger(u) && !hasNearbyEscort(u)) {
@@ -31,7 +48,11 @@ public class TransportCaptain extends UnitCaptain<Transport> {
                 return sentry(u); // Wait for escort
             }
 
-            order = goToUnloadingPoint(u);
+            // Prioritize expansion zones with unoccupied cities
+            order = goToExpansionUnloadingPoint(u);
+            if (order == null) {
+                order = goToUnloadingPoint(u);
+            }
             if (order == null) {
                 order = explore(u);
             }
@@ -49,6 +70,24 @@ public class TransportCaptain extends UnitCaptain<Transport> {
             order = explore(u);
         }
         return order;
+    }
+
+    /**
+     * Route transport to expansion zones (areas near unoccupied cities).
+     * This prioritizes delivering troops to continents with unoccupied cities.
+     */
+    private Order goToExpansionUnloadingPoint(Transport u) {
+        Location closestExpansion = u.getClosestLocation(
+            plan.getExpandUnloadingPoints()
+        );
+        if (closestExpansion != null) {
+            Log.info(
+                u,
+                "Going to expansion unloading point (near unoccupied cities)"
+            );
+            return u.newMoveOrder(closestExpansion);
+        }
+        return null;
     }
 
     /**

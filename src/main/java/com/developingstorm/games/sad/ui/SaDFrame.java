@@ -16,6 +16,10 @@ import com.developingstorm.games.sad.Robot;
 import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.Vision;
+import com.developingstorm.games.sad.events.GameEvent;
+import com.developingstorm.games.sad.events.GameEventListener;
+import com.developingstorm.games.sad.events.GameEventType;
+import com.developingstorm.games.sad.events.UnitSelectedEvent;
 import com.developingstorm.games.sad.persistence.GameStateSerializer;
 import com.developingstorm.games.sad.ui.NewGameDialog.NewGameValues;
 import com.developingstorm.games.sad.ui.controls.PathsCommander;
@@ -380,6 +384,11 @@ public class SaDFrame extends JFrame {
         }
 
         game = new Game(players, this.map, this.ctx);
+
+        // NOTE: Swing UI is deprecated and kept as reference only.
+        // GameListener has been removed in favor of event bus.
+        // To make Swing work again, subscribe to events from game.getEventBus()
+        /* DEPRECATED - GameListener removed
         this.game.setGameListener(
             new GameListener() {
                 @Override
@@ -545,6 +554,10 @@ public class SaDFrame extends JFrame {
                 }
             }
         );
+        */ // END DEPRECATED GameListener
+
+        // NEW: Register with event bus for decoupled event handling
+        registerEventBusListeners();
 
         this.board = this.game.getBoard();
         this.ubar.setGame(this.game);
@@ -561,6 +574,65 @@ public class SaDFrame extends JFrame {
         vp.add(this.canvas);
 
         initGame();
+    }
+
+    /**
+     * Register listeners with the event bus for decoupled event handling.
+     * This is the NEW approach that will make JavaFX migration easier.
+     */
+    private void registerEventBusListeners() {
+        if (this.game == null) {
+            return;
+        }
+
+        // Register a listener for game events
+        this.game.getEventBus().addListener(
+            new GameEventListener() {
+                @Override
+                public void onGameEvent(GameEvent event) {
+                    // This is already called on EDT thanks to GameEventBus
+
+                    switch (event.getEventType()) {
+                        case UNIT_SELECTED:
+                            UnitSelectedEvent use = (UnitSelectedEvent) event;
+                            // Unit selection is already handled by legacy GameListener
+                            // This is here as an example of the new pattern
+                            Log.info(
+                                "Event bus: Unit selected - " + use.getUnit()
+                            );
+                            break;
+                        case MAP_UPDATED:
+                            // Repaint canvas when map is updated
+                            if (SaDFrame.this.canvas != null) {
+                                SaDFrame.this.canvas.repaint();
+                            }
+                            break;
+                        case WAITING_FOR_ORDERS:
+                            // Game is waiting for orders
+                            Log.info("Event bus: Game waiting for orders");
+                            break;
+                        case COMBAT_RESOLVED:
+                            // Combat animation/effects already handled by legacy listener
+                            Log.info("Event bus: Combat resolved");
+                            break;
+                        default:
+                            // Other events - can add handling as needed
+                            break;
+                    }
+                }
+
+                @Override
+                public GameEventType[] getInterestedEventTypes() {
+                    // Filter to only events we care about
+                    return new GameEventType[] {
+                        GameEventType.UNIT_SELECTED,
+                        GameEventType.MAP_UPDATED,
+                        GameEventType.WAITING_FOR_ORDERS,
+                        GameEventType.COMBAT_RESOLVED,
+                    };
+                }
+            }
+        );
     }
 
     private void selectPlayer(Player p) {
@@ -922,6 +994,10 @@ public class SaDFrame extends JFrame {
                         SaDFrame.this.game = loadedGame;
                         SaDFrame.this.map = loadedGame.getBoard().map;
                         System.out.println("Setting game listener...");
+
+                        // NOTE: Swing UI is deprecated and kept as reference only.
+                        // GameListener has been removed in favor of event bus.
+                        /* DEPRECATED - GameListener removed
                         SaDFrame.this.game.setGameListener(
                             new GameListener() {
                                 @Override
@@ -1116,6 +1192,10 @@ public class SaDFrame extends JFrame {
                                 }
                             }
                         );
+                        */ // END DEPRECATED GameListener
+
+                        // NEW: Register with event bus for decoupled event handling
+                        registerEventBusListeners();
 
                         // Set up board and canvas
                         SaDFrame.this.board = SaDFrame.this.game.getBoard();

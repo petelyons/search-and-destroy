@@ -11,19 +11,43 @@ import com.developingstorm.games.sad.util.Log;
 public class RobotBrain implements IBrain {
 
     private final Robot owner;
+    private final AIConfiguration config;
     private Battleplan battleplan;
     private General general;
+    private StrategyMemory strategyMemory;
+    private OperationsCoordinator operationsCoordinator;
 
     public RobotBrain(Robot owner) {
+        this(owner, new AIConfiguration());
+    }
+
+    public RobotBrain(Robot owner, AIConfiguration config) {
         this.owner = owner;
-        // battleplan = new Battleplan(this.owner.getGame(), this.owner);
+        this.config = config;
+        this.strategyMemory = new StrategyMemory();
+        this.operationsCoordinator = new OperationsCoordinator(
+            owner,
+            strategyMemory
+        );
+    }
+
+    public AIConfiguration getConfig() {
+        return config;
     }
 
     @Override
     public void startNewTurn() {
-        battleplan = new Battleplan(this.owner.getGame(), this.owner);
+        battleplan = new Battleplan(
+            this.owner.getGame(),
+            this.owner,
+            this.config
+        );
         Log.info(this.battleplan.toString());
-        general = new General(this.battleplan);
+
+        // Plan amphibious operations before assigning unit orders
+        operationsCoordinator.planOperations(battleplan);
+
+        general = new General(this.battleplan, operationsCoordinator);
         this.owner.forEachUnit(u -> {
             u.assignOrder(this.general.getOrders(u));
         });

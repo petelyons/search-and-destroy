@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
 public class Player implements UnitLens, LocationLens {
@@ -58,8 +59,11 @@ public class Player implements UnitLens, LocationLens {
     protected boolean[][] explored;
     protected int enemyActivity[][];
     protected String name;
-    private volatile LinkedList<Unit> pendingPlay;
-    private volatile LinkedList<Unit> pendingOrders;
+
+    // Thread-safe queues using lock-free concurrent collections
+    private final ConcurrentLinkedQueue<Unit> pendingPlay;
+    private final ConcurrentLinkedQueue<Unit> pendingOrders;
+
     private EdictFactory edictFactory;
 
     // Last known positions of enemy units (for fog-of-war indicators)
@@ -73,8 +77,10 @@ public class Player implements UnitLens, LocationLens {
         this.unownedCities = new HashSet<City>();
         this.enemyCities = new HashSet<City>();
         this.enemyUnits = new HashSet<Unit>();
-        this.pendingPlay = new LinkedList<>();
-        this.pendingOrders = new LinkedList<>();
+
+        // Use thread-safe concurrent queues
+        this.pendingPlay = new ConcurrentLinkedQueue<>();
+        this.pendingOrders = new ConcurrentLinkedQueue<>();
         this.lastSeenEnemies = new HashMap<>();
 
         this.edictFactory = new EdictFactory(this);
@@ -98,29 +104,41 @@ public class Player implements UnitLens, LocationLens {
         return true;
     }
 
+    /**
+     * Remove and return the next unit from pending play queue.
+     * Thread-safe using lock-free concurrent queue.
+     */
     public Unit popPendingPlay() {
-        if (this.pendingPlay.isEmpty()) {
-            return null;
-        }
-        return this.pendingPlay.pop();
+        return this.pendingPlay.poll();
     }
 
+    /**
+     * Add a unit to the pending play queue.
+     * Thread-safe using lock-free concurrent queue.
+     */
     public void pushPendingPlay(Unit u) {
         if (u != null && !u.isDead()) {
-            this.pendingPlay.push(u);
+            this.pendingPlay.offer(u);
         }
     }
 
+    /**
+     * Remove and return the next unit from pending orders queue.
+     * Thread-safe using lock-free concurrent queue.
+     */
     public Unit popPendingOrders() {
-        if (this.pendingOrders.isEmpty()) {
-            return null;
-        }
-        return this.pendingOrders.pop();
+        return this.pendingOrders.poll();
     }
 
+    /**
+     * Add a unit to the pending orders queue.
+     * Thread-safe using lock-free concurrent queue.
+     */
     public void pushPendingOrders(Unit u) {
         Log.info(this, "Pushing unit to pending orders: " + u);
-        this.pendingOrders.push(u);
+        if (u != null && !u.isDead()) {
+            this.pendingOrders.offer(u);
+        }
     }
 
     public String toString() {
@@ -144,6 +162,13 @@ public class Player implements UnitLens, LocationLens {
 
         this.explored = new boolean[width][height];
         this.visible = new Vision[width][height];
+
+        // Initialize all visibility to NONE
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                this.visible[x][y] = Vision.NONE;
+            }
+        }
     }
 
     public Board getBoard() {
@@ -211,6 +236,9 @@ public class Player implements UnitLens, LocationLens {
 
     public void removeUnit(Unit u) {
         this.units.remove(u);
+        // Also remove from pending queues to prevent dead units from being played
+        this.pendingPlay.remove(u);
+        this.pendingOrders.remove(u);
     }
 
     public List<Unit> reachableEnemies(Unit u) {
@@ -650,6 +678,19 @@ public class Player implements UnitLens, LocationLens {
         this.units.forEach(consumer);
     }
 
+    /**
+     * Clears all current visibility (but preserves explored areas).
+     * Should be called at the start of each turn before recalculating visibility.
+     * Also called when loading a saved game to ensure clean visibility state.
+     */
+    public void clearVisibility() {
+        for (int x = 0; x < this.visible.length; x++) {
+            for (int y = 0; y < this.visible[x].length; y++) {
+                this.visible[x][y] = Vision.NONE;
+            }
+        }
+    }
+
     private void markVisible(Location loc, Vision v) {
         Vision newVis = v;
         Vision ov = this.visible[loc.x][loc.y];
@@ -730,7 +771,8 @@ public class Player implements UnitLens, LocationLens {
     }
 
     public Vision getVisibility(Location loc) {
-        return this.visible[loc.x][loc.y];
+        Vision v = this.visible[loc.x][loc.y];
+        return v != null ? v : Vision.NONE;
     }
 
     public boolean isExplored(Location loc) {
@@ -1013,8 +1055,18 @@ public class Player implements UnitLens, LocationLens {
 
     public void startNewTurn() {
         Log.debug(this, "Starting new turn");
+
+        // Clear visibility at the start of each turn
+        clearVisibility();
+
+        // Recalculate visibility based on current unit and city positions
         for (City c : this.cities) {
             c.startNewTurn();
+            adjustVisibility(c);
+        }
+
+        for (Unit u : this.units) {
+            adjustVisibility(u);
         }
 
         buildCityLists();
@@ -1097,8 +1149,12 @@ public class Player implements UnitLens, LocationLens {
 
     public void play() {
         int previousMovesLeft = 0;
+        long turnStartTime = System.currentTimeMillis();
+        int totalUnits = this.units.size();
+        int unitsMoved = 0;
 
-        startNewTurn();
+        // Note: startNewTurn() is now called in Game.play() before this method
+        // to ensure visibility is updated before any UI rendering occurs
 
         while (true) {
             List<Unit> unplayed = unplayedUnits();
@@ -1110,12 +1166,20 @@ public class Player implements UnitLens, LocationLens {
 
             Unit pending = popPendingPlay();
             // Move the unit the user interacted with
-            if (pending != null && pending.hasOrders()) {
+            if (pending != null && pending.hasOrders() && !pending.isDead()) {
                 if (unplayed.contains(pending)) {
                     unplayed.remove(pending);
                 }
                 // Execute turn for pending unit even if carried (not in unplayed list)
-                pending.turn().attemptTurn();
+                try {
+                    pending.turn().attemptTurn();
+                } catch (SaDException e) {
+                    // Unit may have died during turn execution - log and continue
+                    Log.warn(
+                        pending,
+                        "Exception during turn execution: " + e.getMessage()
+                    );
+                }
             }
 
             for (Unit u : unplayed) {
@@ -1124,7 +1188,20 @@ public class Player implements UnitLens, LocationLens {
                 }
 
                 this.game.selectUnit(u);
-                u.turn().attemptTurn();
+                int movesBeforeAttempt = u.life().movesLeft();
+                try {
+                    u.turn().attemptTurn();
+                    // Track if unit moved (consumed moves)
+                    if (u.life().movesLeft() < movesBeforeAttempt) {
+                        unitsMoved++;
+                    }
+                } catch (SaDException e) {
+                    // Unit may have died during turn execution - log and continue
+                    Log.warn(
+                        u,
+                        "Exception during turn execution: " + e.getMessage()
+                    );
+                }
             }
 
             unplayed = unplayedUnits();
@@ -1150,6 +1227,18 @@ public class Player implements UnitLens, LocationLens {
         }
 
         completeTurn();
+
+        // Publish turn completion metrics
+        long turnDuration = System.currentTimeMillis() - turnStartTime;
+        this.game.getEventBus().publish(
+            new com.developingstorm.games.sad.events.TurnCompleteEvent(
+                this.game.getTurn(),
+                this,
+                turnDuration,
+                totalUnits,
+                unitsMoved
+            )
+        );
     }
 
     // Store the full player info

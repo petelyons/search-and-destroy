@@ -193,6 +193,16 @@ public class Move extends Order {
                         this.loc
                 );
                 resp = this.game.resolveMove(this.unit, dest, this.loc);
+
+                // If transport is in unloading mode and just completed a move step,
+                // try to discharge units at this location
+                if (
+                    resp == ResponseCode.STEP_COMPLETE &&
+                    this.unit.isUnloadingMode()
+                ) {
+                    this.unit.unload();
+                }
+
                 if (resp == ResponseCode.STEP_COMPLETE) {
                     continue;
                 } else if (resp == ResponseCode.TURN_COMPLETE) {
@@ -247,6 +257,17 @@ public class Move extends Order {
                     dest
             );
             resp = this.game.resolveMove(this.unit, dest, this.loc);
+
+            // If transport is in unloading mode and completed a move,
+            // try to discharge units at this location
+            if (
+                (resp == ResponseCode.STEP_COMPLETE ||
+                    resp == ResponseCode.TURN_COMPLETE) &&
+                this.unit.isUnloadingMode()
+            ) {
+                this.unit.unload();
+            }
+
             if (resp == ResponseCode.TURN_COMPLETE) {
                 Log.info(this.unit, "Unit reports turn complete");
             } else if (resp == ResponseCode.DIED) {

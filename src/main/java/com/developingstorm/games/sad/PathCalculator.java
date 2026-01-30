@@ -23,7 +23,6 @@ class PathCalculator {
     static Path calcPath(
         Game game,
         Board board,
-        GameListener gameListener,
         Player player,
         Location from,
         Location to,
@@ -32,7 +31,6 @@ class PathCalculator {
         Path p = calcTravelPath(
             game,
             board,
-            gameListener,
             player,
             from,
             to,
@@ -50,7 +48,6 @@ class PathCalculator {
     static Path calcTravelPath(
         Game game,
         Board board,
-        GameListener gameListener,
         Player player,
         Location from,
         Location to,
@@ -87,14 +84,13 @@ class PathCalculator {
 
         AStarNode s = new AStarNode(start, 1);
         AStarNode g = new AStarNode(goal, 1);
-        AStarWatcher watcher =
-            gameListener != null ? gameListener.getWatcher() : null;
+        // Use debug event bus for pathfinding visualization (null when debugging disabled)
         AStar astar = new AStar(
             s,
             g,
             board.getWidth(),
             board.getHeight(),
-            watcher
+            game.getDebugEventBus()
         );
         List<AStarState> list = astar.solve();
 

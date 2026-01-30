@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 
 public class Log {
 
-    private static final Logger logger = LoggerFactory.getLogger(Log.class);
+    private static final Logger defaultLogger = LoggerFactory.getLogger(
+        Log.class
+    );
 
     public enum Severity {
         DEBUG,
@@ -17,6 +19,12 @@ public class Log {
     private Log() {}
 
     private static void log(Severity sev, Object context, String desc) {
+        // Get logger based on context object's class for better filtering
+        Logger logger =
+            context != null
+                ? LoggerFactory.getLogger(context.getClass())
+                : defaultLogger;
+
         String message = formatMessage(context, desc);
 
         switch (sev) {
@@ -84,6 +92,6 @@ public class Log {
     }
 
     public static void stack(String string) {
-        logger.error(string, new Exception(string));
+        defaultLogger.error(string, new Exception(string));
     }
 }
