@@ -1134,9 +1134,10 @@ public class Player implements UnitLens, LocationLens {
                 } else if (
                     !u.hasOrders() &&
                     u.onboard != null &&
-                    u.onboard.isUnloadingMode()
+                    u.onboard.isUnloadingMode() &&
+                    u.canDisembark()
                 ) {
-                    // Carried unit woken for unloading — player should be prompted
+                    // Carried unit woken for unloading — only if there's a valid hex
                     units.add(u);
                 }
             }
