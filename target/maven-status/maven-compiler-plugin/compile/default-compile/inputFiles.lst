@@ -3,7 +3,6 @@
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/fx/sprites/FxLineSprite.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/fx/sprites/FxSprite.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/commands/SetPathCommand.java
-/Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/hexboard/sprites/PolygonSprite.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/PathFinder.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/GameException.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/brain/SubmarineCaptain.java
@@ -43,7 +42,6 @@
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/brain/General.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/events/AbstractGameEvent.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/brain/ProductionPair.java
-/Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/hexboard/mapbuilder/MapBuilderHexBoardFrame.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/types/Armor.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/Unit.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/brain/AIConfigurationLoader.java
@@ -65,7 +63,6 @@
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/types/Infantry.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/controller/GameController.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/hexboard/Direction.java
-/Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/hexboard/sprites/ImageSprite.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/edicts/AirPatrol.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/fx/sprites/FxArrowSprite.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/types/Battleship.java
@@ -73,7 +70,6 @@
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/fx/GameCommandHandler.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/testing/TournamentManager.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/fx/modes/AttackMode.java
-/Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/hexboard/HexCanvas.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/hexboard/HexBoardContext.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/UnitStats.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/SaDException.java
@@ -109,11 +105,9 @@
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/util/Graph.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/types/Destroyer.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/testing/AITestCLI.java
-/Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/hexboard/sprites/Sprite.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/util/Tracer.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/fx/modes/MapCanvasModeManager.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/fx/SaveGameDialog.java
-/Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/hexboard/sprites/ArrowSprite.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/commands/SetAirPatrolCommand.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/astar/AStarPosition.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/brain/CruiserCaptain.java
@@ -157,7 +151,6 @@
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/brain/TargetPrioritizer.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/orders/Patrol.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/controller/GameQueryServiceImpl.java
-/Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/hexboard/sprites/LineSprite.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/orders/SkipTurn.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/events/GameEventType.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/MapState.java
@@ -174,7 +167,6 @@
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/edicts/SendSeaUnits.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/orders/Attack.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/types/Cargo.java
-/Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/hexboard/sprites/StrokeSprite.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/global/GlobalConstants.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/fx/UnitInfoPanel.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/types/Fighter.java
@@ -187,11 +179,9 @@
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/fx/modes/GameMode.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/hexboard/HexBoardView.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/testing/GameStatistics.java
-/Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/hexboard/sprites/MovingImageSprite.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/brain/strategy/ContinentClassifier.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/brain/FighterCaptain.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/util/Log.java
-/Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/hexboard/sprites/CursorSprite.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/brain/CargoCaptain.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/orders/MoveSouthEast.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/brain/BattleshipCaptain.java
@@ -210,6 +200,5 @@
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/Order.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/Player.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/fx/BattleHistoryPanel.java
-/Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/hexboard/sprites/SpriteEngine.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/orders/MoveSouthWest.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/brain/UnitCaptain.java

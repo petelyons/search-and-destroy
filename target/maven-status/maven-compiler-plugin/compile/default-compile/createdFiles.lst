@@ -35,16 +35,13 @@ com/developingstorm/games/astar/AStarState.class
 com/developingstorm/games/sad/events/GameEventListener.class
 com/developingstorm/games/sad/fx/SaveGameDialog$SaveGameEntry.class
 com/developingstorm/games/sad/Travel.class
-com/developingstorm/games/hexboard/sprites/ArrowSprite.class
 com/developingstorm/games/sad/events/CombatResolvedEvent.class
 com/developingstorm/games/sad/VisionManager.class
 com/developingstorm/games/sad/GameState.class
 com/developingstorm/games/sad/fx/TerrainImages$1.class
-com/developingstorm/games/hexboard/sprites/MovingImageSprite.class
 com/developingstorm/games/sad/edicts/SendSeaUnits.class
 com/developingstorm/games/sad/Player$1.class
 com/developingstorm/games/sad/City.class
-com/developingstorm/games/hexboard/mapbuilder/MapBuilderHexBoardFrame.class
 com/developingstorm/games/sad/Player$OrderStateCounts.class
 com/developingstorm/games/sad/OrderResponse.class
 com/developingstorm/games/sad/fx/SaveGameDialog$SaveGameCell.class
@@ -57,9 +54,7 @@ com/developingstorm/games/sad/util/json/JsonParser$TokenType.class
 com/developingstorm/games/sad/commands/ClearPathCommand$1.class
 com/developingstorm/games/sad/fx/modes/ExploreMode$1.class
 com/developingstorm/games/sad/events/PathfindingErrorEvent.class
-com/developingstorm/games/hexboard/mapbuilder/MapBuilderHexBoardFrame$1.class
 com/developingstorm/games/sad/brain/StrategyMemory$OperationPhase.class
-com/developingstorm/games/hexboard/sprites/CursorSprite.class
 com/developingstorm/games/sad/GameNames.class
 com/developingstorm/games/sad/testing/GameStatistics.class
 com/developingstorm/games/sad/brain/General.class
@@ -85,7 +80,6 @@ com/developingstorm/games/sad/brain/StrategyMemory$InvasionPlan.class
 com/developingstorm/games/sad/orders/MoveEast.class
 com/developingstorm/games/sad/util/json/JsonFormatter.class
 com/developingstorm/games/sad/fx/GameView$1.class
-com/developingstorm/games/hexboard/sprites/ImageSprite.class
 com/developingstorm/games/sad/fx/NewGameDialog.class
 com/developingstorm/games/sad/commands/SetAirPatrolCommand.class
 com/developingstorm/games/sad/fx/modes/AbstractMapCanvasMode.class
@@ -107,14 +101,12 @@ com/developingstorm/games/sad/events/PlayerSelectedEvent.class
 com/developingstorm/games/sad/UnitStats.class
 com/developingstorm/games/sad/brain/InfantryCaptain.class
 com/developingstorm/games/sad/EdictGovernor.class
-com/developingstorm/games/hexboard/sprites/PolygonSprite.class
 com/developingstorm/games/sad/types/Carrier.class
 com/developingstorm/games/sad/types/Infantry.class
 com/developingstorm/games/sad/fx/BattleHistoryPanel.class
 com/developingstorm/games/sad/fx/TerrainImages.class
 com/developingstorm/games/sad/turn/OrderState.class
 com/developingstorm/games/sad/events/GameEventType.class
-com/developingstorm/games/hexboard/sprites/Sprite.class
 com/developingstorm/games/sad/types/Battleship.class
 com/developingstorm/games/sad/brain/CargoCaptain.class
 com/developingstorm/games/sad/types/Submarine.class
@@ -136,7 +128,6 @@ com/developingstorm/games/sad/orders/Disband.class
 com/developingstorm/games/sad/edicts/AirPatrol.class
 com/developingstorm/games/sad/fx/modes/GameMode$1.class
 com/developingstorm/games/sad/fx/sprites/FxArrowSprite.class
-com/developingstorm/games/hexboard/mapbuilder/MapBuilderHexBoardFrame$MapContext.class
 com/developingstorm/games/sad/EdictType.class
 com/developingstorm/games/sad/orders/MoveSouthEast.class
 SAD.class
@@ -170,7 +161,6 @@ com/developingstorm/games/sad/brain/StrategyMemory$DefensePlan.class
 com/developingstorm/games/sad/fx/sprites/FxSprite.class
 com/developingstorm/games/sad/Board.class
 com/developingstorm/games/sad/brain/Battleplan.class
-com/developingstorm/games/hexboard/sprites/SpriteEngine$AnimationThread.class
 com/developingstorm/games/sad/fx/GameCommandHandler.class
 com/developingstorm/games/sad/persistence/GameStateSerializer.class
 com/developingstorm/games/sad/commands/SetPathCommand$1.class
@@ -188,7 +178,6 @@ com/developingstorm/games/sad/orders/Unload.class
 com/developingstorm/games/sad/fx/GameMenuBar.class
 com/developingstorm/games/sad/fx/modes/PathMode.class
 com/developingstorm/games/sad/CombatResult.class
-com/developingstorm/games/hexboard/sprites/SpriteEngine.class
 com/developingstorm/util/GraphNode.class
 com/developingstorm/games/sad/fx/GameView.class
 com/developingstorm/games/sad/events/UnitTrackedEvent.class
@@ -208,7 +197,6 @@ com/developingstorm/games/sad/events/GameEventBus$ListenerRegistration.class
 com/developingstorm/games/sad/Type.class
 com/developingstorm/games/sad/fx/CityUnitsDialog.class
 com/developingstorm/games/sad/testing/TournamentManager$TournamentResult.class
-com/developingstorm/games/hexboard/sprites/StrokeSprite.class
 com/developingstorm/games/sad/orders/DirectionalMove.class
 com/developingstorm/games/sad/controller/GameController.class
 com/developingstorm/games/sad/events/GameOverEvent.class
@@ -234,7 +222,6 @@ com/developingstorm/games/hexboard/HexBoardContext.class
 com/developingstorm/games/sad/brain/AIConfigurationLoader.class
 com/developingstorm/exceptions/ProductRuntimeException.class
 com/developingstorm/games/sad/Game$1.class
-com/developingstorm/games/hexboard/sprites/LineSprite.class
 com/developingstorm/games/sad/types/Transport.class
 com/developingstorm/games/sad/combat/EnemyDetector.class
 com/developingstorm/games/hexboard/Direction.class
@@ -252,7 +239,6 @@ com/developingstorm/games/sad/Unit.class
 com/developingstorm/games/astar/AStarWatcher.class
 com/developingstorm/games/astar/AStarNode.class
 com/developingstorm/games/sad/controller/GameQueryServiceImpl.class
-com/developingstorm/games/hexboard/HexCanvas.class
 com/developingstorm/games/astar/AStar.class
 com/developingstorm/games/sad/Game$3.class
 com/developingstorm/games/sad/fx/BattleHistoryPanel$BattleSelectionListener.class
