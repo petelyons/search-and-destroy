@@ -1,9 +1,0 @@
-com/developingstorm/games/astar/GridState.class
-com/developingstorm/games/sad/persistence/GameStateSerializerTest$MockSaDBoardContext.class
-com/developingstorm/games/sad/PathCalculatorTest.class
-com/developingstorm/games/sad/BoardTest.class
-com/developingstorm/games/sad/persistence/GameStateSerializerTest.class
-com/developingstorm/games/astar/AStarTest.class
-com/developingstorm/games/hexboard/LocationTest.class
-com/developingstorm/games/hexboard/DirectionTest.class
-com/developingstorm/games/astar/GridPosition.class

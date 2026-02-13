@@ -160,7 +160,6 @@ com/developingstorm/games/hexboard/Location.class
 com/developingstorm/games/hexboard/HexBoard.class
 com/developingstorm/games/sad/fx/UnitInfoPanel.class
 com/developingstorm/games/sad/fx/modes/ExploreMode.class
-com/developingstorm/util/NoKeyScrollPane.class
 com/developingstorm/games/astar/AStarPosition.class
 com/developingstorm/games/sad/UnitNames$ThemeNames.class
 com/developingstorm/games/sad/MovementResolver.class

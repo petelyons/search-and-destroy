@@ -203,7 +203,6 @@
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/util/json/JsonObj.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/events/GameAbortedEvent.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/commands/ResumeGameCommand.java
-/Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/util/NoKeyScrollPane.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/PathfindingContext.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/fx/NewGameDialog.java
 /Users/petelyons/code/pete/search-and-destroy/src/main/java/com/developingstorm/games/sad/edicts/AutoSentry.java
