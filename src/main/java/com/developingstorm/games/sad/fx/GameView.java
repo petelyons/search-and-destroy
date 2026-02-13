@@ -159,15 +159,15 @@ public class GameView extends BorderPane {
                 }
                 break;
             case UNIT_MOVED:
-                // Unit moved - refresh map and update info panel if this is the selected unit
+                // Unit moved - refresh map and update info panel if this is the displayed unit
                 com.developingstorm.games.sad.events.UnitMovedEvent ume =
                     (com.developingstorm.games.sad.events.UnitMovedEvent) event;
-                Unit selectedUnit = query.getSelectedUnit();
+                Unit displayedUnit = unitInfoPanel.getUnit();
                 if (
-                    selectedUnit != null && selectedUnit.id == ume.getUnitId()
+                    displayedUnit != null && displayedUnit.id == ume.getUnitId()
                 ) {
-                    // Selected unit moved - update info panel to show new location
-                    unitInfoPanel.setUnit(selectedUnit);
+                    // Displayed unit moved - refresh info panel to show new location
+                    unitInfoPanel.setUnit(displayedUnit);
                 }
                 mapCanvas.refresh();
                 break;

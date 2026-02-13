@@ -207,6 +207,13 @@ public class UnitInfoPanel extends VBox {
     }
 
     /**
+     * Get the unit currently displayed in this panel.
+     */
+    public Unit getUnit() {
+        return currentUnit;
+    }
+
+    /**
      * Update the panel to show information about the given unit.
      * Uses helper methods from Unit class to match Swing formatting.
      */
