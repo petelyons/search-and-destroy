@@ -1,6 +1,6 @@
 package com.developingstorm.games.sad.fx;
 
-import com.developingstorm.games.sad.Game;
+import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.commands.DisbandUnitCommand;
 import com.developingstorm.games.sad.controller.GameController;
@@ -92,6 +92,17 @@ public class GameCommandHandler {
             cmd.execute(query.getGame());
         });
         controller.resumeGame(null);
+    }
+
+    /**
+     * End the current player's turn immediately, skipping all remaining units.
+     */
+    public void endTurn() {
+        Player currentPlayer = query.getCurrentPlayer();
+        if (currentPlayer != null && !currentPlayer.isRobot()) {
+            currentPlayer.requestEndTurn();
+            controller.resumeGame(null);
+        }
     }
 
     /**

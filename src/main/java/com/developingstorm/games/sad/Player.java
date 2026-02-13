@@ -66,6 +66,9 @@ public class Player implements UnitLens, LocationLens {
 
     private EdictFactory edictFactory;
 
+    // Flag to signal the game loop to end the current turn immediately
+    private volatile boolean endTurnRequested;
+
     // Last known positions of enemy units (for fog-of-war indicators)
     private Map<Long, LastSeenInfo> lastSeenEnemies;
 
@@ -139,6 +142,13 @@ public class Player implements UnitLens, LocationLens {
         if (u != null && !u.isDead()) {
             this.pendingOrders.offer(u);
         }
+    }
+
+    /**
+     * Request that the current turn end immediately, skipping all remaining units.
+     */
+    public void requestEndTurn() {
+        this.endTurnRequested = true;
     }
 
     public String toString() {
@@ -1165,11 +1175,17 @@ public class Player implements UnitLens, LocationLens {
         long turnStartTime = System.currentTimeMillis();
         int totalUnits = this.units.size();
         int unitsMoved = 0;
+        this.endTurnRequested = false;
 
         // Note: startNewTurn() is now called in Game.play() before this method
         // to ensure visibility is updated before any UI rendering occurs
 
         while (true) {
+            if (endTurnRequested) {
+                Log.info(this, "End turn requested by player");
+                break;
+            }
+
             List<Unit> unplayed = unplayedUnits();
 
             if (unplayed.isEmpty()) {
@@ -1231,8 +1247,22 @@ public class Player implements UnitLens, LocationLens {
             previousMovesLeft = orderStats.availableMoves;
 
             if (orderStats.noOrders > 0) {
+                if (orderStats.availableMoves == 0) {
+                    Log.info(
+                        this,
+                        "Units need orders but no moves available - ending turn"
+                    );
+                    break;
+                }
                 Log.debug(this, "Needs more orders");
                 unitsNeedOrders();
+                if (endTurnRequested) {
+                    Log.info(
+                        this,
+                        "End turn requested during order assignment"
+                    );
+                    break;
+                }
                 previousMovesLeft = -1;
             }
 

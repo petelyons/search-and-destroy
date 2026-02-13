@@ -286,6 +286,11 @@ public class GameView extends BorderPane {
                         consumed = true;
                     }
                     break;
+                case ENTER:
+                    // End turn - skip all remaining units
+                    commandHandler.endTurn();
+                    consumed = true;
+                    break;
                 case ESCAPE:
                     // Delegate to mode manager first
                     // If not handled, deselect unit
