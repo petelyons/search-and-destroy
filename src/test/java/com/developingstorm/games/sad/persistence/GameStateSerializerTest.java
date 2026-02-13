@@ -2,6 +2,7 @@ package com.developingstorm.games.sad.persistence;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.developingstorm.games.hexboard.HexBoardContext;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.hexboard.LocationMap;
 import com.developingstorm.games.sad.City;
@@ -10,7 +11,6 @@ import com.developingstorm.games.sad.OrderType;
 import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
-import com.developingstorm.games.sad.ui.SaDBoardContext;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -31,9 +31,9 @@ public class GameStateSerializerTest {
     File tempDir;
 
     /**
-     * Mock implementation of SaDBoardContext for testing
+     * Mock implementation of HexBoardContext for testing
      */
-    private static class MockSaDBoardContext implements SaDBoardContext {
+    private static class MockSaDBoardContext implements HexBoardContext {
 
         @Override
         public int getWidth() {
@@ -68,11 +68,6 @@ public class GameStateSerializerTest {
         @Override
         public int getZs() {
             return 3;
-        }
-
-        @Override
-        public java.awt.Color getPlayerColor(Player p) {
-            return java.awt.Color.BLACK;
         }
 
         @Override

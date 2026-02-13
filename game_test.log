@@ -1,15 +1,76 @@
-15:12:59.661 [JavaFX-Game-Thread] INFO  c.developingstorm.games.sad.Player - <Human: I=1>:[58]:Turn over
-15:12:59.742 [JavaFX-Game-Thread] INFO  com.developingstorm.games.sad.Robot - <Robot: I=2>:[58]:Turn over
-15:12:59.743 [JavaFX-Game-Thread] INFO  c.developingstorm.games.sad.Player - <Human: I=1>:[58]:Turn over
-15:12:59.744 [JavaFX-Game-Thread] INFO  com.developingstorm.games.sad.Robot - <Robot: I=2>:[58]:Turn over
-15:12:59.744 [JavaFX-Game-Thread] INFO  c.developingstorm.games.sad.Player - <Human: I=1>:[58]:Turn over
-15:12:59.746 [JavaFX-Game-Thread] INFO  com.developingstorm.games.sad.Robot - <Robot: I=2>:[58]:Turn over
-15:12:59.746 [JavaFX-Game-Thread] INFO  c.developingstorm.games.sad.Player - <Human: I=1>:[58]:Turn over
-15:12:59.747 [JavaFX-Game-Thread] INFO  com.developingstorm.games.sad.Robot - <Robot: I=2>:[58]:Turn over
-15:12:59.748 [JavaFX-Game-Thread] INFO  c.developingstorm.games.sad.Player - <Human: I=1>:[58]:Turn over
-15:12:59.751 [JavaFX-Game-Thread] INFO  c.d.games.sad.types.Infantry - <[Infantry 2: AWAKE: No Orders: Own=Robot: I=2: Loc=(2,39): Life=[HITS=2/2: MOVE=1/1]]>:[58]:Placing unit on board
-15:12:59.755 [JavaFX-Game-Thread] INFO  c.d.games.sad.types.Infantry - <[Infantry 2: AWAKE: No Orders: Own=Robot: I=2: Loc=(2,39): Life=[HITS=2/2: MOVE=1/1]]>:[58]:Moving to prioritized unoccupied city: Otter Lake  at 7,38 unowned
-15:12:59.757 [JavaFX-Game-Thread] INFO  c.d.games.sad.types.Infantry - <[Infantry 2: AWAKE: Move: Own=Robot: I=2: Loc=(2,39): Life=[HITS=2/2: MOVE=1/1]]>:[58]:change location to 3,40
-15:12:59.758 [JavaFX-Game-Thread] INFO  c.d.games.sad.types.Infantry - <[Infantry 3: AWAKE: No Orders: Own=Human: I=1: Loc=(36,22): Life=[HITS=2/2: MOVE=1/1]]>:[58]:Placing unit on board
-15:12:59.758 [JavaFX-Game-Thread] INFO  c.developingstorm.games.sad.Player - <Human: I=1>:[58]:unitsNeedOrders() called, checking pendingOrders queue
-15:12:59.758 [JavaFX-Game-Thread] INFO  c.developingstorm.games.sad.Player - <Human: I=1>:[58]:No units in pendingOrders need orders
+15:47:42.571 [main] INFO  c.d.g.s.p.GameStateSerializer - Loading game from: /var/folders/tj/h_yx2zns36v9x0y3lv4mnsmc0000gn/T/junit9603924069703205387/corrupted.json
+15:47:42.577 [main] INFO  c.d.g.s.p.GameStateSerializer - Loading game from: /Users/petelyons/code/pete/search-and-destroy/target/test-classes/saves/test_save_v1.2.json
+15:47:42.605 [main] INFO  c.d.g.s.p.GameStateSerializer - Restoring explored areas from save file (v1.2+)
+15:47:42.605 [main] INFO  c.d.g.s.p.GameStateSerializer - Restoring 541 explored locations for player Pete
+15:47:42.605 [main] INFO  c.d.g.s.p.GameStateSerializer - Restoring 241 explored locations for player Jayne
+15:47:42.606 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 2: AWAKE: No Orders: Own=Robot: I=2: Loc=(4,20): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.607 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 2: AWAKE: No Orders: Own=Robot: I=2: Loc=(4,20): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.607 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 3: AWAKE: No Orders: Own=Robot: I=2: Loc=(4,20): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.607 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 3: AWAKE: No Orders: Own=Robot: I=2: Loc=(4,20): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.607 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 4: AWAKE: No Orders: Own=Robot: I=2: Loc=(4,20): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.607 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 4: AWAKE: No Orders: Own=Robot: I=2: Loc=(4,20): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.607 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 5: AWAKE: No Orders: Own=Robot: I=2: Loc=(7,33): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.608 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 5: AWAKE: No Orders: Own=Robot: I=2: Loc=(7,33): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.608 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 6: AWAKE: No Orders: Own=Robot: I=2: Loc=(4,20): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.608 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 6: AWAKE: No Orders: Own=Robot: I=2: Loc=(4,20): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.608 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 7: AWAKE: No Orders: Own=Human: I=1: Loc=(15,12): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.608 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 7: AWAKE: No Orders: Own=Human: I=1: Loc=(15,12): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.608 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 8: AWAKE: No Orders: Own=Human: I=1: Loc=(12,13): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.608 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 8: AWAKE: No Orders: Own=Human: I=1: Loc=(12,13): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.608 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 9: AWAKE: No Orders: Own=Human: I=1: Loc=(4,13): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.608 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 9: AWAKE: No Orders: Own=Human: I=1: Loc=(4,13): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.608 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 10: AWAKE: No Orders: Own=Human: I=1: Loc=(20,12): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.608 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 10: AWAKE: No Orders: Own=Human: I=1: Loc=(20,12): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.608 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 11: AWAKE: No Orders: Own=Human: I=1: Loc=(20,12): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.608 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 11: AWAKE: No Orders: Own=Human: I=1: Loc=(20,12): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.608 [main] INFO  c.d.games.sad.types.Transport - <[Transport 12: AWAKE: No Orders: Own=Robot: I=2: Loc=(5,41): Life=[HITS=2/2: MOVE=2/2]]>:[3]:Placing unit on board
+15:47:42.609 [main] INFO  c.d.games.sad.types.Transport - <[Transport 12: AWAKE: No Orders: Own=Robot: I=2: Loc=(5,41): Life=[HITS=2/2: MOVE=2/2]]>:[3]:Exiting unloading mode
+15:47:42.609 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 13: AWAKE: No Orders: Own=Human: I=1: Loc=(22,18): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.609 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 13: AWAKE: No Orders: Own=Human: I=1: Loc=(22,18): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.609 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 14: AWAKE: No Orders: Own=Human: I=1: Loc=(4,13): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.609 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 14: AWAKE: No Orders: Own=Human: I=1: Loc=(4,13): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.609 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 15: AWAKE: No Orders: Own=Human: I=1: Loc=(4,13): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.609 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 15: AWAKE: No Orders: Own=Human: I=1: Loc=(4,13): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.609 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 16: AWAKE: No Orders: Own=Human: I=1: Loc=(20,21): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.609 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 16: AWAKE: No Orders: Own=Human: I=1: Loc=(20,21): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.609 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 17: AWAKE: No Orders: Own=Human: I=1: Loc=(4,13): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.609 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 17: AWAKE: No Orders: Own=Human: I=1: Loc=(4,13): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.609 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 18: AWAKE: No Orders: Own=Human: I=1: Loc=(22,19): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.610 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 18: AWAKE: No Orders: Own=Human: I=1: Loc=(22,19): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.610 [main] INFO  c.d.games.sad.types.Destroyer - <[Destroyer 19: AWAKE: No Orders: Own=Human: I=1: Loc=(0,18): Life=[HITS=3/3: MOVE=3/3]]>:[3]:Placing unit on board
+15:47:42.610 [main] INFO  c.d.games.sad.types.Destroyer - <[Destroyer 19: AWAKE: No Orders: Own=Human: I=1: Loc=(0,18): Life=[HITS=3/3: MOVE=3/3]]>:[3]:Exiting unloading mode
+15:47:42.610 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 20: AWAKE: No Orders: Own=Human: I=1: Loc=(17,12): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.610 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 20: AWAKE: No Orders: Own=Human: I=1: Loc=(17,12): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.610 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 21: AWAKE: No Orders: Own=Robot: I=2: Loc=(6,30): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.610 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 21: AWAKE: No Orders: Own=Robot: I=2: Loc=(6,30): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.610 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 22: AWAKE: No Orders: Own=Human: I=1: Loc=(20,12): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.610 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 22: AWAKE: No Orders: Own=Human: I=1: Loc=(20,12): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.610 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 23: AWAKE: No Orders: Own=Human: I=1: Loc=(14,5): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.610 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 23: AWAKE: No Orders: Own=Human: I=1: Loc=(14,5): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.610 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 24: AWAKE: No Orders: Own=Human: I=1: Loc=(23,19): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.610 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 24: AWAKE: No Orders: Own=Human: I=1: Loc=(23,19): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.610 [main] INFO  c.d.games.sad.types.Transport - <[Transport 25: AWAKE: No Orders: Own=Human: I=1: Loc=(18,17): Life=[HITS=2/2: MOVE=2/2]]>:[3]:Placing unit on board
+15:47:42.611 [main] INFO  c.d.games.sad.types.Transport - <[Transport 25: AWAKE: No Orders: Own=Human: I=1: Loc=(18,17): Life=[HITS=2/2: MOVE=2/2]]>:[3]:Exiting unloading mode
+15:47:42.611 [main] INFO  c.d.games.sad.types.Transport - <[Transport 26: AWAKE: No Orders: Own=Human: I=1: Loc=(4,13): Life=[HITS=2/2: MOVE=2/2]]>:[3]:Placing unit on board
+15:47:42.611 [main] INFO  c.d.games.sad.types.Transport - <[Transport 26: AWAKE: No Orders: Own=Human: I=1: Loc=(4,13): Life=[HITS=2/2: MOVE=2/2]]>:[3]:Exiting unloading mode
+15:47:42.611 [main] INFO  c.d.games.sad.types.Destroyer - <[Destroyer 27: AWAKE: No Orders: Own=Robot: I=2: Loc=(6,23): Life=[HITS=3/3: MOVE=3/3]]>:[3]:Placing unit on board
+15:47:42.611 [main] INFO  c.d.games.sad.types.Destroyer - <[Destroyer 27: AWAKE: No Orders: Own=Robot: I=2: Loc=(6,23): Life=[HITS=3/3: MOVE=3/3]]>:[3]:Exiting unloading mode
+15:47:42.611 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 28: AWAKE: No Orders: Own=Human: I=1: Loc=(20,12): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.611 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 28: AWAKE: No Orders: Own=Human: I=1: Loc=(20,12): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.611 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 29: AWAKE: No Orders: Own=Human: I=1: Loc=(14,5): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.611 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 29: AWAKE: No Orders: Own=Human: I=1: Loc=(14,5): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.611 [main] INFO  c.d.games.sad.types.Bomber - <[Bomber 30: AWAKE: No Orders: Own=Human: I=1: Loc=(7,3): Life=[HITS=2/2: MOVE=4/4: FUEL=32/32]]>:[3]:Placing unit on board
+15:47:42.611 [main] INFO  c.d.games.sad.types.Bomber - <[Bomber 30: AWAKE: No Orders: Own=Human: I=1: Loc=(7,3): Life=[HITS=2/2: MOVE=4/4: FUEL=32/32]]>:[3]:Exiting unloading mode
+15:47:42.611 [main] INFO  c.d.games.sad.types.Bomber - <[Bomber 31: AWAKE: No Orders: Own=Human: I=1: Loc=(13,15): Life=[HITS=2/2: MOVE=4/4: FUEL=32/32]]>:[3]:Placing unit on board
+15:47:42.611 [main] INFO  c.d.games.sad.types.Bomber - <[Bomber 31: AWAKE: No Orders: Own=Human: I=1: Loc=(13,15): Life=[HITS=2/2: MOVE=4/4: FUEL=32/32]]>:[3]:Exiting unloading mode
+15:47:42.611 [main] INFO  c.d.games.sad.types.Destroyer - <[Destroyer 32: AWAKE: No Orders: Own=Human: I=1: Loc=(9,20): Life=[HITS=3/3: MOVE=3/3]]>:[3]:Placing unit on board
+15:47:42.611 [main] INFO  c.d.games.sad.types.Destroyer - <[Destroyer 32: AWAKE: No Orders: Own=Human: I=1: Loc=(9,20): Life=[HITS=3/3: MOVE=3/3]]>:[3]:Exiting unloading mode
+15:47:42.611 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 33: AWAKE: No Orders: Own=Human: I=1: Loc=(20,12): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.611 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 33: AWAKE: No Orders: Own=Human: I=1: Loc=(20,12): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.611 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 34: AWAKE: No Orders: Own=Human: I=1: Loc=(15,5): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.611 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 34: AWAKE: No Orders: Own=Human: I=1: Loc=(15,5): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.611 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 35: AWAKE: No Orders: Own=Human: I=1: Loc=(7,3): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Placing unit on board
+15:47:42.611 [main] INFO  c.d.games.sad.types.Infantry - <[Infantry 35: AWAKE: No Orders: Own=Human: I=1: Loc=(7,3): Life=[HITS=2/2: MOVE=1/1]]>:[3]:Exiting unloading mode
+15:47:42.612 [main] INFO  c.d.g.s.p.GameStateSerializer - Recalculating visibility for all players after load
+15:47:42.612 [main] INFO  c.d.g.s.p.GameStateSerializer - Game loaded successfully: turn 87
+15:47:42.615 [main] INFO  c.d.g.s.p.GameStateSerializer - Loading game from: /var/folders/tj/h_yx2zns36v9x0y3lv4mnsmc0000gn/T/junit7754861058770251516/test_save.json
