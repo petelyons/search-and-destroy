@@ -36,7 +36,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import javax.swing.JOptionPane;
 
 /**
  * Class information
@@ -55,8 +54,6 @@ public class Game implements UnitLens, LocationLens {
     private final CombatResolver combatResolver;
     private final CityManager cityManager;
     private final MovementResolver movementResolver;
-
-    private volatile GameListener gameListener;
 
     public volatile int turn;
 
@@ -80,7 +77,6 @@ public class Game implements UnitLens, LocationLens {
     public Game(Player[] players, HexBoardMap grid, HexBoardContext ctx) {
         try {
             this.ctx = ctx;
-            this.gameListener = null;
             this.players = players;
             this.pendingActions = new LinkedList<Runnable>();
 
@@ -211,14 +207,6 @@ public class Game implements UnitLens, LocationLens {
         return paused;
     }
 
-    public void setGameListener(GameListener gameListener) {
-        this.gameListener = gameListener;
-    }
-
-    GameListener getGameListener() {
-        return gameListener;
-    }
-
     public void trackUnit(Unit u) {
         if (u != null) {
             // Only track units owned by the human player (players[0])
@@ -234,20 +222,12 @@ public class Game implements UnitLens, LocationLens {
             }
 
             eventBus.publish(new UnitTrackedEvent(u));
-
-            if (this.gameListener != null) {
-                this.gameListener.trackUnit(u);
-            }
         } else {
             Log.debug(this, "Tracking null unit");
         }
     }
 
-    public void trackLocation(Location loc) {
-        if (this.gameListener != null && loc != null) {
-            this.gameListener.trackLocation(loc);
-        }
-    }
+    public void trackLocation(Location loc) {}
 
     public Board getBoard() {
         return board;
@@ -529,13 +509,6 @@ public class Game implements UnitLens, LocationLens {
                         GameState.AWAITING_ORDERS
                     );
 
-                    if (this.gameListener != null) {
-                        Thread t = new Thread(() ->
-                            this.gameListener.notifyWait()
-                        );
-                        t.start();
-                    }
-
                     // Wait loop that periodically checks for commands
                     while (
                         this.gameState == GameState.AWAITING_ORDERS && paused
@@ -589,34 +562,16 @@ public class Game implements UnitLens, LocationLens {
         }
     }
 
-    private void playerChange() {
-        if (this.gameListener != null) this.gameListener.selectPlayer(
-            this.currentPlayer
-        );
-    }
+    private void playerChange() {}
 
     public void selectUnit(Unit u) {
         if (u != null) selectedUnit = u;
-
-        // Publish event for new architecture
         eventBus.publish(new UnitSelectedEvent(u));
-
-        // Legacy listener call for backward compatibility
-        if (this.gameListener != null) {
-            this.gameListener.selectUnit(u);
-        }
     }
 
     public void deselectUnit() {
         selectedUnit = null;
-
-        // Publish event for new architecture
         eventBus.publish(new UnitSelectedEvent(null));
-
-        // Legacy listener call for backward compatibility
-        if (this.gameListener != null) {
-            this.gameListener.selectUnit(null);
-        }
     }
 
     public void play() {
@@ -638,17 +593,11 @@ public class Game implements UnitLens, LocationLens {
                 uc = this.currentPlayer.unitCount();
                 cc = this.currentPlayer.cityCount();
                 if (cc == 0 && uc == 0) {
-                    if (this.gameListener != null) {
-                        this.gameListener.gameOver(nextPlayer());
-                    }
                     eventBus.publish(new GameOverEvent(nextPlayer()));
                     transitionState(this.gameState, GameState.GAME_OVER);
                     return;
                 } else if (cc == 0) {
                     if (!this.currentPlayer.hasUnitsThatCaptureACity()) {
-                        if (this.gameListener != null) {
-                            this.gameListener.gameOver(nextPlayer());
-                        }
                         eventBus.publish(new GameOverEvent(nextPlayer()));
                         transitionState(this.gameState, GameState.GAME_OVER);
                         return;
@@ -666,9 +615,6 @@ public class Game implements UnitLens, LocationLens {
                 if (currentPlayer == this.players[0]) {
                     Log.debug(this, "Starting turn: " + this.turn);
                     this.turn++;
-                    if (this.gameListener != null) {
-                        this.gameListener.newTurn(this.turn);
-                    }
                     eventBus.publish(new NewTurnEvent(this.turn));
                 }
                 processPostedGameActions();
@@ -677,9 +623,6 @@ public class Game implements UnitLens, LocationLens {
             } while (true);
         } catch (Throwable t) {
             t.printStackTrace();
-            if (this.gameListener != null) {
-                this.gameListener.abort();
-            }
             eventBus.publish(new GameAbortedEvent());
         }
     }
