@@ -1,7 +1,5 @@
 package com.developingstorm.games.sad;
 
-import com.developingstorm.games.sad.ui.GameIcons;
-
 public enum Type {
     INFANTRY(
         builder()
@@ -17,7 +15,7 @@ public enum Type {
             .carryCount(0)
             .weight(1)
             .attack(1)
-            .iconID(GameIcons.iARMY)
+            .iconID(7)
     ),
     ARMOR(
         builder()
@@ -33,7 +31,7 @@ public enum Type {
             .carryCount(0)
             .weight(2)
             .attack(2)
-            .iconID(GameIcons.iTANK)
+            .iconID(25)
     ),
     FIGHTER(
         builder()
@@ -49,7 +47,7 @@ public enum Type {
             .carryCount(0)
             .weight(1)
             .attack(1)
-            .iconID(GameIcons.iFIGHTER)
+            .iconID(8)
     ),
     BOMBER(
         builder()
@@ -65,7 +63,7 @@ public enum Type {
             .carryCount(0)
             .weight(0)
             .attack(3)
-            .iconID(GameIcons.iBOMBER)
+            .iconID(26)
     ),
     CARGO(
         builder()
@@ -81,7 +79,7 @@ public enum Type {
             .carryCount(1)
             .weight(0)
             .attack(0)
-            .iconID(GameIcons.iCARGO)
+            .iconID(27)
     ),
     DESTROYER(
         builder()
@@ -97,7 +95,7 @@ public enum Type {
             .carryCount(0)
             .weight(0)
             .attack(3)
-            .iconID(GameIcons.iDESTROYER)
+            .iconID(10)
     ),
     TRANSPORT(
         builder()
@@ -113,7 +111,7 @@ public enum Type {
             .carryCount(6)
             .weight(0)
             .attack(0)
-            .iconID(GameIcons.iTRANSPORT)
+            .iconID(9)
     ),
     SUBMARINE(
         builder()
@@ -129,7 +127,7 @@ public enum Type {
             .carryCount(0)
             .weight(0)
             .attack(4)
-            .iconID(GameIcons.iSUBMARINE)
+            .iconID(11)
     ),
     CRUISER(
         builder()
@@ -145,7 +143,7 @@ public enum Type {
             .carryCount(0)
             .weight(0)
             .attack(3)
-            .iconID(GameIcons.iCRUISER)
+            .iconID(12)
     ),
     CARRIER(
         builder()
@@ -161,7 +159,7 @@ public enum Type {
             .carryCount(6)
             .weight(0)
             .attack(1)
-            .iconID(GameIcons.iAIRCRAFTCARRIER)
+            .iconID(14)
     ),
     BATTLESHIP(
         builder()
@@ -177,7 +175,7 @@ public enum Type {
             .carryCount(0)
             .weight(0)
             .attack(4)
-            .iconID(GameIcons.iBATTLESHIP)
+            .iconID(13)
     );
 
     static {

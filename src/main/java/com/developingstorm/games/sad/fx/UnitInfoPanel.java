@@ -10,7 +10,6 @@ import com.developingstorm.games.sad.orders.HeadHome;
 import com.developingstorm.games.sad.orders.Sentry;
 import com.developingstorm.games.sad.orders.SkipTurn;
 import com.developingstorm.games.sad.orders.Unload;
-import com.developingstorm.games.sad.ui.GameIcons;
 import java.awt.image.BufferedImage;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
