@@ -317,11 +317,12 @@ public class MapCanvas extends StackPane {
         }
 
         // Draw cities (only in explored areas)
-        Player currentPlayer = query.getCurrentPlayer();
+        // Always use human player for fog of war, never the AI player
+        Player humanPlayer = query.getHumanPlayer();
         for (City city : board.getCities()) {
             Location cityLoc = city.getLocation();
             boolean isExplored =
-                (currentPlayer == null) || currentPlayer.isExplored(cityLoc);
+                (humanPlayer == null) || humanPlayer.isExplored(cityLoc);
             if (isExplored) {
                 drawCity(city);
             }
@@ -375,18 +376,18 @@ public class MapCanvas extends StackPane {
                 }
 
                 // Only draw units that are either:
-                // 1. Owned by the current player (always visible to themselves)
+                // 1. Owned by the human player (always visible to themselves)
                 // 2. Located in currently visible areas (not just explored)
                 boolean shouldDraw = false;
-                if (currentPlayer == null) {
+                if (humanPlayer == null) {
                     // No fog of war (testing/spectator mode)
                     shouldDraw = true;
-                } else if (unitToDraw.getOwner() == currentPlayer) {
+                } else if (unitToDraw.getOwner() == humanPlayer) {
                     // Always show our own units
                     shouldDraw = true;
                 } else {
                     // Enemy units: only show in currently visible areas
-                    Vision visibility = currentPlayer.getVisibility(loc);
+                    Vision visibility = humanPlayer.getVisibility(loc);
                     shouldDraw = (visibility != Vision.NONE);
                 }
 
@@ -553,9 +554,10 @@ public class MapCanvas extends StackPane {
         Board board = query.getBoard();
 
         // Check if location is explored (visibility/fog of war)
-        Player currentPlayer = query.getCurrentPlayer();
+        // Always use human player, never the AI player
+        Player humanPlayer = query.getHumanPlayer();
         boolean isExplored =
-            (currentPlayer == null) || currentPlayer.isExplored(loc);
+            (humanPlayer == null) || humanPlayer.isExplored(loc);
 
         // If unexplored, show unexplored image
         if (!isExplored) {

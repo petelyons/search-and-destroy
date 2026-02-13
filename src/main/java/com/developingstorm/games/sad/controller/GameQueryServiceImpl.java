@@ -1,12 +1,12 @@
 package com.developingstorm.games.sad.controller;
 
+import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.Board;
 import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.GameState;
 import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Unit;
-import com.developingstorm.games.hexboard.Location;
 import java.util.List;
 
 /**
@@ -34,6 +34,11 @@ public class GameQueryServiceImpl implements GameQueryService {
     @Override
     public Player getCurrentPlayer() {
         return game.currentPlayer();
+    }
+
+    @Override
+    public Player getHumanPlayer() {
+        return game.getHumanPlayer();
     }
 
     @Override

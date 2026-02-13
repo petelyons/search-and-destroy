@@ -100,6 +100,12 @@ public class PatrolMode extends AbstractMapCanvasMode {
      * Add a waypoint to the patrol route.
      */
     private void addWaypoint(Location location) {
+        // Check if clicking on the start location - this completes the patrol
+        if (!waypoints.isEmpty() && waypoints.get(0).equals(location)) {
+            completePatrol();
+            return;
+        }
+
         // Don't add duplicate consecutive waypoints
         if (
             !waypoints.isEmpty() &&

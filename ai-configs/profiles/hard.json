@@ -1,0 +1,49 @@
+{
+  "name": "hard",
+  "version": "1.0.0",
+  "created": "2025-01-29",
+  "description": "Hard difficulty - challenging for experienced players",
+  "code_version": "main",
+  "parent_config": "baseline/v1.0",
+
+  "parameters": {
+    "aggressionLevel": 0.7,
+    "defenseBias": 0.3,
+    "expansionPriority": 0.8,
+    "riskTolerance": 0.6,
+    "combatThreshold": 1.2,
+    "invasionReadiness": 3,
+    "productionStrategy": "AGGRESSIVE",
+
+    "weights": {
+      "cityValue": 100,
+      "unitValue": 45,
+      "territoryValue": 40,
+      "economicValue": 35
+    }
+  },
+
+  "features": {
+    "enableTransportOperations": true,
+    "enableAirSupport": true,
+    "enableCombinedArms": true,
+    "enableAdvancedThreatAssessment": true,
+    "enableInvasionCoordination": true
+  },
+
+  "tactical": {
+    "minAttackPowerRatio": 1.2,
+    "retreatThreshold": 0.4,
+    "defensiveDistance": 2,
+    "scoutingRange": 6
+  },
+
+  "metadata": {
+    "test_results": {
+      "games_played": 0,
+      "win_rate": null,
+      "vs_baseline": null
+    },
+    "status": "profile"
+  }
+}

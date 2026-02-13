@@ -1,12 +1,12 @@
 package com.developingstorm.games.sad.controller;
 
+import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.Board;
 import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.GameState;
 import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Unit;
-import com.developingstorm.games.hexboard.Location;
 import java.util.List;
 
 /**
@@ -22,7 +22,6 @@ import java.util.List;
  * when GameEvents indicate state has changed.
  */
 public interface GameQueryService {
-
     /**
      * Get the current game state (RUNNING, AWAITING_ORDERS, PAUSED, GAME_OVER).
      */
@@ -37,10 +36,21 @@ public interface GameQueryService {
 
     /**
      * Get the current player whose turn it is.
+     * WARNING: For UI rendering, use getHumanPlayer() instead!
+     * This returns the AI player during their turn.
      *
-     * @return The current player
+     * @return The current player (human or AI depending on whose turn it is)
      */
     Player getCurrentPlayer();
+
+    /**
+     * Get the human player (always players[0]).
+     * The UI should ALWAYS use this for rendering fog of war and explored areas.
+     * This ensures the UI never shows the AI's view of the world.
+     *
+     * @return The human player
+     */
+    Player getHumanPlayer();
 
     /**
      * Get all players in the game.

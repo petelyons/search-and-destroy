@@ -220,19 +220,24 @@ public class Game implements UnitLens, LocationLens {
     }
 
     public void trackUnit(Unit u) {
-        if (this.gameListener != null && u != null) {
-            // Only track units that are visible to the human player (players[0])
-            // This prevents the viewport from jumping to AI units moving in fog of war
+        if (u != null) {
+            // Only track units owned by the human player (players[0])
+            // This prevents the viewport from jumping to AI units
             if (this.players != null && this.players.length > 0) {
                 Player humanPlayer = this.players[0];
-                Vision visibility = humanPlayer.getVisibility(u.getLocation());
-                if (visibility == Vision.NONE) {
-                    // Unit is not visible to human player, don't track it
+
+                // Check if this unit belongs to the human player
+                if (u.getOwner() != humanPlayer) {
+                    // This is an AI unit - don't track it
                     return;
                 }
             }
 
-            this.gameListener.trackUnit(u);
+            eventBus.publish(new UnitTrackedEvent(u));
+
+            if (this.gameListener != null) {
+                this.gameListener.trackUnit(u);
+            }
         } else {
             Log.debug(this, "Tracking null unit");
         }
@@ -364,6 +369,47 @@ public class Game implements UnitLens, LocationLens {
         return newList;
     }
 
+    /**
+     * Check if a unit can be placed at a location respecting stacking rules.
+     * Stacking limit is 1 unit per hex with exceptions:
+     * 1. Units in a city can stack freely.
+     * 2. Units on a transport stack up to carrying capacity (handled separately).
+     * 3. Air units can share a hex with a friendly land or sea unit.
+     */
+    public boolean canPlaceUnit(Unit unit, Location loc) {
+        List<Unit> existing = unitsAtLocation(loc);
+        if (existing.isEmpty()) {
+            return true;
+        }
+        // Exception 1: cities allow stacking
+        if (isCity(loc)) {
+            return true;
+        }
+        // Exception 3: air unit can share with friendly non-air unit (and vice versa)
+        if (unit.getTravel() == Travel.AIR) {
+            for (Unit u : existing) {
+                if (
+                    u.getOwner() == unit.getOwner() &&
+                    u.getTravel() != Travel.AIR
+                ) {
+                    // Air can share with friendly land/sea — but only one air unit allowed
+                    return existing.size() == 1;
+                }
+            }
+            return false;
+        }
+        // Non-air unit checking if it can share with an existing air unit
+        for (Unit u : existing) {
+            if (
+                u.getOwner() == unit.getOwner() && u.getTravel() == Travel.AIR
+            ) {
+                return existing.size() == 1;
+            }
+        }
+        // Default: 1 unit per hex, hex is occupied
+        return false;
+    }
+
     private Set<Unit> getSetofUnitsAtLocation(Location loc) {
         return unitManager.getSetofUnitsAtLocation(loc);
     }
@@ -407,6 +453,17 @@ public class Game implements UnitLens, LocationLens {
 
     public Player currentPlayer() {
         return currentPlayer;
+    }
+
+    /**
+     * Get the human player (always players[0]).
+     * The UI should ALWAYS use this for rendering fog of war,
+     * never currentPlayer() which switches between human and AI.
+     *
+     * @return The human player
+     */
+    public Player getHumanPlayer() {
+        return this.players[0];
     }
 
     private void signalGameThread() {

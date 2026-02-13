@@ -1,0 +1,9 @@
+{
+  "assistant": {
+    "version": "2",
+    "project_context": {
+      "enabled": true,
+      "files": ["ARCHITECTURE_RULES.md"]
+    }
+  }
+}

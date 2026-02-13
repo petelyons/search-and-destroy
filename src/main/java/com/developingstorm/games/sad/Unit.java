@@ -383,6 +383,11 @@ public abstract class Unit {
                     }
                 }
             }
+
+            // After each move step, wake carried units that can now disembark
+            if (this.isTransport() && this.unloadingMode && isAlongCoast()) {
+                wakeDisembarkableUnits();
+            }
         }
 
         // Auto-load fighters onto carriers FIRST - fighters always load when entering carrier space
@@ -661,28 +666,16 @@ public abstract class Unit {
 
         // Carriers can launch fighters at any time (air units can fly anywhere)
         // Transports and Cargo need adjacent land for unloading ground units
+        List<Location> neighbors = this.loc.getRing(1);
         if (this.isTransport() || this.isCargo()) {
             // Count available adjacent hexes for unloading
             int availableSpaces = 0;
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    if (dx == 0 && dy == 0) continue;
-                    Location adjacent = Location.get(
-                        this.loc.x + dx,
-                        this.loc.y + dy
-                    );
-                    if (
-                        adjacent != null &&
-                        this.game.getBoard().onBoard(adjacent)
-                    ) {
-                        // Check if any carried unit can move to this location
-                        for (Unit u : this.carries) {
-                            if (
-                                this.game.getBoard().isTravelable(u, adjacent)
-                            ) {
-                                availableSpaces++;
-                                break; // Found space for at least one unit type
-                            }
+            for (Location adjacent : neighbors) {
+                if (this.game.getBoard().onBoard(adjacent)) {
+                    for (Unit u : this.carries) {
+                        if (this.game.getBoard().isTravelable(u, adjacent)) {
+                            availableSpaces++;
+                            break;
                         }
                     }
                 }
@@ -721,35 +714,15 @@ public abstract class Unit {
         for (Unit carriedUnit : unitsToUnload) {
             // Find an adjacent hex for this unit to move to
             Location disembarkHex = null;
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    if (dx == 0 && dy == 0) continue;
-                    Location adjacent = Location.get(
-                        this.loc.x + dx,
-                        this.loc.y + dy
-                    );
-                    if (
-                        adjacent != null &&
-                        this.game.getBoard().onBoard(adjacent)
-                    ) {
-                        // Check if this unit can move to this location
-                        if (
-                            this.game.getBoard().isTravelable(
-                                carriedUnit,
-                                adjacent
-                            )
-                        ) {
-                            // Check if location isn't too crowded (max 3 units)
-                            if (
-                                this.game.unitsAtLocation(adjacent).size() < 3
-                            ) {
-                                disembarkHex = adjacent;
-                                break;
-                            }
-                        }
-                    }
+            for (Location adjacent : neighbors) {
+                if (
+                    this.game.getBoard().onBoard(adjacent) &&
+                    this.game.getBoard().isTravelable(carriedUnit, adjacent) &&
+                    this.game.canPlaceUnit(carriedUnit, adjacent)
+                ) {
+                    disembarkHex = adjacent;
+                    break;
                 }
-                if (disembarkHex != null) break;
             }
 
             if (disembarkHex != null) {
@@ -787,6 +760,9 @@ public abstract class Unit {
     public void removeCarried(Unit u) {
         if (this.carries != null) {
             this.carries.remove(u);
+            if (this.carries.isEmpty() && this.unloadingMode) {
+                setUnloadingMode(false);
+            }
         }
         u.onboard = null;
     }
@@ -840,8 +816,15 @@ public abstract class Unit {
                     if (u == this) {
                         continue;
                     }
-                    // Only load units that are not already on a transport (this or another)
+                    // Only load units that are not already on a transport and don't have active orders
                     if (u.isCarried() == false && u.onboard == null) {
+                        // Skip units with non-sentry orders — they're busy
+                        if (
+                            u.hasOrders() &&
+                            u.getOrder().getType() != OrderType.SENTRY
+                        ) {
+                            continue;
+                        }
                         if (canCarry(u)) {
                             Log.debug(
                                 this,
@@ -1223,5 +1206,45 @@ public abstract class Unit {
             }
         }
         return false;
+    }
+
+    /**
+     * Checks if this carried unit has at least one valid adjacent hex to disembark to.
+     * The hex must be travelable for this unit's type and have fewer than 3 units.
+     */
+    public boolean canDisembark() {
+        if (onboard == null) {
+            return false;
+        }
+        List<Location> neighbors = onboard.getLocation().getRing(1);
+        for (Location adj : neighbors) {
+            if (board.onBoard(adj) && board.isTravelable(this, adj)) {
+                if (game.canPlaceUnit(this, adj)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Wake all carried units that have a valid hex to disembark to.
+     * Called after each transport move step while in unloading mode.
+     */
+    public void wakeDisembarkableUnits() {
+        if (carries == null || !unloadingMode) {
+            return;
+        }
+        for (Unit u : carries) {
+            if (u.canDisembark() && u.inSentryMode()) {
+                u.life().wake();
+                u.clearOrders();
+                u.turn().updateOrderState();
+                Log.info(
+                    u,
+                    "Waking up for unloading - disembark hex available"
+                );
+            }
+        }
     }
 }

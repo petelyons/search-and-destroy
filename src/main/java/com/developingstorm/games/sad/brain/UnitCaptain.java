@@ -383,8 +383,11 @@ public abstract class UnitCaptain<T extends Unit> {
     }
 
     protected Order occupyLandStrategy(Unit u) {
-        // If on transport, wait in sentry mode - transport will move us off when ready
+        // If on transport and ready to disembark, move to adjacent land
         if (u.isCarried()) {
+            if (needsToDisembark(u)) {
+                return disembarkFromTransport(u);
+            }
             return sentry(u);
         }
 
@@ -539,7 +542,7 @@ public abstract class UnitCaptain<T extends Unit> {
             return false;
         }
 
-        return u.onboard.isUnloadingMode() && u.onboard.isAlongCoast();
+        return u.onboard.isUnloadingMode() && u.canDisembark();
     }
 
     /**
@@ -565,8 +568,20 @@ public abstract class UnitCaptain<T extends Unit> {
             return u.newSkipTurn();
         }
 
-        // Pick the first valid hex (could be improved with priority logic)
+        // Prefer the hex closest to the best city target
         Location disembarkHex = validHexes.get(0);
+        City bestTarget = plan.getBestCityTarget(u);
+        if (bestTarget != null) {
+            Location targetLoc = bestTarget.getLocation();
+            int bestDist = Integer.MAX_VALUE;
+            for (Location hex : validHexes) {
+                int dist = hex.distance(targetLoc);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    disembarkHex = hex;
+                }
+            }
+        }
         Log.info(u, "Disembarking from transport to " + disembarkHex);
         return u.newMoveOrder(disembarkHex);
     }
@@ -591,9 +606,8 @@ public abstract class UnitCaptain<T extends Unit> {
             }
         }
 
-        // Check if hex has space (max 3 units per hex)
-        int unitsAtLocation = plan.getGame().unitsAtLocation(loc).size();
-        if (unitsAtLocation >= 3) {
+        // Check stacking rules (1 unit per hex, with exceptions for cities and air units)
+        if (!plan.getGame().canPlaceUnit(u, loc)) {
             return false;
         }
 

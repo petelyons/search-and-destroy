@@ -248,13 +248,20 @@ public class GameMenuBar extends MenuBar {
     // File Menu Actions
 
     private void onNew() {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("New Game");
-        alert.setHeaderText("New Game");
-        alert.setContentText(
-            "New game dialog not yet implemented in JavaFX version."
+        NewGameDialog dialog = new NewGameDialog(getScene().getWindow());
+        NewGameDialog.NewGameSettings settings = dialog
+            .showAndWait()
+            .orElse(null);
+        if (settings == null) {
+            return;
+        }
+        lifecycleHandler.newGame(
+            settings.player1Name,
+            settings.player1Type,
+            settings.player2Name,
+            settings.player2Type,
+            settings.mapResource
         );
-        alert.showAndWait();
     }
 
     private void onLoadGame() {

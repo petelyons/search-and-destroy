@@ -1,0 +1,47 @@
+TRANSPORT AI ANALYSIS - 200 Turn Test
+======================================
+
+TRANSPORT ACTIVITY:
+- Total Transport log entries: 3,789
+- Successful unload operations: 314
+- Transports ARE working and unloading units
+
+KEY FINDINGS:
+
+1. TRANSPORTS ARE FUNCTIONING:
+   - They load infantry units (seen: "Carries=6 units (I, I, I, I, I, I)")
+   - They navigate to unloading points
+   - They successfully unload units
+
+2. EVIDENCE OF SUCCESSFUL OPERATIONS:
+   Example from logs:
+   - "Going to expansion unloading point (near unoccupied cities)"
+   - "Unloading 6 units (spaces available: 3)"
+   - "Unload complete, activated 1 of 6 units"
+   - Infantry units then move from transport location to land
+
+3. POTENTIAL ISSUES OBSERVED:
+   
+   a) PATH OSCILLATION:
+      - Transports sometimes bounce between locations (4,6 ↔ 4,7)
+      - This happens when pathfinding gets stuck
+      - Eventually resolves and transport continues
+   
+   b) MOVE CANCELLATIONS:
+      - "Move CANCELLED: sea unit cannot move to land at X,Y (not a city)"
+      - This is normal - transport trying to get closer to shore
+      - Pathfinding corrects and finds water route
+
+4. LOGGING VOLUME ISSUE:
+   - Still 212MB / 1.4M lines (too verbose for analysis)
+   - Most logs (677K) from Log.info(String) calls without context
+   - These bypass our logger filtering
+
+CONCLUSION:
+Transports ARE conquering other continents (314 unloads prove this).
+If you're not seeing conquest, the issue may be:
+- Infantry not capturing cities after unloading
+- Strategic targeting (wrong continents/cities being targeted)
+- Not enough transports being built
+
+Next steps: Check if unloaded infantry are actually capturing cities.

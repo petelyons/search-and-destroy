@@ -42,4 +42,20 @@ public interface GameLifecycleHandler {
      * @param saveName The new name to save with
      */
     void saveAs(String saveName);
+
+    /**
+     * Start a new game with the given settings.
+     * @param player1Name Name for player 1
+     * @param player1Type Type for player 1 (0=Human, 1=Robot)
+     * @param player2Name Name for player 2
+     * @param player2Type Type for player 2 (0=Human, 1=Robot)
+     * @param mapResource Map resource filename (e.g. "MedMap.sdm")
+     */
+    void newGame(
+        String player1Name,
+        int player1Type,
+        String player2Name,
+        int player2Type,
+        String mapResource
+    );
 }

@@ -149,6 +149,10 @@ public class Player implements UnitLens, LocationLens {
         return id;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public EdictFactory edictFactory() {
         return edictFactory;
     }
@@ -1124,9 +1128,17 @@ public class Player implements UnitLens, LocationLens {
         //   forEachUnit((Unit u)->{Log.info(u, (u.life().hasMoves() ? "HAS MOVES" : "NO MOVES")); });
 
         forEachUnit((Unit u) -> {
-            // Exclude carried units - they are cargo and only execute via pendingPlay queue
-            if (u.life().hasMoves() && !u.isCarried()) {
-                units.add(u);
+            if (u.life().hasMoves()) {
+                if (!u.isCarried()) {
+                    units.add(u);
+                } else if (
+                    !u.hasOrders() &&
+                    u.onboard != null &&
+                    u.onboard.isUnloadingMode()
+                ) {
+                    // Carried unit woken for unloading — player should be prompted
+                    units.add(u);
+                }
             }
         });
 

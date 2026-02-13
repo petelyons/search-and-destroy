@@ -26,11 +26,17 @@ public class Unload extends Order {
             // Unit is now active and ready to move off the transport
             return new OrderResponse(ResponseCode.ORDER_COMPLETE, this, null);
         } else {
-            // This unit is the transport itself - unload all cargo
+            // This unit is the transport itself — enter unloading mode
             this.unit.setUnloadingMode(true);
-            this.unit.unload();
-            // Transport's order and turn are completely done after activating a carried unit
-            // This prevents the transport from getting another turn until carried units disembark
+
+            if (this.unit.getOwner().isRobot()) {
+                // AI: bulk unload all cargo immediately
+                this.unit.unload();
+            } else {
+                // Human: wake carried units so the player can move them individually
+                this.unit.wakeDisembarkableUnits();
+            }
+
             return new OrderResponse(
                 ResponseCode.ORDER_AND_TURN_COMPLETE,
                 this,

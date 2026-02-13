@@ -1,0 +1,49 @@
+{
+  "name": "baseline-v1.0",
+  "version": "1.0.0",
+  "created": "2025-01-29",
+  "description": "Baseline AI configuration capturing current production behavior",
+  "code_version": "main",
+  "parent_config": null,
+
+  "parameters": {
+    "aggressionLevel": 0.5,
+    "defenseBias": 0.5,
+    "expansionPriority": 0.5,
+    "riskTolerance": 0.5,
+    "combatThreshold": 1.5,
+    "invasionReadiness": 5,
+    "productionStrategy": "BALANCED",
+
+    "weights": {
+      "cityValue": 100,
+      "unitValue": 50,
+      "territoryValue": 30,
+      "economicValue": 40
+    }
+  },
+
+  "features": {
+    "enableTransportOperations": true,
+    "enableAirSupport": true,
+    "enableCombinedArms": false,
+    "enableAdvancedThreatAssessment": true,
+    "enableInvasionCoordination": false
+  },
+
+  "tactical": {
+    "minAttackPowerRatio": 1.5,
+    "retreatThreshold": 0.5,
+    "defensiveDistance": 3,
+    "scoutingRange": 5
+  },
+
+  "metadata": {
+    "test_results": {
+      "games_played": 0,
+      "win_rate": null,
+      "vs_baseline": null
+    },
+    "status": "stable"
+  }
+}

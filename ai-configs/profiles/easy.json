@@ -1,0 +1,49 @@
+{
+  "name": "easy",
+  "version": "1.0.0",
+  "created": "2025-01-29",
+  "description": "Easy difficulty - suitable for new players learning the game",
+  "code_version": "main",
+  "parent_config": "baseline/v1.0",
+
+  "parameters": {
+    "aggressionLevel": 0.3,
+    "defenseBias": 0.6,
+    "expansionPriority": 0.4,
+    "riskTolerance": 0.3,
+    "combatThreshold": 1.8,
+    "invasionReadiness": 8,
+    "productionStrategy": "DEFENSIVE",
+
+    "weights": {
+      "cityValue": 100,
+      "unitValue": 60,
+      "territoryValue": 20,
+      "economicValue": 50
+    }
+  },
+
+  "features": {
+    "enableTransportOperations": false,
+    "enableAirSupport": true,
+    "enableCombinedArms": false,
+    "enableAdvancedThreatAssessment": false,
+    "enableInvasionCoordination": false
+  },
+
+  "tactical": {
+    "minAttackPowerRatio": 1.8,
+    "retreatThreshold": 0.6,
+    "defensiveDistance": 4,
+    "scoutingRange": 4
+  },
+
+  "metadata": {
+    "test_results": {
+      "games_played": 0,
+      "win_rate": null,
+      "vs_baseline": null
+    },
+    "status": "profile"
+  }
+}

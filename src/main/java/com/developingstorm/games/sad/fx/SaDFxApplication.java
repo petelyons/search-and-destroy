@@ -56,37 +56,7 @@ public class SaDFxApplication extends Application {
         queryService = new GameQueryServiceImpl(game);
 
         // Create lifecycle handler
-        GameLifecycleHandler lifecycleHandler = new GameLifecycleHandler() {
-            @Override
-            public void loadGame(File saveFile) {
-                SaDFxApplication.this.loadGame(saveFile);
-            }
-
-            @Override
-            public void saveGame(File saveFile) {
-                SaDFxApplication.this.saveGame(saveFile);
-            }
-
-            @Override
-            public Game getCurrentGame() {
-                return game;
-            }
-
-            @Override
-            public String getCurrentSaveName() {
-                return SaDFxApplication.this.getCurrentSaveName();
-            }
-
-            @Override
-            public void quickSave(String saveName) {
-                SaDFxApplication.this.quickSave(saveName);
-            }
-
-            @Override
-            public void saveAs(String saveName) {
-                SaDFxApplication.this.saveAs(saveName);
-            }
-        };
+        GameLifecycleHandler lifecycleHandler = createLifecycleHandler();
 
         // Create the main view
         gameView = new GameView(
@@ -241,6 +211,71 @@ public class SaDFxApplication extends Application {
         gameThread.start();
     }
 
+    /**
+     * Create a player of the given type.
+     * @param type 0=Human, 1=Robot
+     */
+    private Player createPlayer(int type, String name, int id) {
+        if (type == 1) {
+            return new Robot(name, id);
+        }
+        return new Player(name, id);
+    }
+
+    /**
+     * Create the lifecycle handler that delegates to this application.
+     */
+    private GameLifecycleHandler createLifecycleHandler() {
+        return new GameLifecycleHandler() {
+            @Override
+            public void loadGame(File saveFile) {
+                SaDFxApplication.this.loadGame(saveFile);
+            }
+
+            @Override
+            public void saveGame(File saveFile) {
+                SaDFxApplication.this.saveGame(saveFile);
+            }
+
+            @Override
+            public Game getCurrentGame() {
+                return game;
+            }
+
+            @Override
+            public String getCurrentSaveName() {
+                return SaDFxApplication.this.getCurrentSaveName();
+            }
+
+            @Override
+            public void quickSave(String saveName) {
+                SaDFxApplication.this.quickSave(saveName);
+            }
+
+            @Override
+            public void saveAs(String saveName) {
+                SaDFxApplication.this.saveAs(saveName);
+            }
+
+            @Override
+            public void newGame(
+                String player1Name,
+                int player1Type,
+                String player2Name,
+                int player2Type,
+                String mapResource
+            ) {
+                SaDFxApplication.this.newGame(
+                    player1Name,
+                    player1Type,
+                    player2Name,
+                    player2Type,
+                    mapResource
+                );
+            }
+        };
+    }
+
     @Override
     public void stop() {
         // Clean up when application closes
@@ -278,37 +313,7 @@ public class SaDFxApplication extends Application {
             queryService = new GameQueryServiceImpl(game);
 
             // Create lifecycle handler
-            GameLifecycleHandler lifecycleHandler = new GameLifecycleHandler() {
-                @Override
-                public void loadGame(File saveFile) {
-                    SaDFxApplication.this.loadGame(saveFile);
-                }
-
-                @Override
-                public void saveGame(File saveFile) {
-                    SaDFxApplication.this.saveGame(saveFile);
-                }
-
-                @Override
-                public Game getCurrentGame() {
-                    return game;
-                }
-
-                @Override
-                public String getCurrentSaveName() {
-                    return SaDFxApplication.this.getCurrentSaveName();
-                }
-
-                @Override
-                public void quickSave(String saveName) {
-                    SaDFxApplication.this.quickSave(saveName);
-                }
-
-                @Override
-                public void saveAs(String saveName) {
-                    SaDFxApplication.this.saveAs(saveName);
-                }
-            };
+            GameLifecycleHandler lifecycleHandler = createLifecycleHandler();
 
             // Recreate the view on JavaFX thread
             Platform.runLater(() -> {
@@ -344,6 +349,94 @@ public class SaDFxApplication extends Application {
                     );
                 alert.setTitle("Load Failed");
                 alert.setHeaderText("Failed to load game");
+                alert.setContentText("Error: " + e.getMessage());
+                alert.showAndWait();
+            });
+        }
+    }
+
+    /**
+     * Start a new game with the given settings.
+     */
+    private void newGame(
+        String player1Name,
+        int player1Type,
+        String player2Name,
+        int player2Type,
+        String mapResource
+    ) {
+        try {
+            // Stop current game
+            if (game != null) {
+                game.end();
+            }
+            if (gameThread != null && gameThread.isAlive()) {
+                gameThread.join(1000);
+            }
+
+            // Reset naming pools
+            ShipNames.reset();
+            UnitNames.reset();
+
+            // Reset save name for new game
+            this.currentSaveName = null;
+
+            // Load map
+            this.map = HexBoardMap.loadMapAsResource(this, mapResource);
+
+            // Create players
+            Player[] players = new Player[2];
+            players[0] = createPlayer(player1Type, player1Name, 1);
+            players[1] = createPlayer(player2Type, player2Name, 2);
+
+            UnitNames.autoAssignThemes(players.length);
+
+            // Create game
+            this.game = new Game(players, map, ctx);
+
+            // Recreate controllers with new game
+            controller = new GameControllerImpl(game);
+            queryService = new GameQueryServiceImpl(game);
+
+            // Create lifecycle handler
+            GameLifecycleHandler lifecycleHandler = createLifecycleHandler();
+
+            // Recreate the view on JavaFX thread
+            Platform.runLater(() -> {
+                GameView newGameView = new GameView(
+                    game,
+                    controller,
+                    queryService,
+                    lifecycleHandler
+                );
+
+                // Use system menu bar on macOS
+                if (
+                    System.getProperty("os.name").toLowerCase().contains("mac")
+                ) {
+                    newGameView.useSystemMenuBarProperty().set(true);
+                }
+
+                Scene scene = new Scene(newGameView, 1200, 800);
+                primaryStage.setScene(scene);
+                primaryStage.setTitle("Search and Destroy (JavaFX)");
+
+                this.gameView = newGameView;
+
+                // Start the game thread
+                startGameThread();
+            });
+
+            System.out.println("JavaFX: New game started");
+        } catch (Exception e) {
+            e.printStackTrace();
+            Platform.runLater(() -> {
+                javafx.scene.control.Alert alert =
+                    new javafx.scene.control.Alert(
+                        javafx.scene.control.Alert.AlertType.ERROR
+                    );
+                alert.setTitle("New Game Failed");
+                alert.setHeaderText("Failed to create new game");
                 alert.setContentText("Error: " + e.getMessage());
                 alert.showAndWait();
             });

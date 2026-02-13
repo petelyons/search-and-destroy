@@ -1,0 +1,15 @@
+15:12:59.661 [JavaFX-Game-Thread] INFO  c.developingstorm.games.sad.Player - <Human: I=1>:[58]:Turn over
+15:12:59.742 [JavaFX-Game-Thread] INFO  com.developingstorm.games.sad.Robot - <Robot: I=2>:[58]:Turn over
+15:12:59.743 [JavaFX-Game-Thread] INFO  c.developingstorm.games.sad.Player - <Human: I=1>:[58]:Turn over
+15:12:59.744 [JavaFX-Game-Thread] INFO  com.developingstorm.games.sad.Robot - <Robot: I=2>:[58]:Turn over
+15:12:59.744 [JavaFX-Game-Thread] INFO  c.developingstorm.games.sad.Player - <Human: I=1>:[58]:Turn over
+15:12:59.746 [JavaFX-Game-Thread] INFO  com.developingstorm.games.sad.Robot - <Robot: I=2>:[58]:Turn over
+15:12:59.746 [JavaFX-Game-Thread] INFO  c.developingstorm.games.sad.Player - <Human: I=1>:[58]:Turn over
+15:12:59.747 [JavaFX-Game-Thread] INFO  com.developingstorm.games.sad.Robot - <Robot: I=2>:[58]:Turn over
+15:12:59.748 [JavaFX-Game-Thread] INFO  c.developingstorm.games.sad.Player - <Human: I=1>:[58]:Turn over
+15:12:59.751 [JavaFX-Game-Thread] INFO  c.d.games.sad.types.Infantry - <[Infantry 2: AWAKE: No Orders: Own=Robot: I=2: Loc=(2,39): Life=[HITS=2/2: MOVE=1/1]]>:[58]:Placing unit on board
+15:12:59.755 [JavaFX-Game-Thread] INFO  c.d.games.sad.types.Infantry - <[Infantry 2: AWAKE: No Orders: Own=Robot: I=2: Loc=(2,39): Life=[HITS=2/2: MOVE=1/1]]>:[58]:Moving to prioritized unoccupied city: Otter Lake  at 7,38 unowned
+15:12:59.757 [JavaFX-Game-Thread] INFO  c.d.games.sad.types.Infantry - <[Infantry 2: AWAKE: Move: Own=Robot: I=2: Loc=(2,39): Life=[HITS=2/2: MOVE=1/1]]>:[58]:change location to 3,40
+15:12:59.758 [JavaFX-Game-Thread] INFO  c.d.games.sad.types.Infantry - <[Infantry 3: AWAKE: No Orders: Own=Human: I=1: Loc=(36,22): Life=[HITS=2/2: MOVE=1/1]]>:[58]:Placing unit on board
+15:12:59.758 [JavaFX-Game-Thread] INFO  c.developingstorm.games.sad.Player - <Human: I=1>:[58]:unitsNeedOrders() called, checking pendingOrders queue
+15:12:59.758 [JavaFX-Game-Thread] INFO  c.developingstorm.games.sad.Player - <Human: I=1>:[58]:No units in pendingOrders need orders
