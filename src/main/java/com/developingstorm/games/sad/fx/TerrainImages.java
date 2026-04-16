@@ -1,6 +1,9 @@
 package com.developingstorm.games.sad.fx;
 
+import com.developingstorm.games.sad.Travel;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
+import javafx.scene.paint.Color;
 
 /**
  * Loads and manages terrain images for JavaFX rendering.
@@ -236,5 +239,74 @@ public class TerrainImages {
      */
     public Image getAnchorImage() {
         return anchorImage;
+    }
+
+    /**
+     * Draws a travel-class silhouette (unknown enemy contact) centered on
+     * {@code (cx, cy)} with size {@code size}. Uses {@code color} for the fill
+     * (typically the enemy player's color).
+     */
+    public void drawSilhouette(
+        GraphicsContext gc,
+        Travel travel,
+        double cx,
+        double cy,
+        double size,
+        Color color
+    ) {
+        double half = size / 2.0;
+        gc.setFill(color);
+        gc.setStroke(Color.BLACK);
+        gc.setLineWidth(1.0);
+
+        switch (travel) {
+            case LAND: {
+                // Upward-pointing triangle
+                double[] xs = { cx, cx - half, cx + half };
+                double[] ys = { cy - half, cy + half, cy + half };
+                gc.fillPolygon(xs, ys, 3);
+                gc.strokePolygon(xs, ys, 3);
+                break;
+            }
+            case SEA: {
+                // Ship hull: trapezoid (wide bottom, narrow top)
+                double[] xs = {
+                    cx - half, cx - half * 0.6, cx + half * 0.6, cx + half
+                };
+                double[] ys = {
+                    cy + half * 0.3, cy - half * 0.4, cy - half * 0.4, cy + half * 0.3
+                };
+                gc.fillPolygon(xs, ys, 4);
+                gc.strokePolygon(xs, ys, 4);
+                break;
+            }
+            case AIR: {
+                // Diamond / plan-view aircraft
+                double[] xs = { cx, cx + half, cx, cx - half };
+                double[] ys = { cy - half, cy, cy + half, cy };
+                gc.fillPolygon(xs, ys, 4);
+                gc.strokePolygon(xs, ys, 4);
+                break;
+            }
+            default:
+                return;
+        }
+
+        // Overlay "?" mark
+        gc.setFill(Color.WHITE);
+        gc.setStroke(Color.BLACK);
+        gc.setLineWidth(1.5);
+        javafx.scene.text.Font font = javafx.scene.text.Font.font(
+            "Arial",
+            javafx.scene.text.FontWeight.BOLD,
+            Math.max(10, size * 0.55)
+        );
+        gc.setFont(font);
+        gc.setTextAlign(javafx.scene.text.TextAlignment.CENTER);
+        gc.setTextBaseline(javafx.geometry.VPos.CENTER);
+        gc.strokeText("?", cx, cy);
+        gc.fillText("?", cx, cy);
+        gc.setTextAlign(javafx.scene.text.TextAlignment.LEFT);
+        gc.setTextBaseline(javafx.geometry.VPos.BASELINE);
     }
 }
