@@ -95,8 +95,10 @@ public class ContactMap {
     /**
      * Returns the best contact at {@code location} for rendering purposes, or
      * null if none. Priority: identified beats unidentified; within the same
-     * identification level, the contact with the longer remaining ghost life
-     * wins.
+     * identification level, the fresher sighting (later {@code turnDetected})
+     * wins, and within the same turn, the higher {@code spotterQuality} wins.
+     * In the common case (same turn) this is equivalent to "longer remaining
+     * ghost life wins," since higher spotter quality extends ghost lifetime.
      */
     public Contact getContactAt(Location location) {
         Contact best = null;
