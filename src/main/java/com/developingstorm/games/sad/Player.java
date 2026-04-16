@@ -328,51 +328,6 @@ public class Player implements UnitLens, LocationLens {
         }
     }
 
-    private void buildEnemyUnitList() {
-        this.enemyUnits.clear();
-
-        int width = this.board.getWidth();
-        int height = this.board.getHeight();
-        int currentTurn = this.game.getTurn();
-
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                Location loc = Location.get(x, y);
-                if (isExplored(loc)) {
-                    Unit u = visibleUnit(loc);
-                    if (u != null) {
-                        Player p = u.getOwner();
-                        if (p != this) {
-                            this.enemyUnits.add(u);
-                            // Placeholder: mark an identified contact at current
-                            // visibility range. Task 5 replaces this with a proper
-                            // radial scan using detectionRange/identificationRange.
-                            this.contactMap.updateContact(
-                                u.id,
-                                loc,
-                                u.getType(),
-                                u.getTravel(),
-                                p,
-                                /* identified= */ true,
-                                /* spotterQuality= */ 0,
-                                currentTurn
-                            );
-                        }
-                    }
-                }
-            }
-        }
-
-        // Decay old ghosts; drop contacts for units that have died.
-        this.contactMap.refreshContacts(
-            currentTurn,
-            unitId -> {
-                Unit u = this.game.getUnitById(unitId);
-                return u == null || u.isDead();
-            }
-        );
-    }
-
     public Set<Unit> getKnownEnemies() {
         Set<Unit> set = new HashSet<Unit>();
 
@@ -394,6 +349,90 @@ public class Player implements UnitLens, LocationLens {
             }
         }
         return set;
+    }
+
+    /**
+     * Two-ring detection pass. Populates {@code contactMap} with every enemy
+     * unit that any owned unit or city can detect, marking it identified if
+     * within that spotter's identification range (or auto-identifying
+     * submarines under WATER/COMPLETE vision). Also refreshes/decays ghosts
+     * and re-populates the legacy {@code enemyUnits} set from current
+     * contacts only (for backwards compatibility with existing callers).
+     */
+    private void scanForContacts() {
+        this.enemyUnits.clear();
+        int currentTurn = this.game.getTurn();
+
+        for (Player other : this.game.getPlayers()) {
+            if (other == this) continue;
+            for (Unit enemy : other.getUnits()) {
+                if (enemy.isDead()) continue;
+                Location eLoc = enemy.getLocation();
+
+                boolean detectedThisTurn = false;
+                boolean bestIdentified = false;
+                int bestSpotterQuality = 0;
+
+                // Owned units as spotters
+                for (Unit u : this.units) {
+                    Type ut = u.getType();
+                    int dist = u.getLocation().distance(eLoc);
+                    if (dist > ut.getDetectionRange()) continue;
+                    if (!enemy.isVisible(ut.getVision())) continue;
+
+                    detectedThisTurn = true;
+                    boolean identified = dist <= ut.getIdentificationRange();
+                    // Submarines under WATER or COMPLETE vision are auto-ID'd
+                    if (
+                        enemy.getType() == Type.SUBMARINE &&
+                        (ut.getVision() == Vision.WATER ||
+                            ut.getVision() == Vision.COMPLETE)
+                    ) {
+                        identified = true;
+                    }
+                    if (identified) bestIdentified = true;
+                    if (ut.getSpotterQuality() > bestSpotterQuality) {
+                        bestSpotterQuality = ut.getSpotterQuality();
+                    }
+                }
+
+                // Owned cities as spotters (detectionRange=3, idRange=3,
+                // quality=2, COMPLETE vision)
+                if (!bestIdentified || bestSpotterQuality < 2) {
+                    for (City c : this.cities) {
+                        int dist = c.getLocation().distance(eLoc);
+                        if (dist > 3) continue;
+                        // Cities have COMPLETE vision — everything is visible
+                        detectedThisTurn = true;
+                        bestIdentified = true;
+                        if (bestSpotterQuality < 2) bestSpotterQuality = 2;
+                    }
+                }
+
+                if (detectedThisTurn) {
+                    this.enemyUnits.add(enemy);
+                    this.contactMap.updateContact(
+                        enemy.id,
+                        eLoc,
+                        enemy.getType(),
+                        enemy.getTravel(),
+                        other,
+                        bestIdentified,
+                        bestSpotterQuality,
+                        currentTurn
+                    );
+                }
+            }
+        }
+
+        // Decay stale contacts; drop dead units
+        this.contactMap.refreshContacts(
+            currentTurn,
+            unitId -> {
+                Unit u = this.game.getUnitById(unitId);
+                return u == null || u.isDead();
+            }
+        );
     }
 
     private Set<City> getCitiesBuildingArmies() {
@@ -1021,7 +1060,7 @@ public class Player implements UnitLens, LocationLens {
         }
 
         buildCityLists();
-        buildEnemyUnitList();
+        scanForContacts();
         calcEnemyActivity();
         calcContinentsLoadingPositions();
 
