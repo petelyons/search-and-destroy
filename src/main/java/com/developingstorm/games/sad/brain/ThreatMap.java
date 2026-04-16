@@ -67,58 +67,64 @@ public class ThreatMap {
      * Analyzes all visible enemy units and calculates threat levels
      */
     private void analyze() {
-        // Find all visible enemy units
+        int currentTurn = this.game.getTurn();
+
+        // 1) Live visible enemies — full threat
         for (Player enemy : this.game.getPlayers()) {
-            if (enemy.equals(this.player)) {
-                continue;
-            }
-
+            if (enemy.equals(this.player)) continue;
             for (Unit enemyUnit : enemy.getUnits()) {
-                if (enemyUnit.isDead()) {
-                    continue;
-                }
-
+                if (enemyUnit.isDead()) continue;
                 Location loc = enemyUnit.getLocation();
-                // Check if location is visible (not NONE)
                 Vision visibility = this.player.getVisibility(loc);
-                if (visibility != Vision.NONE) {
-                    this.visibleEnemies.add(enemyUnit);
+                if (visibility == Vision.NONE) continue;
 
-                    // Record threat at this location
-                    ThreatInfo threat = this.threatsByLocation.get(loc);
-                    if (threat == null) {
-                        threat = new ThreatInfo(loc);
-                        this.threatsByLocation.put(loc, threat);
-                    }
-                    threat.addEnemy(enemyUnit);
-
-                    // Add to continent threat
-                    Continent continent = this.game.getBoard().getContinent(
-                        loc
-                    );
-                    if (continent != null) {
-                        double continentThreat =
-                            this.threatsByContinent.getOrDefault(
-                                continent,
-                                0.0
-                            );
-                        continentThreat += threat.threatLevel;
-                        this.threatsByContinent.put(continent, continentThreat);
-                    }
-
-                    // Check if enemy threatens our cities
-                    checkCityThreats(enemyUnit);
-                }
+                this.visibleEnemies.add(enemyUnit);
+                ThreatInfo threat = this.threatsByLocation.computeIfAbsent(
+                    loc, ThreatInfo::new
+                );
+                threat.addEnemy(enemyUnit);
+                addContinentThreat(loc, threat.threatLevel);
+                checkCityThreats(enemyUnit);
             }
         }
 
+        // 2) Ghost contacts — reduced threat (only where we don't already have
+        //    a live visible enemy tracked at that hex).
+        for (com.developingstorm.games.sad.Contact contact
+                : this.player.getContactMap().getAllContacts()) {
+            if (contact.isCurrent(currentTurn)) continue;
+            if (!contact.identified || contact.type == null) continue;
+            if (this.threatsByLocation.containsKey(contact.location)) continue;
+
+            int age = contact.age(currentTurn);
+            double weight;
+            if (age == 1) weight = 0.5;
+            else if (age >= 2) weight = 0.25;
+            else weight = 1.0;
+
+            double ghostThreat = contact.type.getAttack() * weight;
+            if (ghostThreat <= 0.0) continue;
+
+            ThreatInfo threat = this.threatsByLocation.computeIfAbsent(
+                contact.location, ThreatInfo::new
+            );
+            threat.threatLevel += ghostThreat;
+            addContinentThreat(contact.location, ghostThreat);
+        }
+
         Log.info(
-            "ThreatMap: Found " +
-                this.visibleEnemies.size() +
-                " visible enemies, " +
-                this.threatenedCities.size() +
-                " threatened cities"
+            "ThreatMap: Found " + this.visibleEnemies.size()
+                + " visible enemies, " + this.threatenedCities.size()
+                + " threatened cities"
         );
+    }
+
+    private void addContinentThreat(Location loc, double delta) {
+        Continent continent = this.game.getBoard().getContinent(loc);
+        if (continent != null) {
+            double existing = this.threatsByContinent.getOrDefault(continent, 0.0);
+            this.threatsByContinent.put(continent, existing + delta);
+        }
     }
 
     /**
