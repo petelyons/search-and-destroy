@@ -76,13 +76,11 @@ public class DestroyerCaptain extends UnitCaptain<Destroyer> {
      */
     private Location findGhostTarget(Unit unit) {
         Player owner = unit.getOwner();
-        int currentTurn = owner.getGame().getTurn();
 
         Location bestLoc = null;
         double bestScore = -1.0;
 
-        for (Contact c : owner.getContactMap().getAllContacts()) {
-            if (c.isCurrent(currentTurn)) continue;
+        for (Contact c : owner.getGhostContacts()) {
             if (c.travelType != Travel.SEA) continue;
 
             double score;
