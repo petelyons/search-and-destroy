@@ -799,7 +799,7 @@ public class Player implements UnitLens, LocationLens {
     }
 
     public Collection<Contact> getIdentifiedContacts() {
-        java.util.List<Contact> out = new java.util.ArrayList<>();
+        List<Contact> out = new ArrayList<>();
         for (Contact c : contactMap.getAllContacts()) {
             if (c.identified) out.add(c);
         }
