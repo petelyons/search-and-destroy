@@ -171,7 +171,7 @@ public class DetectionIntegrationTest {
      * (dead-unit removal during refreshContacts).
      */
     @Test
-    public void testGhostSurvivesAfterEnemyLeavesVisibility() {
+    public void testContactRemovedAfterEnemyDies() {
         Location destLoc = Location.get(10, 10);
         Location subLoc = Location.get(12, 10);
         assertEquals(2, destLoc.distance(subLoc), "setup: distance must be 2");

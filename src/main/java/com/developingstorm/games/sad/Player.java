@@ -397,7 +397,11 @@ public class Player implements UnitLens, LocationLens {
                 }
 
                 // Owned cities as spotters (detectionRange=3, idRange=3,
-                // quality=2, COMPLETE vision)
+                // quality=2, COMPLETE vision). Short-circuit: if a unit spotter
+                // already produced an identified sighting at max quality, a
+                // city can't upgrade it. Relies on the invariant that
+                // bestIdentified is only set after detectedThisTurn=true in
+                // the unit loop above.
                 if (!bestIdentified || bestSpotterQuality < 2) {
                     for (City c : this.cities) {
                         int dist = c.getLocation().distance(eLoc);
