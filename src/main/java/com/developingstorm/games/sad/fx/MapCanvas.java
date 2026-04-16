@@ -12,7 +12,6 @@ import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
-import com.developingstorm.games.sad.Vision;
 import com.developingstorm.games.sad.controller.GameController;
 import com.developingstorm.games.sad.controller.GameQueryService;
 import com.developingstorm.games.sad.fx.sprites.FxArrowSprite;
@@ -328,119 +327,53 @@ public class MapCanvas extends StackPane {
             }
         }
 
-        // Draw units (only in explored areas)
-        // Group units by location to handle stacks properly
-        java.util.Map<Location, java.util.List<Unit>> unitsByLocation =
+        // 1) Draw own units (no fog of war for own units).
+        java.util.Map<Location, java.util.List<Unit>> ownUnitsByLocation =
             new java.util.HashMap<>();
         for (Unit unit : query.getAllUnits()) {
-            // Show units that are either not carried, OR are carried but awake (being unloaded)
-            if (
-                !unit.isCarried() || (unit.isCarried() && !unit.inSentryMode())
-            ) {
-                unitsByLocation
-                    .computeIfAbsent(unit.getLocation(), k ->
-                        new java.util.ArrayList<>()
-                    )
-                    .add(unit);
-            }
+            if (unit.isCarried() && unit.inSentryMode()) continue;
+            if (humanPlayer != null && unit.getOwner() != humanPlayer) continue;
+            ownUnitsByLocation
+                .computeIfAbsent(unit.getLocation(), k -> new java.util.ArrayList<>())
+                .add(unit);
         }
 
-        // Draw one unit per location (the active one)
         Unit selectedUnit = query.getSelectedUnit();
-        for (java.util.Map.Entry<
-            Location,
-            java.util.List<Unit>
-        > entry : unitsByLocation.entrySet()) {
+        for (java.util.Map.Entry<Location, java.util.List<Unit>> entry :
+                ownUnitsByLocation.entrySet()) {
             Location loc = entry.getKey();
             java.util.List<Unit> unitsAtLoc = entry.getValue();
+            if (unitsAtLoc.isEmpty()) continue;
 
-            if (!unitsAtLoc.isEmpty()) {
-                // Determine which unit to draw (active unit in stack)
-                Unit unitToDraw = null;
-
-                // Priority 1: Selected unit if it's in this stack
-                if (selectedUnit != null && unitsAtLoc.contains(selectedUnit)) {
-                    unitToDraw = selectedUnit;
-                } else {
-                    // Priority 2: First unit with available moves
-                    for (Unit u : unitsAtLoc) {
-                        if (u.life().hasMoves() && !u.inSentryMode()) {
-                            unitToDraw = u;
-                            break;
-                        }
-                    }
-                    // Priority 3: Just use the first unit
-                    if (unitToDraw == null) {
-                        unitToDraw = unitsAtLoc.get(0);
+            Unit unitToDraw = null;
+            if (selectedUnit != null && unitsAtLoc.contains(selectedUnit)) {
+                unitToDraw = selectedUnit;
+            } else {
+                for (Unit u : unitsAtLoc) {
+                    if (u.life().hasMoves() && !u.inSentryMode()) {
+                        unitToDraw = u;
+                        break;
                     }
                 }
+                if (unitToDraw == null) unitToDraw = unitsAtLoc.get(0);
+            }
 
-                // Only draw units that are either:
-                // 1. Owned by the human player (always visible to themselves)
-                // 2. Located in currently visible areas (not just explored)
-                boolean shouldDraw = false;
-                if (humanPlayer == null) {
-                    // No fog of war (testing/spectator mode)
-                    shouldDraw = true;
-                } else if (unitToDraw.getOwner() == humanPlayer) {
-                    // Always show our own units
-                    shouldDraw = true;
-                } else {
-                    // Enemy units: only show in currently visible areas
-                    Vision visibility = humanPlayer.getVisibility(loc);
-                    shouldDraw = (visibility != Vision.NONE);
-                }
+            drawUnit(unitToDraw);
+            if (unitsAtLoc.size() > 1) drawStackBadge(loc, unitsAtLoc.size());
+        }
 
-                if (shouldDraw) {
-                    drawUnit(unitToDraw);
-
-                    // Draw stack indicator if multiple units
-                    if (unitsAtLoc.size() > 1) {
-                        double[] center = getHexCenter(loc);
-                        String count = String.valueOf(unitsAtLoc.size());
-
-                        // Scale badge size based on digit count
-                        double badgeSize = count.length() == 1 ? 14 : 18;
-                        double badgeX = center[0] + 12;
-                        double badgeY = center[1] - 12;
-
-                        // Draw white circle with black border
-                        gc.setFill(Color.WHITE);
-                        gc.setStroke(Color.BLACK);
-                        gc.setLineWidth(1.5);
-                        gc.fillOval(
-                            badgeX - badgeSize / 2,
-                            badgeY - badgeSize / 2,
-                            badgeSize,
-                            badgeSize
-                        );
-                        gc.strokeOval(
-                            badgeX - badgeSize / 2,
-                            badgeY - badgeSize / 2,
-                            badgeSize,
-                            badgeSize
-                        );
-
-                        // Draw centered text
-                        gc.setFill(Color.BLACK);
-                        javafx.scene.text.Font font =
-                            javafx.scene.text.Font.font(
-                                "Arial",
-                                javafx.scene.text.FontWeight.BOLD,
-                                count.length() == 1 ? 10 : 9
-                            );
-                        gc.setFont(font);
-                        gc.setTextAlign(javafx.scene.text.TextAlignment.CENTER);
-                        gc.setTextBaseline(javafx.geometry.VPos.CENTER);
-
-                        // Draw text centered on badge
-                        gc.fillText(count, badgeX, badgeY);
-
-                        // Reset text alignment
-                        gc.setTextAlign(javafx.scene.text.TextAlignment.LEFT);
-                        gc.setTextBaseline(javafx.geometry.VPos.BASELINE);
-                    }
-                }
+        // 2) Draw enemy contacts from the human player's ContactMap.
+        if (humanPlayer != null) {
+            int currentTurn = query.getGame().getTurn();
+            for (com.developingstorm.games.sad.Contact contact
+                    : humanPlayer.getContactMap().getAllContacts()) {
+                drawContact(contact, currentTurn);
+            }
+        } else {
+            // Spectator / no-fog mode: draw all enemy units live
+            for (Unit unit : query.getAllUnits()) {
+                if (unit.isCarried() && unit.inSentryMode()) continue;
+                drawUnit(unit);
             }
         }
 
@@ -715,6 +648,99 @@ public class MapCanvas extends StackPane {
         double textHeight = text.getLayoutBounds().getHeight();
 
         gc.fillText(name, center[0], center[1] + textHeight + (textHeight / 2));
+    }
+
+    private static final double GHOST_OPACITY = 0.45;
+
+    private Color colorForPlayerId(int playerId) {
+        if (playerId == 1) return Color.rgb(250, 100, 100);
+        if (playerId == 2) return Color.rgb(150, 150, 250);
+        return Color.rgb(100, 250, 100);
+    }
+
+    private void drawStackBadge(Location loc, int count) {
+        double[] center = getHexCenter(loc);
+        String text = String.valueOf(count);
+        double badgeSize = text.length() == 1 ? 14 : 18;
+        double badgeX = center[0] + 12;
+        double badgeY = center[1] - 12;
+
+        gc.setFill(Color.WHITE);
+        gc.setStroke(Color.BLACK);
+        gc.setLineWidth(1.5);
+        gc.fillOval(badgeX - badgeSize / 2, badgeY - badgeSize / 2, badgeSize, badgeSize);
+        gc.strokeOval(badgeX - badgeSize / 2, badgeY - badgeSize / 2, badgeSize, badgeSize);
+
+        gc.setFill(Color.BLACK);
+        javafx.scene.text.Font font = javafx.scene.text.Font.font(
+            "Arial",
+            javafx.scene.text.FontWeight.BOLD,
+            text.length() == 1 ? 10 : 9
+        );
+        gc.setFont(font);
+        gc.setTextAlign(javafx.scene.text.TextAlignment.CENTER);
+        gc.setTextBaseline(javafx.geometry.VPos.CENTER);
+        gc.fillText(text, badgeX, badgeY);
+        gc.setTextAlign(javafx.scene.text.TextAlignment.LEFT);
+        gc.setTextBaseline(javafx.geometry.VPos.BASELINE);
+    }
+
+    private void drawContact(
+        com.developingstorm.games.sad.Contact contact,
+        int currentTurn
+    ) {
+        double[] center = getHexCenter(contact.location);
+        double bgSize = 28;
+
+        boolean isCurrent = contact.isCurrent(currentTurn);
+        double alpha = isCurrent ? 1.0 : GHOST_OPACITY;
+
+        Color playerColor = colorForPlayerId(
+            contact.owner != null ? contact.owner.getId() : 0
+        );
+        Color fadedBg = new Color(
+            playerColor.getRed(),
+            playerColor.getGreen(),
+            playerColor.getBlue(),
+            alpha
+        );
+
+        // Background tile
+        gc.setFill(fadedBg);
+        gc.fillRect(
+            center[0] - bgSize / 2, center[1] - bgSize / 2, bgSize, bgSize
+        );
+        gc.setStroke(new Color(0, 0, 0, alpha));
+        gc.setLineWidth(1.0);
+        gc.strokeRect(
+            center[0] - bgSize / 2, center[1] - bgSize / 2, bgSize, bgSize
+        );
+
+        double iconSize = 24;
+        if (contact.identified && contact.type != null) {
+            javafx.scene.image.Image img = terrainImages.getUnitImage(contact.type);
+            if (img != null) {
+                gc.setGlobalAlpha(alpha);
+                gc.drawImage(
+                    img,
+                    center[0] - iconSize / 2,
+                    center[1] - iconSize / 2,
+                    iconSize,
+                    iconSize
+                );
+                gc.setGlobalAlpha(1.0);
+            }
+        } else {
+            Color silColor = new Color(0.75, 0.75, 0.75, alpha);
+            terrainImages.drawSilhouette(
+                gc,
+                contact.travelType,
+                center[0],
+                center[1],
+                iconSize,
+                silColor
+            );
+        }
     }
 
     /**
