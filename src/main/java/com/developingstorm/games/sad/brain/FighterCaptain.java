@@ -1,7 +1,9 @@
 package com.developingstorm.games.sad.brain;
 
 import com.developingstorm.games.hexboard.Location;
+import com.developingstorm.games.sad.Contact;
 import com.developingstorm.games.sad.Order;
+import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
@@ -57,6 +59,13 @@ public class FighterCaptain extends UnitCaptain<Fighter> {
             return order;
         }
 
+        // PRIORITY 2.5: Investigate known ghost contacts within fuel range
+        Location ghost = findGhostTarget(u);
+        if (ghost != null) {
+            Log.info(u, "Investigating ghost at " + ghost);
+            return u.newMoveOrder(ghost);
+        }
+
         // PRIORITY 3: Return to carrier if not carried
         if (!u.isCarried()) {
             order = gotoCarrier(u);
@@ -67,6 +76,38 @@ public class FighterCaptain extends UnitCaptain<Fighter> {
 
         // PRIORITY 4: Explore for new targets
         return explore(u);
+    }
+
+    private Location findGhostTarget(Unit unit) {
+        Player owner = unit.getOwner();
+        Location bestLoc = null;
+        double bestScore = -1.0;
+
+        for (Contact c : owner.getGhostContacts()) {
+            double score;
+            if (c.travelType == Travel.AIR && c.identified && c.type != null) {
+                score = c.type.getAttack() + 1.5;
+            } else if (c.travelType == Travel.AIR) {
+                score = 1.0;
+            } else if (c.travelType == Travel.SEA && c.identified && c.type != null) {
+                score = c.type.getAttack() + 0.5;
+            } else if (c.travelType == Travel.SEA) {
+                score = 0.5;
+            } else {
+                continue; // skip LAND ghosts
+            }
+
+            int dist = unit.getLocation().distance(c.location);
+            if (dist == 0) continue;
+            if (dist > unit.life().remainingFuel()) continue; // respect fuel
+
+            score = score / (double) dist;
+            if (score > bestScore) {
+                bestScore = score;
+                bestLoc = c.location;
+            }
+        }
+        return bestLoc;
     }
 
     /**
