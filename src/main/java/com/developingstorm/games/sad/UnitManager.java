@@ -150,11 +150,6 @@ class UnitManager {
                 )
             );
         removeUnitFromBoard(u);
-
-        // Remove from all players' last-seen tracking
-        for (Player p : game.getPlayers()) {
-            p.removeLastSeenEnemy(u.id);
-        }
     }
 
     /**
