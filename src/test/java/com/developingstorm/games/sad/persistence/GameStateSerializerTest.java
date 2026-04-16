@@ -314,6 +314,24 @@ public class GameStateSerializerTest {
         // Skip for now as it requires a real game instance
     }
 
+    @Test
+    public void testLoadedGameStartsWithEmptyContactMap() throws Exception {
+        URL saveFileUrl = getClass().getResource("/saves/test_save_v1.2.json");
+        assertNotNull(saveFileUrl, "Test save file should exist");
+        File saveFile = new File(saveFileUrl.toURI());
+
+        Game loaded = serializer.loadGame(saveFile, mockContext);
+
+        for (Player p : loaded.getPlayers()) {
+            assertEquals(
+                0,
+                p.getContactMap().size(),
+                "ContactMap should be empty on load for player " + p.toJsonLink()
+                    + "; it repopulates from the next turn's scan"
+            );
+        }
+    }
+
     /**
      * Helper method to find a unit by type in the units list
      */
