@@ -16,6 +16,9 @@ public enum Type {
             .weight(1)
             .attack(1)
             .iconID(7)
+            .detectionRange(1)
+            .identificationRange(1)
+            .spotterQuality(0)
     ),
     ARMOR(
         builder()
@@ -32,6 +35,9 @@ public enum Type {
             .weight(2)
             .attack(2)
             .iconID(25)
+            .detectionRange(1)
+            .identificationRange(1)
+            .spotterQuality(0)
     ),
     FIGHTER(
         builder()
@@ -48,6 +54,9 @@ public enum Type {
             .weight(1)
             .attack(1)
             .iconID(8)
+            .detectionRange(4)
+            .identificationRange(2)
+            .spotterQuality(1)
     ),
     BOMBER(
         builder()
@@ -64,6 +73,9 @@ public enum Type {
             .weight(0)
             .attack(3)
             .iconID(26)
+            .detectionRange(4)
+            .identificationRange(2)
+            .spotterQuality(1)
     ),
     CARGO(
         builder()
@@ -80,6 +92,9 @@ public enum Type {
             .weight(0)
             .attack(0)
             .iconID(27)
+            .detectionRange(2)
+            .identificationRange(2)
+            .spotterQuality(0)
     ),
     DESTROYER(
         builder()
@@ -96,6 +111,9 @@ public enum Type {
             .weight(0)
             .attack(3)
             .iconID(10)
+            .detectionRange(3)
+            .identificationRange(3)
+            .spotterQuality(1)
     ),
     TRANSPORT(
         builder()
@@ -112,6 +130,9 @@ public enum Type {
             .weight(0)
             .attack(0)
             .iconID(9)
+            .detectionRange(2)
+            .identificationRange(1)
+            .spotterQuality(0)
     ),
     SUBMARINE(
         builder()
@@ -128,6 +149,9 @@ public enum Type {
             .weight(0)
             .attack(4)
             .iconID(11)
+            .detectionRange(2)
+            .identificationRange(2)
+            .spotterQuality(1)
     ),
     CRUISER(
         builder()
@@ -144,6 +168,9 @@ public enum Type {
             .weight(0)
             .attack(3)
             .iconID(12)
+            .detectionRange(4)
+            .identificationRange(4)
+            .spotterQuality(2)
     ),
     CARRIER(
         builder()
@@ -160,6 +187,9 @@ public enum Type {
             .weight(0)
             .attack(1)
             .iconID(14)
+            .detectionRange(3)
+            .identificationRange(1)
+            .spotterQuality(0)
     ),
     BATTLESHIP(
         builder()
@@ -176,6 +206,9 @@ public enum Type {
             .weight(0)
             .attack(4)
             .iconID(13)
+            .detectionRange(3)
+            .identificationRange(2)
+            .spotterQuality(1)
     );
 
     static {
@@ -199,6 +232,9 @@ public enum Type {
     private final int attack;
     private final int iconID;
     private final int weight;
+    private final int detectionRange;
+    private final int identificationRange;
+    private final int spotterQuality;
 
     Type(Builder builder) {
         this.description = builder.description;
@@ -218,6 +254,9 @@ public enum Type {
         this.weight = builder.weight;
         this.attack = builder.attack;
         this.iconID = builder.iconID;
+        this.detectionRange = builder.detectionRange;
+        this.identificationRange = builder.identificationRange;
+        this.spotterQuality = builder.spotterQuality;
     }
 
     private static Builder builder() {
@@ -240,6 +279,9 @@ public enum Type {
         private int attack;
         private int iconID;
         private int weight;
+        private int detectionRange;
+        private int identificationRange;
+        private int spotterQuality;
 
         Builder description(String description) {
             this.description = description;
@@ -310,6 +352,21 @@ public enum Type {
             this.iconID = iconID;
             return this;
         }
+
+        Builder detectionRange(int v) {
+            this.detectionRange = v;
+            return this;
+        }
+
+        Builder identificationRange(int v) {
+            this.identificationRange = v;
+            return this;
+        }
+
+        Builder spotterQuality(int v) {
+            this.spotterQuality = v;
+            return this;
+        }
     }
 
     public String getAbr() {
@@ -362,6 +419,18 @@ public enum Type {
 
     public int getWeight() {
         return weight;
+    }
+
+    public int getDetectionRange() {
+        return detectionRange;
+    }
+
+    public int getIdentificationRange() {
+        return identificationRange;
+    }
+
+    public int getSpotterQuality() {
+        return spotterQuality;
     }
 
     public boolean canCarry(Type t) {
