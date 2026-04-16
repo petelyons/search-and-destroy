@@ -59,14 +59,14 @@ public class FighterCaptain extends UnitCaptain<Fighter> {
             return order;
         }
 
-        // PRIORITY 2.5: Investigate known ghost contacts within fuel range
+        // PRIORITY 3: Investigate known ghost contacts within fuel range
         Location ghost = findGhostTarget(u);
         if (ghost != null) {
             Log.info(u, "Investigating ghost at " + ghost);
             return u.newMoveOrder(ghost);
         }
 
-        // PRIORITY 3: Return to carrier if not carried
+        // PRIORITY 4: Return to carrier if not carried
         if (!u.isCarried()) {
             order = gotoCarrier(u);
             if (order != null) {
@@ -74,7 +74,7 @@ public class FighterCaptain extends UnitCaptain<Fighter> {
             }
         }
 
-        // PRIORITY 4: Explore for new targets
+        // PRIORITY 5: Explore for new targets
         return explore(u);
     }
 
