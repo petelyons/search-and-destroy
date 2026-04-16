@@ -353,18 +353,18 @@ public enum Type {
             return this;
         }
 
-        Builder detectionRange(int v) {
-            this.detectionRange = v;
+        Builder detectionRange(int detectionRange) {
+            this.detectionRange = detectionRange;
             return this;
         }
 
-        Builder identificationRange(int v) {
-            this.identificationRange = v;
+        Builder identificationRange(int identificationRange) {
+            this.identificationRange = identificationRange;
             return this;
         }
 
-        Builder spotterQuality(int v) {
-            this.spotterQuality = v;
+        Builder spotterQuality(int spotterQuality) {
+            this.spotterQuality = spotterQuality;
             return this;
         }
     }
