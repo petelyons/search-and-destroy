@@ -2,6 +2,7 @@ package com.developingstorm.games.sad.brain;
 
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.City;
+import com.developingstorm.games.sad.Contact;
 import com.developingstorm.games.sad.Continent;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Player;
@@ -90,17 +91,13 @@ public class ThreatMap {
 
         // 2) Ghost contacts — reduced threat (only where we don't already have
         //    a live visible enemy tracked at that hex).
-        for (com.developingstorm.games.sad.Contact contact
-                : this.player.getContactMap().getAllContacts()) {
+        for (Contact contact : this.player.getContactMap().getAllContacts()) {
             if (contact.isCurrent(currentTurn)) continue;
             if (!contact.identified || contact.type == null) continue;
             if (this.threatsByLocation.containsKey(contact.location)) continue;
 
             int age = contact.age(currentTurn);
-            double weight;
-            if (age == 1) weight = 0.5;
-            else if (age >= 2) weight = 0.25;
-            else weight = 1.0;
+            double weight = (age == 1) ? 0.5 : 0.25;
 
             double ghostThreat = contact.type.getAttack() * weight;
             if (ghostThreat <= 0.0) continue;
