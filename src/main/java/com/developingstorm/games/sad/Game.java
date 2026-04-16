@@ -67,6 +67,10 @@ public class Game implements UnitLens, LocationLens {
 
     private volatile boolean endPlay;
 
+    // When true, the human player's first turn should pause for input
+    // even if all units have orders. Set after loading a saved game.
+    private volatile boolean resumingFromLoad;
+
     // New architecture components for UI/Game separation
     private final GameEventBus eventBus;
     private final DebugEventBus debugEventBus;
@@ -708,6 +712,26 @@ public class Game implements UnitLens, LocationLens {
         synchronized (this) {
             endPlay = true;
         }
+    }
+
+    /**
+     * Mark that the game is resuming from a saved state.
+     * The human player's first turn will pause for input.
+     */
+    public void setResumingFromLoad() {
+        this.resumingFromLoad = true;
+    }
+
+    /**
+     * Check and clear the resuming-from-load flag.
+     * Returns true exactly once after a load.
+     */
+    public boolean consumeResumingFromLoad() {
+        if (this.resumingFromLoad) {
+            this.resumingFromLoad = false;
+            return true;
+        }
+        return false;
     }
 
     // ========== New Architecture Methods ==========

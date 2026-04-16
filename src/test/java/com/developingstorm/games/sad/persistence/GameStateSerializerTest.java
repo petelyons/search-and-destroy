@@ -161,13 +161,14 @@ public class GameStateSerializerTest {
         );
         assertTrue(jayne.isRobot(), "Jayne should be a robot player");
 
-        // Verify current player
+        // After load, current player is always the human player (index 0)
+        // so the human gets control first after loading
         Player currentPlayer = loadedGame.currentPlayer();
         assertNotNull(currentPlayer, "Current player should not be null");
         assertEquals(
-            jayne,
+            pete,
             currentPlayer,
-            "Current player should be Jayne (index 1)"
+            "Current player should be Pete (human, index 0) after load"
         );
 
         // Verify units

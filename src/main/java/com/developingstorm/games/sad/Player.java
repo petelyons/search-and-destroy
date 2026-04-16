@@ -1177,8 +1177,16 @@ public class Player implements UnitLens, LocationLens {
         int unitsMoved = 0;
         this.endTurnRequested = false;
 
-        // Note: startNewTurn() is now called in Game.play() before this method
-        // to ensure visibility is updated before any UI rendering occurs
+        // After loading a saved game, always pause for human input first.
+        // This ensures the human player gets control before any auto-execution.
+        if (!isRobot() && this.game.consumeResumingFromLoad()) {
+            List<Unit> unplayed = unplayedUnits();
+            if (!unplayed.isEmpty()) {
+                Log.info(this, "Resuming from load - pausing for human input");
+                this.game.selectUnit(unplayed.get(0));
+                this.game.pause();
+            }
+        }
 
         while (true) {
             if (endTurnRequested) {

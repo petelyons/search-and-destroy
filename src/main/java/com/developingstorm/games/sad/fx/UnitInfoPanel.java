@@ -1,30 +1,25 @@
 package com.developingstorm.games.sad.fx;
 
 import com.developingstorm.games.sad.Player;
+import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.controller.GameController;
 import com.developingstorm.games.sad.controller.GameQueryService;
-import com.developingstorm.games.sad.fx.TerrainImages;
-import com.developingstorm.games.sad.orders.Explore;
-import com.developingstorm.games.sad.orders.HeadHome;
-import com.developingstorm.games.sad.orders.Sentry;
-import com.developingstorm.games.sad.orders.SkipTurn;
-import com.developingstorm.games.sad.orders.Unload;
-import java.awt.image.BufferedImage;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.PixelWriter;
-import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
@@ -38,19 +33,20 @@ public class UnitInfoPanel extends VBox {
 
     private Unit currentUnit;
 
-    private Label titleLabel;
+    // UI elements
+    private HBox iconRow;
     private StackPane iconPanel;
     private ImageView iconView;
-    private Label turnLabel;
+    private FlowPane cargoPane;
     private Label nameLabel;
     private Label typeLabel;
-    private Label ownerLabel;
-    private Label healthLabel;
+    private HBox healthBarRow;
+    private Rectangle healthBarFill;
+    private Rectangle healthBarEmpty;
+    private Label healthText;
+    private Label statsLabel;
     private Label locationLabel;
-    private Label movedLabel;
-    private Label carriesLabel;
     private Label orderLabel;
-    private Label movesLabel;
 
     public UnitInfoPanel(GameController controller, GameQueryService query) {
         this.controller = controller;
@@ -60,16 +56,11 @@ public class UnitInfoPanel extends VBox {
     }
 
     private void initializeUI() {
-        setSpacing(10);
+        setSpacing(6);
         setPadding(new Insets(10));
         setAlignment(Pos.TOP_LEFT);
 
-        // Title
-        titleLabel = new Label("Unit Information");
-        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
-        titleLabel.setTextFill(Color.WHITE);
-
-        // Icon panel with background color (matches Swing version)
+        // Icon row: main unit icon + cargo icons
         iconView = new ImageView();
         iconView.setFitWidth(48);
         iconView.setFitHeight(48);
@@ -80,116 +71,67 @@ public class UnitInfoPanel extends VBox {
         iconPanel.setPrefSize(64, 64);
         iconPanel.setMinSize(64, 64);
         iconPanel.setMaxSize(64, 64);
-        iconPanel.setStyle(
-            "-fx-border-color: black; -fx-border-width: 2; -fx-background-color: lightgray;"
-        );
+        iconPanel.setStyle("-fx-border-color: black; -fx-border-width: 2;");
         iconPanel.setAlignment(Pos.CENTER);
 
-        // Info labels
-        turnLabel = createInfoLabel();
-        nameLabel = createInfoLabel();
-        typeLabel = createInfoLabel();
-        ownerLabel = createInfoLabel();
-        healthLabel = createInfoLabel();
-        locationLabel = createInfoLabel();
-        movedLabel = createInfoLabel();
-        carriesLabel = createInfoLabel();
-        orderLabel = createInfoLabel();
-        movesLabel = createInfoLabel();
+        cargoPane = new FlowPane(2, 2);
+        cargoPane.setAlignment(Pos.CENTER_LEFT);
+        cargoPane.setPrefWrapLength(80);
 
-        // Add all to panel
+        iconRow = new HBox(8);
+        iconRow.setAlignment(Pos.CENTER_LEFT);
+        iconRow.getChildren().addAll(iconPanel, cargoPane);
+
+        // Name
+        nameLabel = new Label();
+        nameLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
+        nameLabel.setTextFill(Color.WHITE);
+
+        // Type
+        typeLabel = new Label();
+        typeLabel.setFont(Font.font("System", 11));
+        typeLabel.setTextFill(Color.LIGHTGRAY);
+
+        // Health bar
+        healthBarFill = new Rectangle(0, 12);
+        healthBarEmpty = new Rectangle(0, 12);
+        healthBarEmpty.setFill(Color.rgb(60, 60, 60));
+        healthText = new Label();
+        healthText.setFont(Font.font("System", 11));
+        healthText.setTextFill(Color.LIGHTGRAY);
+
+        healthBarRow = new HBox(6);
+        healthBarRow.setAlignment(Pos.CENTER_LEFT);
+        HBox barContainer = new HBox(0);
+        barContainer.getChildren().addAll(healthBarFill, healthBarEmpty);
+        healthBarRow.getChildren().addAll(barContainer, healthText);
+
+        // Stats (moves, fuel)
+        statsLabel = new Label();
+        statsLabel.setFont(Font.font("System", 11));
+        statsLabel.setTextFill(Color.LIGHTGRAY);
+
+        // Location
+        locationLabel = new Label();
+        locationLabel.setFont(Font.font("System", 11));
+        locationLabel.setTextFill(Color.LIGHTGRAY);
+
+        // Order
+        orderLabel = new Label();
+        orderLabel.setFont(Font.font("System", 11));
+        orderLabel.setTextFill(Color.LIGHTGRAY);
+
         getChildren().addAll(
-            titleLabel,
-            createSeparator(),
-            iconPanel,
-            createSeparator(),
-            turnLabel,
+            iconRow,
             nameLabel,
             typeLabel,
-            ownerLabel,
-            createSeparator(),
-            healthLabel,
-            movesLabel,
-            movedLabel,
-            carriesLabel,
+            healthBarRow,
+            statsLabel,
             locationLabel,
-            createSeparator(),
             orderLabel
         );
 
-        // Set no unit selected initially
         setUnit(null);
-    }
-
-    private Label createInfoLabel() {
-        Label label = new Label();
-        label.setTextFill(Color.LIGHTGRAY);
-        label.setWrapText(true);
-        return label;
-    }
-
-    private Label createSeparator() {
-        Label sep = new Label("─".repeat(30));
-        sep.setTextFill(Color.GRAY);
-        return sep;
-    }
-
-    /**
-     * Convert AWT BufferedImage to JavaFX Image.
-     */
-    private Image convertToFXImage(java.awt.Image awtImage) {
-        if (awtImage == null) {
-            System.err.println("convertToFXImage: awtImage is null");
-            return null;
-        }
-
-        // If it's not a BufferedImage, we need to convert it
-        BufferedImage bImg;
-        if (!(awtImage instanceof BufferedImage)) {
-            System.out.println(
-                "convertToFXImage: Converting Image to BufferedImage"
-            );
-            int width = awtImage.getWidth(null);
-            int height = awtImage.getHeight(null);
-            if (width <= 0 || height <= 0) {
-                System.err.println(
-                    "convertToFXImage: Invalid image dimensions: " +
-                        width +
-                        "x" +
-                        height
-                );
-                return null;
-            }
-            bImg = new BufferedImage(
-                width,
-                height,
-                BufferedImage.TYPE_INT_ARGB
-            );
-            java.awt.Graphics2D g = bImg.createGraphics();
-            g.drawImage(awtImage, 0, 0, null);
-            g.dispose();
-        } else {
-            bImg = (BufferedImage) awtImage;
-        }
-
-        int width = bImg.getWidth();
-        int height = bImg.getHeight();
-        System.out.println(
-            "convertToFXImage: Converting " + width + "x" + height + " image"
-        );
-
-        WritableImage fxImage = new WritableImage(width, height);
-        PixelWriter pixelWriter = fxImage.getPixelWriter();
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int argb = bImg.getRGB(x, y);
-                pixelWriter.setArgb(x, y, argb);
-            }
-        }
-
-        System.out.println("convertToFXImage: Successfully converted image");
-        return fxImage;
     }
 
     /**
@@ -215,16 +157,11 @@ public class UnitInfoPanel extends VBox {
 
     /**
      * Update the panel to show information about the given unit.
-     * Uses helper methods from Unit class to match Swing formatting.
      */
     public void setUnit(Unit unit) {
         this.currentUnit = unit;
 
-        // Always show turn number
-        turnLabel.setText("Turn: " + query.getGame().getTurn());
-
         if (unit == null) {
-            // No unit selected
             iconView.setImage(null);
             iconPanel.setBackground(
                 new Background(
@@ -235,29 +172,25 @@ public class UnitInfoPanel extends VBox {
                     )
                 )
             );
+            cargoPane.getChildren().clear();
             nameLabel.setText("No unit selected");
             typeLabel.setText("");
-            ownerLabel.setText("");
-            healthLabel.setText("");
+            healthBarFill.setWidth(0);
+            healthBarEmpty.setWidth(0);
+            healthText.setText("");
+            statsLabel.setText("");
             locationLabel.setText("");
-            movedLabel.setText("");
-            carriesLabel.setText("");
             orderLabel.setText("");
-            movesLabel.setText("");
         } else {
-            // Set unit icon with status indicators (loaded, fuel, etc.)
+            // Main unit icon with status
             Image fxImage = TerrainImages.getInstance().getUnitImageWithStatus(
                 unit
             );
             if (fxImage != null) {
                 iconView.setImage(fxImage);
-            } else {
-                System.err.println(
-                    "Failed to get icon for unit type: " + unit.getType()
-                );
             }
 
-            // Set background color to player's color
+            // Player color background
             Color playerColor = getPlayerColor(unit.getOwner());
             iconPanel.setBackground(
                 new Background(
@@ -269,44 +202,95 @@ public class UnitInfoPanel extends VBox {
                 )
             );
 
-            // Show unit info using helper methods (matches Swing)
-            nameLabel.setText("Unit: " + unit.name);
-            typeLabel.setText("Type: " + unit.typeDesc());
-            ownerLabel.setText("Owner: " + unit.getOwner().toString());
+            // Carried unit icons
+            cargoPane.getChildren().clear();
+            if (unit.carries != null && !unit.carries.isEmpty()) {
+                for (Unit carried : unit.carries) {
+                    Image cargoImage = TerrainImages.getInstance().getUnitImage(
+                        carried.getType()
+                    );
+                    if (cargoImage != null) {
+                        ImageView cargoView = new ImageView(cargoImage);
+                        cargoView.setFitWidth(20);
+                        cargoView.setFitHeight(20);
+                        cargoView.setPreserveRatio(true);
+                        cargoView.setSmooth(true);
 
-            // Use helper method for health
-            healthLabel.setText("Health: " + unit.life().healthDesc());
-
-            // Show max moves
-            int maxMoves = unit.getType().getDist();
-            movesLabel.setText("Max Moves: " + maxMoves);
-
-            // Use helper method for moved status
-            movedLabel.setText("Moved: " + unit.life().moveDesc());
-
-            // Use helper method for cargo
-            carriesLabel.setText("Carries: " + unit.carriesDesc());
-
-            // Use helper method for location
-            String locDesc = unit.locationDesc();
-            System.out.println(
-                "UnitInfoPanel: Unit " +
-                    unit.name +
-                    " location=" +
-                    unit.getLocation() +
-                    " desc=" +
-                    locDesc
-            );
-            locationLabel.setText("Location: " + locDesc);
-
-            // Show order status (full order toString, not just type)
-            String orderText = "Status: ";
-            if (unit.getOrder() != null) {
-                orderText += unit.getOrder().toString();
-            } else {
-                orderText += "(none)";
+                        StackPane cargoIcon = new StackPane(cargoView);
+                        cargoIcon.setPrefSize(24, 24);
+                        cargoIcon.setMinSize(24, 24);
+                        cargoIcon.setMaxSize(24, 24);
+                        cargoIcon.setBackground(
+                            new Background(
+                                new BackgroundFill(
+                                    playerColor.deriveColor(0, 1, 0.8, 1),
+                                    new CornerRadii(2),
+                                    Insets.EMPTY
+                                )
+                            )
+                        );
+                        cargoIcon.setAlignment(Pos.CENTER);
+                        cargoPane.getChildren().add(cargoIcon);
+                    }
+                }
             }
-            orderLabel.setText(orderText);
+
+            // Name
+            nameLabel.setText(
+                unit.name != null ? unit.name : "Unit #" + unit.id
+            );
+
+            // Type
+            typeLabel.setText(unit.getType().toString());
+
+            // Health bar
+            int hits = unit.life().hits;
+            int maxHits = unit.getType().getHits();
+            double ratio = maxHits > 0 ? (double) hits / maxHits : 0;
+            double barWidth = 140;
+            double fillWidth = barWidth * ratio;
+
+            Color barColor;
+            if (ratio > 0.6) {
+                barColor = Color.LIMEGREEN;
+            } else if (ratio > 0.3) {
+                barColor = Color.YELLOW;
+            } else {
+                barColor = Color.RED;
+            }
+            healthBarFill.setWidth(fillWidth);
+            healthBarFill.setHeight(12);
+            healthBarFill.setFill(barColor);
+            healthBarEmpty.setWidth(barWidth - fillWidth);
+            healthBarEmpty.setHeight(12);
+            healthText.setText(hits + "/" + maxHits);
+
+            // Stats: moves and fuel for air units
+            int movesLeft = unit.life().movesLeft();
+            int maxMoves = unit.getType().getDist();
+            String stats = "Moves: " + movesLeft + "/" + maxMoves;
+            if (unit.getType().getTravel() == Travel.AIR) {
+                int fuel = unit.life().getFuel();
+                int maxFuel = unit.life().getMaxFuel();
+                stats += "  Fuel: " + fuel + "/" + maxFuel;
+            }
+            statsLabel.setText(stats);
+
+            // Location
+            locationLabel.setText(
+                "(" +
+                    unit.getLocation().getX() +
+                    ", " +
+                    unit.getLocation().getY() +
+                    ")"
+            );
+
+            // Order
+            if (unit.getOrder() != null) {
+                orderLabel.setText(unit.getOrder().toString());
+            } else {
+                orderLabel.setText("(none)");
+            }
         }
     }
 }

@@ -51,7 +51,9 @@ public class AttackMode extends AbstractMapCanvasMode {
     @Override
     public void enter() {
         if (attackingUnit == null) {
-            throw new IllegalStateException("Must call setAttackingUnit() before entering AttackMode");
+            throw new IllegalStateException(
+                "Must call setAttackingUnit() before entering AttackMode"
+            );
         }
     }
 
@@ -69,8 +71,11 @@ public class AttackMode extends AbstractMapCanvasMode {
 
         Unit targetUnit = query.getUnitAtLocation(location);
         if (targetUnit != null && isValidTarget(targetUnit)) {
-            // TODO: Implement attack order
-            System.out.println("AttackMode: Attack " + targetUnit.name + " at " + location);
+            // Issue bombardment attack order
+            com.developingstorm.games.sad.orders.Attack attackOrder =
+                attackingUnit.newAttackOrder(location);
+            controller.issueOrder(attackingUnit, attackOrder);
+            controller.resumeGame(attackingUnit);
 
             // Return to game mode
             canvas.getModeManager().switchMode(UIMode.GAME);
@@ -81,8 +86,10 @@ public class AttackMode extends AbstractMapCanvasMode {
     public void onMouseMoved(MouseEvent event, Location location) {
         // Update arrow to follow cursor
         if (attackingUnit != null && arrow != null) {
-            double[] unitCenter = canvas.getHexCenter(attackingUnit.getLocation());
-            double[] cursorPos = {event.getX(), event.getY()};
+            double[] unitCenter = canvas.getHexCenter(
+                attackingUnit.getLocation()
+            );
+            double[] cursorPos = { event.getX(), event.getY() };
 
             // Change arrow color based on whether target is valid
             Unit targetUnit = query.getUnitAtLocation(location);

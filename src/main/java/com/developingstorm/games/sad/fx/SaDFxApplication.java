@@ -176,10 +176,12 @@ public class SaDFxApplication extends Application {
      */
     private void startGameThread() {
         if (gameThread != null && gameThread.isAlive()) {
-            // Stop existing game thread
-            game.end();
+            // Wait for existing game thread to finish.
+            // The caller is responsible for calling end() on the OLD game
+            // before replacing this.game. We must NOT call game.end() here
+            // because this.game may already point to the NEW game.
             try {
-                gameThread.join(1000);
+                gameThread.join(2000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }

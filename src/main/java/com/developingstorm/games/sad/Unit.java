@@ -831,12 +831,13 @@ public abstract class Unit {
                                 "Auto-loading unit: " + u.toUIString()
                             );
                             addCarried(u);
-                            // Wake transport if now full
+                            // Wake transport and clear sentry if now full
                             if (
                                 carriedWeight() >= carriableWeight() &&
                                 inSentryMode()
                             ) {
                                 this.life.wake();
+                                clearOrders();
                             }
                         }
                     }

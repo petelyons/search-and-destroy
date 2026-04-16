@@ -9,9 +9,12 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -19,9 +22,7 @@ import javafx.scene.text.FontWeight;
 
 /**
  * Panel that displays a scrollable history of recent combat encounters.
- * Each battle is shown as a single row with information about attacker and defender.
- *
- * Subscribes to CombatResolvedEvent to update automatically.
+ * Each battle is shown as a compact icon-based row with attacker and defender.
  */
 public class BattleHistoryPanel extends VBox {
 
@@ -29,7 +30,6 @@ public class BattleHistoryPanel extends VBox {
     private final VBox battleListPanel;
     private final ScrollPane scrollPane;
 
-    // Optional listener for when user clicks on a battle
     public interface BattleSelectionListener {
         void battleSelected(Location location);
     }
@@ -38,10 +38,9 @@ public class BattleHistoryPanel extends VBox {
 
     public BattleHistoryPanel() {
         this.battleHistory = new ArrayList<>();
-        this.battleListPanel = new VBox(5);
+        this.battleListPanel = new VBox(3);
         this.battleListPanel.setPadding(new Insets(5));
 
-        // Initialize UI
         setSpacing(5);
         setPadding(new Insets(10));
         setStyle("-fx-background-color: #2b2b2b;");
@@ -54,7 +53,9 @@ public class BattleHistoryPanel extends VBox {
         titleLabel.setMaxWidth(Double.MAX_VALUE);
 
         // Separator
-        Region separator = createSeparator();
+        Region separator = new Region();
+        separator.setPrefHeight(1);
+        separator.setStyle("-fx-background-color: #555;");
 
         // Battle list in scroll pane
         scrollPane = new ScrollPane(battleListPanel);
@@ -67,20 +68,9 @@ public class BattleHistoryPanel extends VBox {
 
         getChildren().addAll(titleLabel, separator, scrollPane);
 
-        // Show empty state initially
         showEmptyState();
     }
 
-    private Region createSeparator() {
-        Region sep = new Region();
-        sep.setPrefHeight(1);
-        sep.setStyle("-fx-background-color: #555;");
-        return sep;
-    }
-
-    /**
-     * Set listener for battle selection clicks.
-     */
     public void setBattleSelectionListener(BattleSelectionListener listener) {
         this.selectionListener = listener;
     }
@@ -97,24 +87,20 @@ public class BattleHistoryPanel extends VBox {
     }
 
     /**
-     * Add a new battle to the history.
-     * Most recent battles appear at the top.
+     * Add a new battle to the history. Most recent at top.
      */
     public void addBattle(CombatResult result) {
         if (result == null) {
             return;
         }
 
-        // If this is the first battle, clear empty state
         if (battleHistory.isEmpty()) {
             battleListPanel.getChildren().clear();
         }
 
-        // Add to history list
         battleHistory.add(result);
 
-        // Create battle row and add to top of display
-        VBox battleRow = createBattleRow(result);
+        HBox battleRow = createBattleRow(result);
         battleListPanel.getChildren().add(0, battleRow);
 
         // Limit history to 50 battles
@@ -125,100 +111,125 @@ public class BattleHistoryPanel extends VBox {
                 .remove(battleListPanel.getChildren().size() - 1);
         }
 
-        // Auto-scroll to top to show latest battle
         scrollPane.setVvalue(0);
     }
 
-    private VBox createBattleRow(CombatResult result) {
-        VBox row = new VBox(3);
-        row.setPadding(new Insets(5));
-        row.setStyle(
-            "-fx-background-color: #333; -fx-border-color: #555; -fx-border-width: 0 0 1 0;"
-        );
+    private Color getPlayerColor(Player player) {
+        int playerId = player.getId();
+        if (playerId == 1) {
+            return Color.rgb(250, 100, 100);
+        } else if (playerId == 2) {
+            return Color.rgb(150, 150, 250);
+        } else {
+            return Color.rgb(100, 250, 100);
+        }
+    }
 
-        // Attacker info
-        Label attackerLabel = new Label(
-            result.getAttackerName() + " (" + result.getAttackerOwner() + ")"
-        );
-        attackerLabel.setTextFill(
-            result.attackerWon() ? Color.LIGHTGREEN : Color.LIGHTCORAL
-        );
-        attackerLabel.setFont(Font.font("System", FontWeight.BOLD, 11));
+    private HBox createBattleRow(CombatResult result) {
+        HBox row = new HBox(6);
+        row.setPadding(new Insets(4));
+        row.setAlignment(Pos.CENTER);
+        row.setStyle("-fx-background-color: #333;");
+        row.setMinHeight(45);
 
-        // Health info for attacker
-        String attackerHealth = String.format(
-            "  %d → %d hits",
+        boolean attackerWon = result.attackerWon();
+
+        // Attacker side
+        VBox attackerBox = createUnitBox(
+            result.getAttackerTypeEnum(),
+            result.getAttackerOwner(),
             result.getAttackerInitialHits(),
-            result.getAttackerFinalHits()
+            result.getAttackerFinalHits(),
+            attackerWon
         );
-        Label attackerHealthLabel = new Label(attackerHealth);
-        attackerHealthLabel.setTextFill(Color.LIGHTGRAY);
-        attackerHealthLabel.setFont(Font.font("System", 10));
 
-        // VS
-        Label vsLabel = new Label("    VS");
-        vsLabel.setTextFill(Color.GRAY);
-        vsLabel.setFont(Font.font("System", FontWeight.BOLD, 10));
+        // Arrow indicator pointing toward the loser
+        String arrowText = attackerWon ? ">>>" : "<<<";
+        Label arrowLabel = new Label(arrowText);
+        arrowLabel.setFont(Font.font("System", FontWeight.BOLD, 10));
+        arrowLabel.setTextFill(Color.GOLD);
 
-        // Defender info
-        Label defenderLabel = new Label(
-            result.getDefenderName() + " (" + result.getDefenderOwner() + ")"
-        );
-        defenderLabel.setTextFill(
-            !result.attackerWon() ? Color.LIGHTGREEN : Color.LIGHTCORAL
-        );
-        defenderLabel.setFont(Font.font("System", FontWeight.BOLD, 11));
-
-        // Health info for defender
-        String defenderHealth = String.format(
-            "  %d → %d hits",
+        // Defender side
+        VBox defenderBox = createUnitBox(
+            result.getDefenderTypeEnum(),
+            result.getDefenderOwner(),
             result.getDefenderInitialHits(),
-            result.getDefenderFinalHits()
+            result.getDefenderFinalHits(),
+            !attackerWon
         );
-        Label defenderHealthLabel = new Label(defenderHealth);
-        defenderHealthLabel.setTextFill(Color.LIGHTGRAY);
-        defenderHealthLabel.setFont(Font.font("System", 10));
 
-        // Outcome
-        String outcome = result.attackerWon() ? "Attacker Won" : "Defender Won";
-        Label outcomeLabel = new Label("  → " + outcome);
-        outcomeLabel.setTextFill(Color.YELLOW);
-        outcomeLabel.setFont(Font.font("System", FontWeight.BOLD, 10));
+        row.getChildren().addAll(attackerBox, arrowLabel, defenderBox);
 
-        row
-            .getChildren()
-            .addAll(
-                attackerLabel,
-                attackerHealthLabel,
-                vsLabel,
-                defenderLabel,
-                defenderHealthLabel,
-                outcomeLabel
-            );
-
-        // Make clickable if listener is set
         if (selectionListener != null) {
             row.setOnMouseClicked(e -> {
                 selectionListener.battleSelected(result.getBattleLocation());
             });
-            row.setStyle(row.getStyle() + "; -fx-cursor: hand;");
+            row.setCursor(javafx.scene.Cursor.HAND);
         }
 
         return row;
     }
 
-    /**
-     * Clear all battle history.
-     */
+    private VBox createUnitBox(
+        com.developingstorm.games.sad.Type unitType,
+        Player owner,
+        int initialHits,
+        int finalHits,
+        boolean isWinner
+    ) {
+        VBox box = new VBox(2);
+        box.setAlignment(Pos.CENTER);
+
+        // Unit icon
+        Image unitImage = TerrainImages.getInstance().getUnitImage(unitType);
+        ImageView iconView = new ImageView(unitImage);
+        iconView.setFitWidth(24);
+        iconView.setFitHeight(24);
+        iconView.setPreserveRatio(true);
+        iconView.setSmooth(true);
+
+        StackPane iconPane = new StackPane(iconView);
+        iconPane.setPrefSize(28, 28);
+        iconPane.setMinSize(28, 28);
+        iconPane.setMaxSize(28, 28);
+        iconPane.setAlignment(Pos.CENTER);
+
+        Color playerColor = getPlayerColor(owner);
+        iconPane.setBackground(
+            new javafx.scene.layout.Background(
+                new javafx.scene.layout.BackgroundFill(
+                    playerColor,
+                    new javafx.scene.layout.CornerRadii(2),
+                    Insets.EMPTY
+                )
+            )
+        );
+
+        if (isWinner) {
+            iconPane.setStyle(
+                "-fx-border-color: gold; -fx-border-width: 2; -fx-border-radius: 2;"
+            );
+        } else {
+            iconPane.setStyle(
+                "-fx-border-color: #555; -fx-border-width: 1; -fx-border-radius: 2;"
+            );
+        }
+
+        // Health text: initialHits→finalHits
+        Label hitsLabel = new Label(initialHits + "\u2192" + finalHits);
+        hitsLabel.setFont(Font.font("System", 9));
+        hitsLabel.setTextFill(isWinner ? Color.LIGHTGREEN : Color.LIGHTCORAL);
+
+        box.getChildren().addAll(iconPane, hitsLabel);
+        return box;
+    }
+
     public void clearHistory() {
         battleHistory.clear();
         battleListPanel.getChildren().clear();
         showEmptyState();
     }
 
-    /**
-     * Get number of battles in history.
-     */
     public int getBattleCount() {
         return battleHistory.size();
     }

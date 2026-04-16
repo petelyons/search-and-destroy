@@ -748,8 +748,12 @@ public class MapCanvas extends StackPane {
             bgSize
         );
 
-        // Draw border with movement highlight
-        boolean hasMoves = unit.life().hasMoves() && !unit.inSentryMode();
+        // Draw border with movement highlight (only for human player's units)
+        Player humanPlayer = query.getHumanPlayer();
+        boolean hasMoves =
+            unit.getOwner() == humanPlayer &&
+            unit.life().hasMoves() &&
+            !unit.inSentryMode();
         if (hasMoves) {
             // Yellow highlight for units with available moves
             gc.setStroke(Color.YELLOW);
@@ -1060,31 +1064,26 @@ public class MapCanvas extends StackPane {
         });
         menu.getItems().add(sentryItem);
 
-        // Unload
-        MenuItem unloadItem = new MenuItem("Unload");
-        unloadItem.setOnAction(e -> {
-            // Use proper command pattern for unload
-            controller.issueOrder(
-                unit,
-                new com.developingstorm.games.sad.orders.Unload(
-                    query.getGame(),
-                    unit
-                )
-            );
-            controller.resumeGame(unit);
-            refresh();
-        });
-        menu.getItems().add(unloadItem);
-
-        // Move (placeholder - would need mode switching)
-        MenuItem moveItem = new MenuItem("Move");
-        moveItem.setDisable(true); // TODO: Implement move mode
-        menu.getItems().add(moveItem);
+        // Unload (only for units that can carry)
+        if (unit.canCarry()) {
+            MenuItem unloadItem = new MenuItem("Unload");
+            unloadItem.setOnAction(e -> {
+                controller.issueOrder(
+                    unit,
+                    new com.developingstorm.games.sad.orders.Unload(
+                        query.getGame(),
+                        unit
+                    )
+                );
+                controller.resumeGame(unit);
+                refresh();
+            });
+            menu.getItems().add(unloadItem);
+        }
 
         // Explore
         MenuItem exploreItem = new MenuItem("Explore");
         exploreItem.setOnAction(e -> {
-            // Use proper command pattern for explore
             controller.issueOrder(
                 unit,
                 new com.developingstorm.games.sad.orders.Explore(
@@ -1099,7 +1098,17 @@ public class MapCanvas extends StackPane {
 
         // Head Home
         MenuItem headHomeItem = new MenuItem("Head Home");
-        headHomeItem.setDisable(true); // TODO: Implement head home
+        headHomeItem.setOnAction(e -> {
+            controller.issueOrder(
+                unit,
+                new com.developingstorm.games.sad.orders.HeadHome(
+                    query.getGame(),
+                    unit
+                )
+            );
+            controller.resumeGame(unit);
+            refresh();
+        });
         menu.getItems().add(headHomeItem);
 
         // Patrol
@@ -1112,14 +1121,18 @@ public class MapCanvas extends StackPane {
         // Bombard (for battleships and cruisers)
         if (unit.isBattleship() || unit.isCruiser()) {
             MenuItem bombardItem = new MenuItem("Bombard...");
-            bombardItem.setDisable(true); // TODO: Implement attack mode
+            bombardItem.setOnAction(e -> {
+                enterAttackMode(unit);
+            });
             menu.getItems().add(bombardItem);
         }
 
         // Escort (for sea units)
         if (unit.getTravel() == Travel.SEA) {
             MenuItem escortItem = new MenuItem("Escort...");
-            escortItem.setDisable(true); // TODO: Implement escort mode
+            escortItem.setOnAction(e -> {
+                enterEscortMode(unit);
+            });
             menu.getItems().add(escortItem);
         }
 
@@ -1466,9 +1479,23 @@ public class MapCanvas extends StackPane {
         City cityAtLocation = query.getCityAtLocation(location);
 
         if (unitsAtLocation != null && !unitsAtLocation.isEmpty()) {
-            if (unitsAtLocation.size() == 1) {
+            // Filter out carried units in sentry mode — they are cargo and
+            // should not be selectable.  The transport/carrier is the unit
+            // the player wants to interact with.
+            List<Unit> selectable = new java.util.ArrayList<>();
+            for (Unit u : unitsAtLocation) {
+                if (!(u.isCarried() && u.inSentryMode())) {
+                    selectable.add(u);
+                }
+            }
+            if (selectable.isEmpty()) {
+                // Fallback: use the full list if filtering removed everything
+                selectable = unitsAtLocation;
+            }
+
+            if (selectable.size() == 1) {
                 // Single unit - just select it
-                controller.selectUnit(unitsAtLocation.get(0));
+                controller.selectUnit(selectable.get(0));
             } else {
                 // Multiple units - cycle through them or show selection
                 Unit currentlySelected = query.getSelectedUnit();
@@ -1479,8 +1506,8 @@ public class MapCanvas extends StackPane {
                     currentlySelected != null &&
                     currentlySelected.getLocation().equals(location)
                 ) {
-                    for (int i = 0; i < unitsAtLocation.size(); i++) {
-                        if (unitsAtLocation.get(i).id == currentlySelected.id) {
+                    for (int i = 0; i < selectable.size(); i++) {
+                        if (selectable.get(i).id == currentlySelected.id) {
                             currentIndex = i;
                             break;
                         }
@@ -1488,8 +1515,8 @@ public class MapCanvas extends StackPane {
                 }
 
                 // Select next unit in the list (cycle around)
-                int nextIndex = (currentIndex + 1) % unitsAtLocation.size();
-                controller.selectUnit(unitsAtLocation.get(nextIndex));
+                int nextIndex = (currentIndex + 1) % selectable.size();
+                controller.selectUnit(selectable.get(nextIndex));
             }
         } else if (cityAtLocation != null) {
             // Track the city location
@@ -1745,6 +1772,34 @@ public class MapCanvas extends StackPane {
 
         // Switch to PATROL mode
         modeManager.switchMode(com.developingstorm.games.sad.fx.UIMode.PATROL);
+    }
+
+    /**
+     * Enter attack/bombard mode for a unit.
+     * Shows arrow from unit following cursor to select bombardment target.
+     */
+    public void enterAttackMode(Unit unit) {
+        com.developingstorm.games.sad.fx.modes.AttackMode attackMode =
+            (com.developingstorm.games.sad.fx.modes.AttackMode) modeManager.getMode(
+                com.developingstorm.games.sad.fx.UIMode.ATTACK
+            );
+
+        attackMode.setAttackingUnit(unit);
+        modeManager.switchMode(com.developingstorm.games.sad.fx.UIMode.ATTACK);
+    }
+
+    /**
+     * Enter escort mode for a unit.
+     * Shows line from unit following cursor to select unit to escort.
+     */
+    public void enterEscortMode(Unit unit) {
+        com.developingstorm.games.sad.fx.modes.EscortMode escortMode =
+            (com.developingstorm.games.sad.fx.modes.EscortMode) modeManager.getMode(
+                com.developingstorm.games.sad.fx.UIMode.ESCORT
+            );
+
+        escortMode.setEscortShip(unit);
+        modeManager.switchMode(com.developingstorm.games.sad.fx.UIMode.ESCORT);
     }
 
     /**

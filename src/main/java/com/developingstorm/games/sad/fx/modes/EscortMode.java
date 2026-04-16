@@ -51,7 +51,9 @@ public class EscortMode extends AbstractMapCanvasMode {
     @Override
     public void enter() {
         if (escortShip == null) {
-            throw new IllegalStateException("Must call setEscortShip() before entering EscortMode");
+            throw new IllegalStateException(
+                "Must call setEscortShip() before entering EscortMode"
+            );
         }
     }
 
@@ -69,8 +71,15 @@ public class EscortMode extends AbstractMapCanvasMode {
 
         Unit targetUnit = query.getUnitAtLocation(location);
         if (targetUnit != null && isValidEscortTarget(targetUnit)) {
-            // TODO: Implement escort pairing
-            System.out.println("EscortMode: " + escortShip.name + " escorts " + targetUnit.name);
+            // Issue escort order
+            com.developingstorm.games.sad.orders.Escort escortOrder =
+                new com.developingstorm.games.sad.orders.Escort(
+                    game,
+                    escortShip,
+                    targetUnit
+                );
+            controller.issueOrder(escortShip, escortOrder);
+            controller.resumeGame(escortShip);
 
             // Return to game mode
             canvas.getModeManager().switchMode(UIMode.GAME);
@@ -82,7 +91,7 @@ public class EscortMode extends AbstractMapCanvasMode {
         // Update line to follow cursor
         if (escortShip != null && line != null) {
             double[] shipCenter = canvas.getHexCenter(escortShip.getLocation());
-            double[] cursorPos = {event.getX(), event.getY()};
+            double[] cursorPos = { event.getX(), event.getY() };
 
             // Change line color based on whether target is valid
             Unit targetUnit = query.getUnitAtLocation(location);

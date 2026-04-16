@@ -9,6 +9,7 @@ public class CombatResult {
 
     private final String attackerName;
     private final String attackerType;
+    private final Type attackerTypeEnum;
     private final Player attackerOwner;
     private final int attackerIconIndex;
     private final int attackerInitialHits;
@@ -17,6 +18,7 @@ public class CombatResult {
 
     private final String defenderName;
     private final String defenderType;
+    private final Type defenderTypeEnum;
     private final Player defenderOwner;
     private final int defenderIconIndex;
     private final int defenderInitialHits;
@@ -36,6 +38,7 @@ public class CombatResult {
         this.attackerName =
             attacker.name != null ? attacker.name : "Unit #" + attacker.id;
         this.attackerType = attacker.getType().toString();
+        this.attackerTypeEnum = attacker.getType();
         this.attackerOwner = attacker.getOwner();
         this.attackerIconIndex = attacker.getType().getIcon();
         this.attackerInitialHits = attackerInitialHits;
@@ -45,6 +48,7 @@ public class CombatResult {
         this.defenderName =
             defender.name != null ? defender.name : "Unit #" + defender.id;
         this.defenderType = defender.getType().toString();
+        this.defenderTypeEnum = defender.getType();
         this.defenderOwner = defender.getOwner();
         this.defenderIconIndex = defender.getType().getIcon();
         this.defenderInitialHits = defenderInitialHits;
@@ -61,6 +65,10 @@ public class CombatResult {
 
     public String getAttackerType() {
         return attackerType;
+    }
+
+    public Type getAttackerTypeEnum() {
+        return attackerTypeEnum;
     }
 
     public Player getAttackerOwner() {
@@ -93,6 +101,10 @@ public class CombatResult {
 
     public String getDefenderType() {
         return defenderType;
+    }
+
+    public Type getDefenderTypeEnum() {
+        return defenderTypeEnum;
     }
 
     public Player getDefenderOwner() {

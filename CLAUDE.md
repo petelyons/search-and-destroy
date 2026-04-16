@@ -1,5 +1,11 @@
 # Search and Destroy - Game Rules and Development Guide
 
+# Style
+- Be concise. Minimize explanations unless asked.
+- Just make the changes — don't narrate what you're doing or why unless it's non-obvious.
+- Skip summaries of what you changed after edits.
+- 
+
 ## Overview
 
 A hex-grid, turn-based strategy game. Players start with one city and one infantry unit. They must explore the map, capture cities, produce units, and destroy all enemies to win.

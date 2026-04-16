@@ -75,7 +75,16 @@ public class GameStateSerializer {
         // Metadata
         root.put("version", SAVE_VERSION);
         root.put("turn", game.getTurn());
-        root.put("currentPlayerIndex", game.currentPlayer().id);
+        // Save array index (not player ID) so we can restore correctly
+        int currentPlayerIdx = 0;
+        Player[] allPlayers = game.getPlayers();
+        for (int i = 0; i < allPlayers.length; i++) {
+            if (allPlayers[i] == game.currentPlayer()) {
+                currentPlayerIdx = i;
+                break;
+            }
+        }
+        root.put("currentPlayerIndex", currentPlayerIdx);
         root.put("savedAt", System.currentTimeMillis());
 
         // Board reference (we'll save the map separately)
@@ -516,8 +525,10 @@ public class GameStateSerializer {
             }
         }
 
-        // Set current player
-        game.currentPlayer = players[currentPlayerIndex];
+        // Always resume with the human player (index 0).
+        // The game is only saved during the human's turn (AWAITING_ORDERS),
+        // and the human should always get control first after loading.
+        game.currentPlayer = players[0];
 
         // Second pass: restore edicts now that all cities are loaded
         for (City city : existingCities) {
@@ -541,6 +552,10 @@ public class GameStateSerializer {
                 player.adjustVisibility(unit);
             }
         }
+
+        // Signal that the game is resuming from a load so the human player's
+        // first turn will always pause for input.
+        game.setResumingFromLoad();
 
         logger.info("Game loaded successfully: turn {}", savedTurn);
         return game;

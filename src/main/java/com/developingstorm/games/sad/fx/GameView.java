@@ -10,6 +10,7 @@ import com.developingstorm.games.sad.events.CombatResolvedEvent;
 import com.developingstorm.games.sad.events.GameEvent;
 import com.developingstorm.games.sad.events.GameEventListener;
 import com.developingstorm.games.sad.events.GameEventType;
+import com.developingstorm.games.sad.events.NewTurnEvent;
 import com.developingstorm.games.sad.events.UnitSelectedEvent;
 import com.developingstorm.games.sad.events.UnitTrackedEvent;
 import com.developingstorm.games.sad.events.WaitingForOrdersEvent;
@@ -39,6 +40,7 @@ public class GameView extends BorderPane {
     private final GameCommandHandler commandHandler;
 
     private MapCanvas mapCanvas;
+    private Label turnLabel;
     private UnitInfoPanel unitInfoPanel;
     private BattleHistoryPanel battleHistoryPanel;
     private javafx.scene.control.ScrollPane scrollPane;
@@ -89,10 +91,24 @@ public class GameView extends BorderPane {
         scrollPane.setFitToHeight(false);
         setCenter(scrollPane);
 
-        // Create right sidebar with unit info and battle history
+        // Create right sidebar with turn banner, unit info, and battle history
         VBox rightSidebar = new VBox();
         rightSidebar.setPrefWidth(250);
         rightSidebar.setMinWidth(250);
+
+        // Turn banner
+        turnLabel = new Label("Turn " + game.getTurn());
+        turnLabel.setFont(
+            javafx.scene.text.Font.font(
+                "System",
+                javafx.scene.text.FontWeight.BOLD,
+                14
+            )
+        );
+        turnLabel.setTextFill(Color.WHITE);
+        turnLabel.setStyle("-fx-background-color: #333; -fx-padding: 8;");
+        turnLabel.setMaxWidth(Double.MAX_VALUE);
+        turnLabel.setAlignment(Pos.CENTER);
 
         // Unit info panel
         unitInfoPanel = new UnitInfoPanel(controller, query);
@@ -105,7 +121,9 @@ public class GameView extends BorderPane {
         battleHistoryPanel = new BattleHistoryPanel();
         VBox.setVgrow(battleHistoryPanel, Priority.ALWAYS);
 
-        rightSidebar.getChildren().addAll(unitInfoPanel, battleHistoryPanel);
+        rightSidebar
+            .getChildren()
+            .addAll(turnLabel, unitInfoPanel, battleHistoryPanel);
         setRight(rightSidebar);
 
         // Set some styling
@@ -136,6 +154,7 @@ public class GameView extends BorderPane {
                             GameEventType.WAITING_FOR_ORDERS,
                             GameEventType.MAP_UPDATED,
                             GameEventType.GAME_ABORTED,
+                            GameEventType.NEW_TURN,
                         };
                     }
                 }
@@ -195,6 +214,10 @@ public class GameView extends BorderPane {
                     );
                 }
                 mapCanvas.refresh();
+                break;
+            case NEW_TURN:
+                NewTurnEvent nte = (NewTurnEvent) event;
+                turnLabel.setText("Turn " + nte.getTurnNumber());
                 break;
             case GAME_ABORTED:
                 handleGameAborted();
