@@ -3,7 +3,6 @@ package com.developingstorm.games.sad;
 import com.developingstorm.games.hexboard.Location;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,7 +126,9 @@ public class ContactMap {
     }
 
     public Collection<Contact> getAllContacts() {
-        return Collections.unmodifiableCollection(contacts.values());
+        // Snapshot: writes happen on the game thread while rendering reads on
+        // the JavaFX thread, so callers must iterate a stable copy.
+        return new ArrayList<>(contacts.values());
     }
 
     public Collection<Contact> getCurrentContacts(int currentTurn) {
