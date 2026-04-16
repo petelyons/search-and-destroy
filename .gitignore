@@ -1,0 +1,19 @@
+# Maven build output
+target/
+
+# Eclipse build output
+bin/
+
+# Compiled class files
+*.class
+
+# OS junk
+.DS_Store
+
+# IDE files (keeping .zed/ since it's project-configured)
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
