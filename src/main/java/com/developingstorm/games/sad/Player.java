@@ -359,7 +359,7 @@ public class Player implements UnitLens, LocationLens {
      * and re-populates the legacy {@code enemyUnits} set from current
      * contacts only (for backwards compatibility with existing callers).
      */
-    private void scanForContacts() {
+    void scanForContacts() {
         this.enemyUnits.clear();
         int currentTurn = this.game.getTurn();
 

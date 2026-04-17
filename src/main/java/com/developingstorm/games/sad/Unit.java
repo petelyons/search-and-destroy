@@ -242,6 +242,9 @@ public abstract class Unit {
         Log.info(this, "change location to " + loc);
         this.game.changeUnitLoc(this, loc);
         this.loc = loc;
+        // Detection rings shifted — rescan so ghost/current state reflects
+        // the new positions instead of staying stale until next turn start.
+        this.game.refreshAllContacts();
     }
 
     public String toString() {

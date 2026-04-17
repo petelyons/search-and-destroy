@@ -187,4 +187,31 @@ public class DetectionIntegrationTest {
 
         assertNull(contactFor(playerA, enemySub), "contact should be removed after enemy dies");
     }
+
+    /**
+     * Ghost state must refresh after every unit move, not only at turn start.
+     * Starts with the destroyer out of detection range from the sub (so the
+     * initial scan records nothing), then steps the destroyer one hex closer
+     * into range and expects the contact to appear as current, not a ghost.
+     */
+    @Test
+    public void testContactRefreshesAfterUnitMove() {
+        Location destStart = Location.get(10, 10);
+        Location destStep = Location.get(11, 10);
+        Location subLoc = Location.get(14, 10);
+        assertEquals(4, destStart.distance(subLoc), "setup: initial distance 4 (out of destroyer range 3)");
+        assertEquals(3, destStep.distance(subLoc), "setup: post-move distance 3 (in range)");
+
+        Unit dest = spawn(Type.DESTROYER, playerA, destStart);
+        Unit sub = spawn(Type.SUBMARINE, playerB, subLoc);
+
+        playerA.startNewTurn();
+        assertNull(contactFor(playerA, sub), "baseline: sub should be out of detection range");
+
+        dest.move(destStep);
+
+        Contact c = contactFor(playerA, sub);
+        assertNotNull(c, "sub should be detected mid-turn after destroyer moves into range");
+        assertTrue(c.isCurrent(game.getTurn()), "contact should be current, not a ghost");
+    }
 }

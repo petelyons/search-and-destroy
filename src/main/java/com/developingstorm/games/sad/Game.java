@@ -245,6 +245,19 @@ public class Game implements UnitLens, LocationLens {
         return players;
     }
 
+    /**
+     * Rescans enemy detection for every player. Call after any state change
+     * that could alter detection — unit moves, kills, captures — so that the
+     * per-player ContactMap stays current within a turn instead of only at
+     * turn start. Runs on the calling thread; must be called from the game
+     * thread (writes to ContactMap are not synchronized).
+     */
+    void refreshAllContacts() {
+        for (Player p : players) {
+            p.scanForContacts();
+        }
+    }
+
     public synchronized Unit createUnit(
         Type type,
         Player owner,
