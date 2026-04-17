@@ -362,11 +362,16 @@ public class MapCanvas extends StackPane {
             if (unitsAtLoc.size() > 1) drawStackBadge(loc, unitsAtLoc.size());
         }
 
-        // 2) Draw enemy contacts from the human player's ContactMap.
+        // 2) Draw enemy contacts from the human player's ContactMap. Skip
+        // any contact whose hex is already occupied by an own unit — a live
+        // friendly unit trumps a stale ghost silhouette on the same tile.
         if (humanPlayer != null) {
             int currentTurn = query.getGame().getTurn();
             for (com.developingstorm.games.sad.Contact contact
                     : humanPlayer.getContactMap().getAllContacts()) {
+                if (ownUnitsByLocation.containsKey(contact.location)) {
+                    continue;
+                }
                 drawContact(contact, currentTurn);
             }
         } else {

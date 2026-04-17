@@ -189,6 +189,25 @@ public class DetectionIntegrationTest {
     }
 
     /**
+     * An infantry unit adjacent to an enemy surface ship must detect it
+     * (SURFACE vision + detectionRange=1 means range-1 sightings succeed).
+     */
+    @Test
+    public void testInfantryDetectsAdjacentDestroyer() {
+        Location infLoc = Location.get(10, 10);
+        Location destLoc = Location.get(11, 10);
+        assertEquals(1, infLoc.distance(destLoc), "setup: distance must be 1");
+
+        spawn(Type.INFANTRY, playerA, infLoc);
+        Unit dest = spawn(Type.DESTROYER, playerB, destLoc);
+
+        playerA.startNewTurn();
+
+        Contact c = contactFor(playerA, dest);
+        assertNotNull(c, "infantry should detect adjacent enemy destroyer");
+    }
+
+    /**
      * Ghost state must refresh after every unit move, not only at turn start.
      * Starts with the destroyer out of detection range from the sub (so the
      * initial scan records nothing), then steps the destroyer one hex closer
