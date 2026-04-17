@@ -1455,7 +1455,8 @@ public class MapCanvas extends StackPane {
 
     /**
      * Show dialog to select units at a city.
-     * Matches Swing CityDialog behavior.
+     * Users select one or more units and pick an action via inline buttons;
+     * the action is applied to every selected unit.
      */
     private void showCityUnitsDialog(City city) {
         List<Unit> unitsAtCity = query.getUnitsAtLocation(city.getLocation());
@@ -1464,35 +1465,84 @@ public class MapCanvas extends StackPane {
             return;
         }
 
-        CityUnitsDialog dialog = new CityUnitsDialog(city, unitsAtCity);
-        dialog
-            .showAndWait()
-            .ifPresent(selectedUnits -> {
-                if (selectedUnits != null && !selectedUnits.isEmpty()) {
-                    // Show context menu for selected units
-                    ContextMenu unitMenu = createMultiUnitOrdersMenu(
-                        selectedUnits,
-                        city
-                    );
-
-                    // Show menu at city location on map
-                    double[] cityCenter = getHexCenter(city.getLocation());
-                    unitMenu.show(canvas, cityCenter[0], cityCenter[1]);
-                }
-            });
+        CityUnitsDialog dialog = new CityUnitsDialog(
+            city,
+            unitsAtCity,
+            (action, selected) -> applyCityDialogAction(action, selected)
+        );
+        dialog.showAndWait();
     }
 
-    /**
-     * Create context menu for multiple selected units.
-     * Similar to createUnitOrdersMenu but works with multiple units.
-     */
-    private ContextMenu createMultiUnitOrdersMenu(
-        List<Unit> units,
-        City cityAtSameLocation
+    private void applyCityDialogAction(
+        CityUnitsDialog.Action action,
+        List<Unit> units
     ) {
-        // For simplicity, just use the first unit's menu for now
-        // TODO: Could enhance to only show options valid for all units
-        return createUnitOrdersMenu(units.get(0), cityAtSameLocation);
+        if (units == null || units.isEmpty()) {
+            return;
+        }
+        com.developingstorm.games.sad.Game g = query.getGame();
+        switch (action) {
+            case SENTRY:
+                for (Unit u : units) {
+                    if (u.inSentryMode()) {
+                        controller.issueOrder(
+                            u,
+                            new com.developingstorm.games.sad.orders.SkipTurn(
+                                g,
+                                u
+                            )
+                        );
+                    } else {
+                        controller.issueOrder(
+                            u,
+                            new com.developingstorm.games.sad.orders.Sentry(
+                                g,
+                                u
+                            )
+                        );
+                    }
+                    controller.resumeGame(u);
+                }
+                break;
+            case UNLOAD:
+                for (Unit u : units) {
+                    if (!u.canCarry()) continue;
+                    controller.issueOrder(
+                        u,
+                        new com.developingstorm.games.sad.orders.Unload(g, u)
+                    );
+                    controller.resumeGame(u);
+                }
+                break;
+            case EXPLORE:
+                for (Unit u : units) {
+                    controller.issueOrder(
+                        u,
+                        new com.developingstorm.games.sad.orders.Explore(g, u)
+                    );
+                    controller.resumeGame(u);
+                }
+                break;
+            case HEAD_HOME:
+                for (Unit u : units) {
+                    controller.issueOrder(
+                        u,
+                        new com.developingstorm.games.sad.orders.HeadHome(g, u)
+                    );
+                    controller.resumeGame(u);
+                }
+                break;
+            case PATROL:
+                enterPatrolMode(units.get(0));
+                break;
+            case BOMBARD:
+                enterAttackMode(units.get(0));
+                break;
+            case ESCORT:
+                enterEscortMode(units.get(0));
+                break;
+        }
+        refresh();
     }
 
     /**

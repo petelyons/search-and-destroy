@@ -1,97 +1,201 @@
 package com.developingstorm.games.sad.fx;
 
 import com.developingstorm.games.sad.City;
+import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Unit;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 
 /**
- * Dialog for selecting units at a city location.
- * Matches Swing CityDialog behavior.
+ * Dialog for selecting units at a city location and issuing orders to the
+ * selection. Multiple units can be selected at once — non-modal action
+ * buttons on the right apply to all selected units.
  */
-public class CityUnitsDialog extends Dialog<List<Unit>> {
+public class CityUnitsDialog extends Dialog<Void> {
 
-    private ListView<UnitListItem> unitListView;
+    public enum Action {
+        SENTRY,
+        UNLOAD,
+        EXPLORE,
+        HEAD_HOME,
+        PATROL,
+        BOMBARD,
+        ESCORT,
+    }
 
-    public CityUnitsDialog(City city, List<Unit> units) {
+    /**
+     * Called when the user clicks an action button. Implementers apply the
+     * action to every unit in {@code units} (single-selection actions will
+     * pass a one-element list).
+     */
+    public interface ActionHandler {
+        void handle(Action action, List<Unit> units);
+    }
+
+    private final ListView<UnitListItem> unitListView;
+
+    public CityUnitsDialog(
+        City city,
+        List<Unit> units,
+        ActionHandler handler
+    ) {
         setTitle("Units at " + city.getName());
-        setHeaderText("Issue Orders to Unit(s)");
+        setHeaderText("Select unit(s), then choose an action");
         initModality(Modality.APPLICATION_MODAL);
 
-        // Create list view with unit items
         unitListView = new ListView<>();
         unitListView
             .getSelectionModel()
             .setSelectionMode(SelectionMode.MULTIPLE);
-
-        // Populate with units
         for (Unit unit : units) {
             unitListView.getItems().add(new UnitListItem(unit));
         }
+        unitListView.setPrefWidth(280);
+        unitListView.setPrefHeight(240);
 
-        // Set preferred size
-        unitListView.setPrefWidth(300);
-        unitListView.setPrefHeight(200);
+        Button sentryBtn = new Button("Sentry / Load");
+        Button unloadBtn = new Button("Unload");
+        Button exploreBtn = new Button("Explore");
+        Button headHomeBtn = new Button("Head Home");
+        Button patrolBtn = new Button("Define Patrol...");
+        Button bombardBtn = new Button("Bombard...");
+        Button escortBtn = new Button("Escort...");
 
-        // Layout
-        VBox content = new VBox(10);
-        Label label = new Label("Select unit(s):");
-        content.getChildren().addAll(label, unitListView);
-        content.setStyle("-fx-padding: 10;");
+        Button[] allButtons = {
+            sentryBtn,
+            unloadBtn,
+            exploreBtn,
+            headHomeBtn,
+            patrolBtn,
+            bombardBtn,
+            escortBtn,
+        };
+        double btnWidth = 160;
+        for (Button b : allButtons) {
+            b.setPrefWidth(btnWidth);
+            b.setMaxWidth(Double.MAX_VALUE);
+        }
 
-        getDialogPane().setContent(content);
-        getDialogPane()
-            .getButtonTypes()
-            .addAll(ButtonType.OK, ButtonType.CANCEL);
+        sentryBtn.setOnAction(e -> fire(handler, Action.SENTRY));
+        unloadBtn.setOnAction(e -> fire(handler, Action.UNLOAD));
+        exploreBtn.setOnAction(e -> fire(handler, Action.EXPLORE));
+        headHomeBtn.setOnAction(e -> fire(handler, Action.HEAD_HOME));
+        patrolBtn.setOnAction(e -> fire(handler, Action.PATROL));
+        bombardBtn.setOnAction(e -> fire(handler, Action.BOMBARD));
+        escortBtn.setOnAction(e -> fire(handler, Action.ESCORT));
 
-        // Convert result
-        setResultConverter(buttonType -> {
-            if (buttonType == ButtonType.OK) {
-                List<Unit> selectedUnits = new ArrayList<>();
-                for (UnitListItem item : unitListView
-                    .getSelectionModel()
-                    .getSelectedItems()) {
-                    selectedUnits.add(item.getUnit());
-                }
-                return selectedUnits;
-            }
-            return null;
-        });
+        VBox actionBox = new VBox(6);
+        actionBox.setAlignment(Pos.TOP_LEFT);
+        actionBox.getChildren().addAll(allButtons);
+        actionBox.setStyle("-fx-padding: 0 0 0 10;");
 
-        // Handle double-click
-        unitListView.setOnMouseClicked(event -> {
-            if (
-                event.getClickCount() == 2 &&
-                !unitListView.getSelectionModel().isEmpty()
-            ) {
-                (
-                    (javafx.scene.control.Button) getDialogPane().lookupButton(
-                        ButtonType.OK
-                    )
-                ).fire();
-            }
-        });
+        Runnable refreshButtons = () -> updateButtonStates(
+            selectedUnits(),
+            sentryBtn,
+            unloadBtn,
+            exploreBtn,
+            headHomeBtn,
+            patrolBtn,
+            bombardBtn,
+            escortBtn
+        );
+
+        unitListView
+            .getSelectionModel()
+            .getSelectedItems()
+            .addListener(
+                (javafx.collections.ListChangeListener<UnitListItem>) c ->
+                    refreshButtons.run()
+            );
+
+        HBox main = new HBox(
+            new VBox(4, new Label("Units:"), unitListView),
+            actionBox
+        );
+        HBox.setHgrow(actionBox, Priority.NEVER);
+        main.setStyle("-fx-padding: 10;");
+
+        getDialogPane().setContent(main);
+        getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+
+        setResultConverter(bt -> null);
+
+        refreshButtons.run();
     }
 
-    /**
-     * Wrapper class for displaying units in the list.
-     */
+    private void fire(ActionHandler handler, Action action) {
+        List<Unit> sel = selectedUnits();
+        if (sel.isEmpty()) {
+            return;
+        }
+        handler.handle(action, sel);
+        close();
+    }
+
+    private List<Unit> selectedUnits() {
+        List<Unit> out = new ArrayList<>();
+        for (UnitListItem item : unitListView
+            .getSelectionModel()
+            .getSelectedItems()) {
+            out.add(item.getUnit());
+        }
+        return out;
+    }
+
+    private void updateButtonStates(
+        List<Unit> sel,
+        Button sentry,
+        Button unload,
+        Button explore,
+        Button headHome,
+        Button patrol,
+        Button bombard,
+        Button escort
+    ) {
+        boolean any = !sel.isEmpty();
+        boolean single = sel.size() == 1;
+
+        sentry.setDisable(!any);
+        explore.setDisable(!any);
+        headHome.setDisable(!any);
+
+        boolean anyCanCarry = false;
+        boolean allSea = any;
+        boolean allBombardCapable = any;
+        for (Unit u : sel) {
+            if (u.canCarry()) anyCanCarry = true;
+            if (u.getTravel() != Travel.SEA) allSea = false;
+            if (!(u.isBattleship() || u.isCruiser())) {
+                allBombardCapable = false;
+            }
+        }
+
+        unload.setDisable(!anyCanCarry);
+        patrol.setDisable(!single);
+        bombard.setDisable(!(single && allBombardCapable));
+        escort.setDisable(!(single && allSea));
+    }
+
     private static class UnitListItem {
 
         private final Unit unit;
 
-        public UnitListItem(Unit unit) {
+        UnitListItem(Unit unit) {
             this.unit = unit;
         }
 
-        public Unit getUnit() {
+        Unit getUnit() {
             return unit;
         }
 

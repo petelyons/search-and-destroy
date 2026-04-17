@@ -296,28 +296,34 @@ public class Move extends Order {
 
     /**
      * Automatically put the unit to sleep if appropriate:
-     * Only when a unit reaches an owned city
+     * Land unit reached an owned city that is producing a loader
+     * (TRANSPORT or CARGO) — i.e. the unit is waiting to be picked up.
+     * Otherwise leave the unit awake so the player can re-task it.
      */
     private void autoSleepIfAppropriate() {
-        // Only apply to land units
         if (this.unit.getTravel() != Travel.LAND) {
             return;
         }
 
-        // Check if at destination
         if (!this.unit.getLocation().equals(this.loc)) {
             return;
         }
 
-        // Check if at an owned city - only sleep if at a city
         City city = this.game.getBoard().getCity(this.unit.getLocation());
-        if (city != null && city.getOwner() == this.unit.getOwner()) {
-            Log.info(
-                this.unit,
-                "Auto-sleeping: reached owned city at destination"
-            );
-            this.unit.orderSentry();
+        if (city == null || city.getOwner() != this.unit.getOwner()) {
+            return;
         }
+
+        Type producing = city.getProduction();
+        if (producing != Type.TRANSPORT && producing != Type.CARGO) {
+            return;
+        }
+
+        Log.info(
+            this.unit,
+            "Auto-sleeping: reached owned city producing " + producing
+        );
+        this.unit.orderSentry();
     }
 
     //  public boolean complete() {
