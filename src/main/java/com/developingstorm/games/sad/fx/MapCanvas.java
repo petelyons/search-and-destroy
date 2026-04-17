@@ -12,6 +12,7 @@ import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.Vision;
 import com.developingstorm.games.sad.controller.GameController;
 import com.developingstorm.games.sad.controller.GameQueryService;
 import com.developingstorm.games.sad.fx.sprites.FxArrowSprite;
@@ -365,6 +366,11 @@ public class MapCanvas extends StackPane {
         // 2) Draw enemy contacts from the human player's ContactMap. Skip
         // any contact whose hex is already occupied by an own unit — a live
         // friendly unit trumps a stale ghost silhouette on the same tile.
+        // Ghost contacts that still sit under live surveillance (any owned
+        // spotter would see that unit if it were still there) render with a
+        // distinct "debunked" style so the player can tell "I used to see
+        // this enemy here and I'd see it now if it stayed" from "I haven't
+        // watched this hex since the sighting."
         if (humanPlayer != null) {
             int currentTurn = query.getGame().getTurn();
             for (com.developingstorm.games.sad.Contact contact
@@ -372,7 +378,10 @@ public class MapCanvas extends StackPane {
                 if (ownUnitsByLocation.containsKey(contact.location)) {
                     continue;
                 }
-                drawContact(contact, currentTurn);
+                boolean debunked =
+                    !contact.isCurrent(currentTurn) &&
+                    isHexSurveilled(humanPlayer, contact);
+                drawContact(contact, currentTurn, debunked);
             }
         } else {
             // Spectator / no-fog mode: draw all enemy units live
@@ -690,15 +699,25 @@ public class MapCanvas extends StackPane {
         gc.setTextBaseline(javafx.geometry.VPos.BASELINE);
     }
 
+    private static final double GHOST_DEBUNKED_OPACITY = 0.18;
+
     private void drawContact(
         com.developingstorm.games.sad.Contact contact,
-        int currentTurn
+        int currentTurn,
+        boolean debunked
     ) {
         double[] center = getHexCenter(contact.location);
         double bgSize = 28;
 
         boolean isCurrent = contact.isCurrent(currentTurn);
-        double alpha = isCurrent ? 1.0 : GHOST_OPACITY;
+        double alpha;
+        if (isCurrent) {
+            alpha = 1.0;
+        } else if (debunked) {
+            alpha = GHOST_DEBUNKED_OPACITY;
+        } else {
+            alpha = GHOST_OPACITY;
+        }
 
         Color playerColor = colorForPlayerId(
             contact.owner != null ? contact.owner.getId() : 0
@@ -716,10 +735,21 @@ public class MapCanvas extends StackPane {
             center[0] - bgSize / 2, center[1] - bgSize / 2, bgSize, bgSize
         );
         gc.setStroke(new Color(0, 0, 0, alpha));
-        gc.setLineWidth(1.0);
-        gc.strokeRect(
-            center[0] - bgSize / 2, center[1] - bgSize / 2, bgSize, bgSize
-        );
+        if (debunked) {
+            // Dashed outline marks "we can see this hex and the enemy isn't
+            // here anymore" vs the solid outline of unobserved ghosts.
+            gc.setLineDashes(3, 3);
+            gc.setLineWidth(1.0);
+            gc.strokeRect(
+                center[0] - bgSize / 2, center[1] - bgSize / 2, bgSize, bgSize
+            );
+            gc.setLineDashes(null);
+        } else {
+            gc.setLineWidth(1.0);
+            gc.strokeRect(
+                center[0] - bgSize / 2, center[1] - bgSize / 2, bgSize, bgSize
+            );
+        }
 
         double iconSize = 24;
         if (contact.identified && contact.type != null) {
@@ -746,6 +776,45 @@ public class MapCanvas extends StackPane {
                 silColor
             );
         }
+    }
+
+    /**
+     * True when some owned spotter (unit or city) would currently detect the
+     * ghost's enemy if it were still on {@code contact.location}. Used to
+     * distinguish a debunked ghost (actively watched empty hex) from a
+     * plain ghost (out-of-sight stale intel).
+     */
+    private boolean isHexSurveilled(
+        Player player,
+        com.developingstorm.games.sad.Contact contact
+    ) {
+        Location loc = contact.location;
+        for (Unit u : player.getUnits()) {
+            if (u.isDead()) continue;
+            Type ut = u.getType();
+            if (u.getLocation().distance(loc) > ut.getDetectionRange()) continue;
+            if (visionCovers(ut.getVision(), contact)) return true;
+        }
+        for (City c : player.getCities()) {
+            if (c.getLocation().distance(loc) <= 3) return true;
+        }
+        return false;
+    }
+
+    private boolean visionCovers(
+        Vision v,
+        com.developingstorm.games.sad.Contact contact
+    ) {
+        if (v == Vision.NONE) return false;
+        if (v == Vision.COMPLETE) return true;
+        if (v == Vision.WATER) {
+            return contact.travelType == Travel.SEA;
+        }
+        // SURFACE — sees all except submarines. For unidentified SEA ghosts
+        // we can't rule out a submarine, so withhold the debunked flag.
+        if (contact.identified && contact.type == Type.SUBMARINE) return false;
+        if (!contact.identified && contact.travelType == Travel.SEA) return false;
+        return true;
     }
 
     /**
