@@ -4,6 +4,7 @@ import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.EdictGovernor;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Travel;
+import com.developingstorm.games.sad.events.MapUpdatedEvent;
 
 /**
  * Command to set a city's path destination for a specific travel type.
@@ -41,7 +42,6 @@ public class SetPathCommand implements GameCommand {
         }
 
         // Set the appropriate path based on travel type
-        // UI update will happen automatically after this command completes
         switch (travelType) {
             case AIR:
                 governor.setAirPathDest(destinationCity);
@@ -53,5 +53,7 @@ public class SetPathCommand implements GameCommand {
                 governor.setLandPathDest(destinationCity);
                 break;
         }
+
+        game.getEventBus().publish(new MapUpdatedEvent());
     }
 }

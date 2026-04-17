@@ -654,6 +654,18 @@ public abstract class Unit {
             u.orderSentry();
         }
         this.carries.add(u);
+
+        // Wake transport if it just became full — previously only autoLoad()
+        // and Sentry.executeTransport() did this, so mid-turn loads via
+        // Unit.move() or MovementResolver left full transports asleep.
+        if (
+            assignOrder &&
+            carriedWeight() >= carriableWeight() &&
+            inSentryMode()
+        ) {
+            this.life.wake();
+            clearOrders();
+        }
     }
 
     public void unload() {
@@ -834,14 +846,6 @@ public abstract class Unit {
                                 "Auto-loading unit: " + u.toUIString()
                             );
                             addCarried(u);
-                            // Wake transport and clear sentry if now full
-                            if (
-                                carriedWeight() >= carriableWeight() &&
-                                inSentryMode()
-                            ) {
-                                this.life.wake();
-                                clearOrders();
-                            }
                         }
                     }
                 }
