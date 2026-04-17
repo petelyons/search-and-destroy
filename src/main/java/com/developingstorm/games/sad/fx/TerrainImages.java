@@ -261,11 +261,11 @@ public class TerrainImages {
 
         switch (travel) {
             case LAND: {
-                // Upward-pointing triangle
-                double[] xs = { cx, cx - half, cx + half };
-                double[] ys = { cy - half, cy + half, cy + half };
-                gc.fillPolygon(xs, ys, 3);
-                gc.strokePolygon(xs, ys, 3);
+                // Diamond
+                double[] xs = { cx, cx + half, cx, cx - half };
+                double[] ys = { cy - half, cy, cy + half, cy };
+                gc.fillPolygon(xs, ys, 4);
+                gc.strokePolygon(xs, ys, 4);
                 break;
             }
             case SEA: {
