@@ -9,6 +9,7 @@ import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.hexboard.LocationLens;
 import com.developingstorm.games.sad.commands.GameCommand;
 import com.developingstorm.games.sad.events.*;
+import com.developingstorm.games.sad.orders.FleetMember;
 import com.developingstorm.games.sad.types.Armor;
 import com.developingstorm.games.sad.types.Battleship;
 import com.developingstorm.games.sad.types.Bomber;
@@ -266,10 +267,10 @@ public class Game implements UnitLens, LocationLens {
         // Guard against infinite recursion: followers trigger this hook too,
         // but only the flagship's movement should drive followers.
         if (mover != f.getFlagship()) return;
-        for (Unit m : new java.util.ArrayList<>(f.membersView().keySet())) {
+        for (Unit m : new ArrayList<>(f.membersView().keySet())) {
             if (m == mover) continue;
             if (m.isDead()) continue;
-            if (!(m.getOrder() instanceof com.developingstorm.games.sad.orders.FleetMember)) continue;
+            if (!(m.getOrder() instanceof FleetMember)) continue;
             if (m.life().movesLeft() <= 0) continue;
             m.execOrder(null);
         }
