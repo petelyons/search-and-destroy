@@ -64,6 +64,11 @@ public class UnitSerializer {
             json.put("onboard", onboard.id);
         }
 
+        // Fleet membership
+        if (unit.getFleet() != null) {
+            json.put("fleetId", unit.getFleet().getId());
+        }
+
         // Order (if any)
         Order order = unit.getOrder();
         if (order != null) {
@@ -152,6 +157,12 @@ public class UnitSerializer {
                     orderData.put("targetY", target.y);
                 }
             }
+
+            if (order instanceof com.developingstorm.games.sad.orders.FleetMember) {
+                com.developingstorm.games.sad.orders.FleetMember fm =
+                    (com.developingstorm.games.sad.orders.FleetMember) order;
+                orderData.put("fleetId", fm.getFleet().getId());
+            }
         } catch (Exception e) {
             // If reflection fails, log but don't crash - order will be lost but game can continue
             System.err.println(
@@ -210,6 +221,11 @@ public class UnitSerializer {
             data.onboardId = onboardId;
         }
 
+        Long fleetId = json.getLong("fleetId");
+        if (fleetId != null) {
+            data.fleetId = fleetId;
+        }
+
         // Extract order type
         String orderType = json.getString("orderType");
         if (orderType != null) {
@@ -244,6 +260,7 @@ public class UnitSerializer {
         public boolean unloadingMode;
         public List<Long> carryingIds;
         public Long onboardId;
+        public Long fleetId;
         public String orderType;
         public JsonObj orderData;
     }

@@ -4,6 +4,9 @@ import com.developingstorm.games.hexboard.Direction;
 import com.developingstorm.games.hexboard.HexBoardContext;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.City;
+import com.developingstorm.games.sad.Fleet;
+import com.developingstorm.games.sad.FleetRegistry;
+import com.developingstorm.games.sad.FleetRole;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.GameException;
 import com.developingstorm.games.sad.Order;
@@ -34,8 +37,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -129,6 +134,29 @@ public class GameStateSerializer {
         }
         root.put("continents", continentsArray);
 
+        // Fleets
+        Collection<Fleet> allFleets = game.getFleetRegistry().allFleets();
+        Object[] fleetsArray = new Object[allFleets.size()];
+        int fIdx = 0;
+        for (Fleet f : allFleets) {
+            JsonObj jf = new JsonObj();
+            jf.put("id", f.getId());
+            jf.put("ownerId", (long) f.getOwner().getId());
+            jf.put("flagshipId", f.getFlagship().id);
+            Map<Unit, FleetRole> mv = f.membersView();
+            Object[] membersArr = new Object[mv.size()];
+            int mIdx = 0;
+            for (Map.Entry<Unit, FleetRole> e : mv.entrySet()) {
+                JsonObj jm = new JsonObj();
+                jm.put("unitId", e.getKey().id);
+                jm.put("role", e.getValue().name());
+                membersArr[mIdx++] = jm;
+            }
+            jf.put("members", membersArr);
+            fleetsArray[fIdx++] = jf;
+        }
+        root.put("fleets", fleetsArray);
+
         logger.info(
             "Game state serialized: {} players, {} units, {} cities, {} continents",
             players.length,
@@ -179,11 +207,9 @@ public class GameStateSerializer {
      * @throws IOException if file operations fail
      */
     public void saveGame(Game game, String saveName) throws IOException {
-        // Create save directory if it doesn't exist (relative to cwd)
         Path saveDir = Paths.get(SAVE_DIR);
         Files.createDirectories(saveDir);
 
-        // Generate filename with human-readable timestamp
         SimpleDateFormat dateFormat = new SimpleDateFormat(
             "yyyy-MM-dd_HH-mm-ss"
         );
@@ -191,34 +217,39 @@ public class GameStateSerializer {
         String filename = saveName + "_" + timestamp + ".sav";
         Path savePath = saveDir.resolve(filename);
 
-        logger.info("Saving game to: {}", savePath);
+        saveGameToFile(game, savePath.toFile(), saveName);
+    }
 
-        // Serialize game state
+    public void saveGameToFile(Game game, File outFile) throws IOException {
+        String base = outFile.getName();
+        int dot = base.lastIndexOf('.');
+        if (dot > 0) base = base.substring(0, dot);
+        saveGameToFile(game, outFile, base);
+    }
+
+    private void saveGameToFile(Game game, File outFile, String saveName)
+        throws IOException {
+        logger.info("Saving game to: {}", outFile);
+
         JsonObj gameState = serializeGame(game);
-
-        // Store map filename in game state (for internal reference)
         JsonObj boardInfo = gameState.getObj("board");
         boardInfo.put("mapFile", "map.txt");
-        boardInfo.put("saveName", saveName); // Store the base save name
+        boardInfo.put("saveName", saveName);
 
         String json = JsonFormatter.format(gameState);
 
-        // Create ZIP archive containing game state and map
         try (
-            FileOutputStream fos = new FileOutputStream(savePath.toFile());
+            FileOutputStream fos = new FileOutputStream(outFile);
             ZipOutputStream zos = new ZipOutputStream(fos)
         ) {
-            // Add game state JSON
             ZipEntry gameEntry = new ZipEntry("game.json");
             zos.putNextEntry(gameEntry);
             zos.write(json.getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
 
-            // Add map file
             ZipEntry mapEntry = new ZipEntry("map.txt");
             zos.putNextEntry(mapEntry);
 
-            // Save map to temp file first, then add to ZIP
             Path tempMapFile = Files.createTempFile("map", ".txt");
             try {
                 game.getBoard().map.saveMap(tempMapFile.toString());
@@ -231,7 +262,7 @@ public class GameStateSerializer {
             zos.closeEntry();
         }
 
-        logger.info("Game saved successfully to: {}", savePath);
+        logger.info("Game saved successfully to: {}", outFile);
     }
 
     /**
@@ -445,26 +476,32 @@ public class GameStateSerializer {
             unitMap.put(unitData.id, unit);
         }
 
-        // Resolve carrying relationships and orders
+        // Resolve carrying relationships (orders deferred until after fleets rebuild)
         for (int i = 0; i < unitsArray.length; i++) {
             JsonObj unitJson = (JsonObj) unitsArray[i];
             UnitSerializer.UnitData unitData = UnitSerializer.deserializeUnit(
                 unitJson
             );
-
             Unit unit = unitMap.get(unitData.id);
-
             if (unitData.carryingIds != null) {
                 for (Long carriedId : unitData.carryingIds) {
                     Unit carried = unitMap.get(carriedId);
                     if (carried != null) {
-                        // Don't assign orders when loading - they'll be restored separately
                         unit.addCarried(carried, false);
                     }
                 }
             }
+        }
 
-            // Restore unit order
+        restoreFleets(game, root, unitMap);
+
+        // Restore unit orders (needs fleets in place for FLEET_MEMBER)
+        for (int i = 0; i < unitsArray.length; i++) {
+            JsonObj unitJson = (JsonObj) unitsArray[i];
+            UnitSerializer.UnitData unitData = UnitSerializer.deserializeUnit(
+                unitJson
+            );
+            Unit unit = unitMap.get(unitData.id);
             if (unitData.orderType != null) {
                 Order order = reconstructOrder(
                     game,
@@ -932,6 +969,25 @@ public class GameStateSerializer {
                         OrderType.MOVE_SOUTH_WEST,
                         Direction.SOUTH_WEST
                     );
+                case FLEET_MEMBER:
+                    if (orderData != null) {
+                        Long fleetId = orderData.getLong("fleetId");
+                        if (fleetId != null) {
+                            Fleet f = game.getFleetRegistry().byId(fleetId);
+                            if (f != null && f.contains(unit)) {
+                                return new com.developingstorm.games.sad.orders.FleetMember(
+                                    game,
+                                    unit,
+                                    f
+                                );
+                            }
+                        }
+                    }
+                    logger.warn(
+                        "FleetMember order missing or invalid fleetId for unit {}",
+                        unit.id
+                    );
+                    return null;
                 case NONE:
                 default:
                     logger.debug(
@@ -948,6 +1004,109 @@ public class GameStateSerializer {
                 e.getMessage()
             );
             return null;
+        }
+    }
+
+    private void restoreFleets(
+        Game game,
+        JsonObj root,
+        java.util.Map<Long, Unit> unitMap
+    ) {
+        Object[] fleetsArr = root.getArray("fleets");
+        if (fleetsArr == null || fleetsArr.length == 0) return;
+
+        FleetRegistry reg = game.getFleetRegistry();
+        long maxId = 0L;
+        for (Object o : fleetsArr) {
+            JsonObj jf = (JsonObj) o;
+            Long fleetId = jf.getLong("id");
+            Long flagshipId = jf.getLong("flagshipId");
+            if (fleetId == null || flagshipId == null) continue;
+            Unit flagship = unitMap.get(flagshipId);
+            if (flagship == null) {
+                logger.warn(
+                    "Fleet {} references missing flagship unit {}",
+                    fleetId,
+                    flagshipId
+                );
+                continue;
+            }
+
+            Fleet f = reg.form(flagship, java.util.Collections.emptyList());
+            long assignedId = f.getId();
+            overrideFleetId(f, fleetId);
+            rekeyFleetInRegistry(reg, assignedId, fleetId);
+            if (fleetId > maxId) maxId = fleetId;
+
+            Object[] members = jf.getArray("members");
+            if (members != null) {
+                for (Object mObj : members) {
+                    JsonObj jm = (JsonObj) mObj;
+                    Long unitId = jm.getLong("unitId");
+                    if (unitId == null || unitId == flagshipId) continue;
+                    Unit m = unitMap.get(unitId);
+                    if (m != null) {
+                        reg.add(f, m);
+                    } else {
+                        logger.warn(
+                            "Fleet {} references missing member unit {}",
+                            fleetId,
+                            unitId
+                        );
+                    }
+                }
+            }
+        }
+        bumpFleetRegistryNextId(reg, maxId + 1L);
+    }
+
+    private static void overrideFleetId(Fleet f, long id) {
+        try {
+            java.lang.reflect.Field fld = Fleet.class.getDeclaredField("id");
+            fld.setAccessible(true);
+            fld.setLong(f, id);
+        } catch (Exception ex) {
+            throw new GameException(
+                "failed to override fleet id: " + ex.getMessage()
+            );
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void rekeyFleetInRegistry(
+        FleetRegistry reg,
+        long oldId,
+        long newId
+    ) {
+        if (oldId == newId) return;
+        try {
+            java.lang.reflect.Field fld =
+                FleetRegistry.class.getDeclaredField("byId");
+            fld.setAccessible(true);
+            java.util.Map<Long, Fleet> byId =
+                (java.util.Map<Long, Fleet>) fld.get(reg);
+            Fleet f = byId.remove(oldId);
+            if (f != null) byId.put(newId, f);
+        } catch (Exception ex) {
+            throw new GameException(
+                "failed to rekey fleet registry: " + ex.getMessage()
+            );
+        }
+    }
+
+    private static void bumpFleetRegistryNextId(FleetRegistry reg, long next) {
+        try {
+            java.lang.reflect.Field fld =
+                FleetRegistry.class.getDeclaredField("nextId");
+            fld.setAccessible(true);
+            long current = fld.getLong(reg);
+            if (next > current) {
+                fld.setLong(reg, next);
+            }
+        } catch (Exception ex) {
+            throw new GameException(
+                "failed to bump fleet registry nextId: " + ex.getMessage()
+            );
         }
     }
 }
