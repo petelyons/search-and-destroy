@@ -267,6 +267,7 @@ public abstract class Unit {
         // Detection rings shifted — rescan so ghost/current state reflects
         // the new positions instead of staying stale until next turn start.
         this.game.refreshAllContacts();
+        this.game.stepFleetFollowers(this);
     }
 
     public String toString() {

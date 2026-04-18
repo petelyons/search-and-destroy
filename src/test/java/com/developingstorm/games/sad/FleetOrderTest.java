@@ -23,4 +23,27 @@ public class FleetOrderTest {
         int after = h.transport.getLocation().distance(h.flagship.getLocation());
         assertTrue(after < before, "transport should close distance to flagship");
     }
+
+    @Test
+    public void followersStepAfterFlagshipStep() {
+        FleetHarness h = FleetHarness.withFlagshipAndTransport();
+        int before = h.transport.getLocation().distance(h.flagship.getLocation());
+        h.transport.assignOrder(new com.developingstorm.games.sad.orders.FleetMember(
+            h.game, h.transport, h.fleet));
+        // Pick an adjacent water hex AWAY from the transport so distance grows
+        // without the follower hook; with the hook, the follower closes by one.
+        com.developingstorm.games.hexboard.Location flagStart = h.flagship.getLocation();
+        com.developingstorm.games.hexboard.Location trLoc = h.transport.getLocation();
+        com.developingstorm.games.hexboard.Location target = null;
+        int bestDist = -1;
+        for (com.developingstorm.games.hexboard.Location adj : flagStart.getRing(1)) {
+            if (!h.game.getBoard().isWater(adj)) continue;
+            int d = adj.distance(trLoc);
+            if (d > bestDist) { bestDist = d; target = adj; }
+        }
+        org.junit.jupiter.api.Assertions.assertNotNull(target, "need a water adjacency");
+        h.flagship.move(target);
+        int after = h.transport.getLocation().distance(h.flagship.getLocation());
+        assertTrue(after <= before, "follower should not fall further behind");
+    }
 }

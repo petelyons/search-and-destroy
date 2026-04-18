@@ -259,6 +259,22 @@ public class Game implements UnitLens, LocationLens {
         }
     }
 
+    public void stepFleetFollowers(Unit mover) {
+        if (mover == null) return;
+        Fleet f = mover.getFleet();
+        if (f == null) return;
+        // Guard against infinite recursion: followers trigger this hook too,
+        // but only the flagship's movement should drive followers.
+        if (mover != f.getFlagship()) return;
+        for (Unit m : new java.util.ArrayList<>(f.membersView().keySet())) {
+            if (m == mover) continue;
+            if (m.isDead()) continue;
+            if (!(m.getOrder() instanceof com.developingstorm.games.sad.orders.FleetMember)) continue;
+            if (m.life().movesLeft() <= 0) continue;
+            m.execOrder(null);
+        }
+    }
+
     public synchronized Unit createUnit(
         Type type,
         Player owner,
