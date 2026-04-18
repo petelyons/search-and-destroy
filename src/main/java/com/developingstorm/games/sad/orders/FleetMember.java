@@ -11,6 +11,7 @@ import com.developingstorm.games.sad.Path;
 import com.developingstorm.games.sad.ResponseCode;
 import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.brain.ScreenFleetBehavior;
 import com.developingstorm.games.sad.util.Log;
 
 public class FleetMember extends Order {
@@ -41,13 +42,19 @@ public class FleetMember extends Order {
         if (role == FleetRole.FLAGSHIP) {
             return new OrderResponse(ResponseCode.CANCEL_ORDER, this, null);
         }
-        return stepTowardTrailSlot(flagship);
+        Location target;
+        if (role == FleetRole.SCREEN) {
+            target = ScreenFleetBehavior.chooseMove(this.unit, fleet, this.game);
+            if (target == null) target = flagship.getLocation();
+        } else {
+            target = flagship.getLocation();
+        }
+        return stepToward(target, flagship.getLocation());
     }
 
-    private OrderResponse stepTowardTrailSlot(Unit flagship) {
-        Location target = flagship.getLocation();
-        int dist = this.unit.getLocation().distance(target);
-        if (dist <= 2) {
+    private OrderResponse stepToward(Location target, Location flagshipLoc) {
+        if (this.unit.getLocation().distance(flagshipLoc) <= 2
+            && target.equals(flagshipLoc)) {
             return new OrderResponse(ResponseCode.TURN_COMPLETE, this, null);
         }
         while (this.unit.life().movesLeft() > 0 && !this.unit.isDead()) {
@@ -60,7 +67,8 @@ public class FleetMember extends Order {
             ResponseCode rc = this.game.resolveMove(this.unit, next, target);
             switch (rc) {
                 case STEP_COMPLETE:
-                    if (this.unit.getLocation().distance(target) <= 2) {
+                    if (target.equals(flagshipLoc)
+                        && this.unit.getLocation().distance(flagshipLoc) <= 2) {
                         return new OrderResponse(ResponseCode.TURN_COMPLETE, this, null);
                     }
                     break;

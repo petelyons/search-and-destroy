@@ -12,10 +12,14 @@ public class FleetHarness {
     public final Unit flagship;
     public final Unit transport;
     public final Fleet fleet;
+    public final Unit screen;
+    public final Player enemy;
 
-    private FleetHarness(Game g, Player o, Unit flag, Unit tr, Fleet f) {
+    private FleetHarness(Game g, Player o, Unit flag, Unit tr, Fleet f,
+                         Unit screen, Player enemy) {
         this.game = g; this.owner = o; this.flagship = flag;
         this.transport = tr; this.fleet = f;
+        this.screen = screen; this.enemy = enemy;
     }
 
     public static FleetHarness withFlagshipAndTransport() {
@@ -35,7 +39,23 @@ public class FleetHarness {
         Unit tr = g.createUnit(Type.TRANSPORT, a, trLoc);
         a.addUnit(tr);
         Fleet f = g.getFleetRegistry().form(bb, List.of(tr));
-        return new FleetHarness(g, a, bb, tr, f);
+        Player enemy = null;
+        for (Player p : g.getPlayers()) if (p != a) { enemy = p; break; }
+        return new FleetHarness(g, a, bb, tr, f, null, enemy);
+    }
+
+    public static FleetHarness withFlagshipAndScreen(Type screenType, int screenDistFromFlagship) {
+        FleetHarness base = withFlagshipAndTransport();
+        Location screenLoc = null;
+        for (Location l : base.flagship.getLocation().getRing(screenDistFromFlagship)) {
+            if (base.game.getBoard().isWater(l)) { screenLoc = l; break; }
+        }
+        if (screenLoc == null) throw new SaDException("no screen water hex");
+        Unit screen = base.game.createUnit(screenType, base.owner, screenLoc);
+        base.owner.addUnit(screen);
+        base.game.getFleetRegistry().add(base.fleet, screen);
+        return new FleetHarness(base.game, base.owner, base.flagship, base.transport,
+            base.fleet, screen, base.enemy);
     }
 
     private static class WaterPair {
