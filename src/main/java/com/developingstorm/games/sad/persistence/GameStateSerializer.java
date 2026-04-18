@@ -149,7 +149,6 @@ public class GameStateSerializer {
             for (Map.Entry<Unit, FleetRole> e : mv.entrySet()) {
                 JsonObj jm = new JsonObj();
                 jm.put("unitId", e.getKey().id);
-                jm.put("role", e.getValue().name());
                 membersArr[mIdx++] = jm;
             }
             jf.put("members", membersArr);
@@ -1022,6 +1021,13 @@ public class GameStateSerializer {
             Long fleetId = jf.getLong("id");
             Long flagshipId = jf.getLong("flagshipId");
             if (fleetId == null || flagshipId == null) continue;
+            if (reg.byId(fleetId) != null) {
+                logger.warn(
+                    "Duplicate fleet id {} in save file, skipping",
+                    fleetId
+                );
+                continue;
+            }
             Unit flagship = unitMap.get(flagshipId);
             if (flagship == null) {
                 logger.warn(
