@@ -155,6 +155,7 @@ public class GameView extends BorderPane {
                             GameEventType.MAP_UPDATED,
                             GameEventType.GAME_ABORTED,
                             GameEventType.NEW_TURN,
+                            GameEventType.FLEET_CHANGED,
                         };
                     }
                 }
@@ -221,6 +222,9 @@ public class GameView extends BorderPane {
                 break;
             case GAME_ABORTED:
                 handleGameAborted();
+                break;
+            case FLEET_CHANGED:
+                mapCanvas.refresh();
                 break;
         }
 

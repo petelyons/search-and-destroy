@@ -5,6 +5,7 @@ import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.Board;
 import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.EdictGovernor;
+import com.developingstorm.games.sad.Fleet;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Order;
 import com.developingstorm.games.sad.OrderType;
@@ -946,6 +947,36 @@ public class MapCanvas extends StackPane {
 
         // Selection is now handled by animated selection sprite
         // (no static drawing here)
+
+        // Fleet overlay — gold star for flagship, white pennant for other members.
+        Fleet fleet = unit.getFleet();
+        if (fleet != null) {
+            double topRightX = center[0] + bgSize / 2 - 8;
+            double topRightY = center[1] - bgSize / 2 + 2;
+            if (fleet.getFlagship() == unit) {
+                gc.setFill(Color.GOLD);
+                gc.setStroke(Color.BLACK);
+                gc.setLineWidth(1.0);
+                double[] xs = { topRightX, topRightX + 3, topRightX + 8,
+                                topRightX + 4, topRightX + 6, topRightX,
+                                topRightX - 6, topRightX - 4, topRightX - 8,
+                                topRightX - 3 };
+                double[] ys = { topRightY, topRightY + 4, topRightY + 4,
+                                topRightY + 7, topRightY + 12, topRightY + 9,
+                                topRightY + 12, topRightY + 7, topRightY + 4,
+                                topRightY + 4 };
+                gc.fillPolygon(xs, ys, xs.length);
+                gc.strokePolygon(xs, ys, xs.length);
+            } else {
+                gc.setFill(Color.WHITE);
+                gc.setStroke(Color.BLACK);
+                gc.setLineWidth(1.0);
+                double[] xs = { topRightX - 5, topRightX + 5, topRightX - 2 };
+                double[] ys = { topRightY,    topRightY + 3, topRightY + 8 };
+                gc.fillPolygon(xs, ys, 3);
+                gc.strokePolygon(xs, ys, 3);
+            }
+        }
     }
 
     /**
