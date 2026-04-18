@@ -235,6 +235,16 @@ public class MapCanvas extends StackPane {
             )
         );
 
+        this.modeManager.registerMode(
+            com.developingstorm.games.sad.fx.UIMode.FLEET,
+            new com.developingstorm.games.sad.fx.modes.FleetMode(
+                this,
+                game,
+                controller,
+                query
+            )
+        );
+
         // Start in GAME mode
         this.modeManager.switchMode(
             com.developingstorm.games.sad.fx.UIMode.GAME
@@ -1615,6 +1625,14 @@ public class MapCanvas extends StackPane {
             case ESCORT:
                 enterEscortMode(units.get(0));
                 break;
+            case FORM_FLEET:
+                if (
+                    units.size() == 1 &&
+                    units.get(0).getType().isCapitalShip()
+                ) {
+                    enterFleetMode(units.get(0));
+                }
+                break;
         }
         refresh();
     }
@@ -1950,6 +1968,18 @@ public class MapCanvas extends StackPane {
 
         escortMode.setEscortShip(unit);
         modeManager.switchMode(com.developingstorm.games.sad.fx.UIMode.ESCORT);
+    }
+
+    /**
+     * Enter fleet mode to pick members for a flagship's new fleet.
+     */
+    public void enterFleetMode(Unit flagship) {
+        com.developingstorm.games.sad.fx.modes.FleetMode fleetMode =
+            (com.developingstorm.games.sad.fx.modes.FleetMode) modeManager.getMode(
+                com.developingstorm.games.sad.fx.UIMode.FLEET
+            );
+        fleetMode.setFlagship(flagship);
+        modeManager.switchMode(com.developingstorm.games.sad.fx.UIMode.FLEET);
     }
 
     /**

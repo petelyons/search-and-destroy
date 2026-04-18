@@ -33,5 +33,10 @@ public enum UIMode {
     /**
      * Escort mode - set up ship escort relationships.
      */
-    ESCORT
+    ESCORT,
+
+    /**
+     * Fleet mode — click members to add them to the flagship's new fleet.
+     */
+    FLEET
 }

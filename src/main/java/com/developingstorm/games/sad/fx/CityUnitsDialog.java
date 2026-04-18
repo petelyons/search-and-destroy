@@ -32,6 +32,7 @@ public class CityUnitsDialog extends Dialog<Void> {
         PATROL,
         BOMBARD,
         ESCORT,
+        FORM_FLEET,
     }
 
     /**
@@ -71,6 +72,7 @@ public class CityUnitsDialog extends Dialog<Void> {
         Button patrolBtn = new Button("Define Patrol...");
         Button bombardBtn = new Button("Bombard...");
         Button escortBtn = new Button("Escort...");
+        Button formFleetBtn = new Button("Form Fleet...");
 
         Button[] allButtons = {
             sentryBtn,
@@ -80,6 +82,7 @@ public class CityUnitsDialog extends Dialog<Void> {
             patrolBtn,
             bombardBtn,
             escortBtn,
+            formFleetBtn,
         };
         double btnWidth = 160;
         for (Button b : allButtons) {
@@ -94,6 +97,7 @@ public class CityUnitsDialog extends Dialog<Void> {
         patrolBtn.setOnAction(e -> fire(handler, Action.PATROL));
         bombardBtn.setOnAction(e -> fire(handler, Action.BOMBARD));
         escortBtn.setOnAction(e -> fire(handler, Action.ESCORT));
+        formFleetBtn.setOnAction(e -> fire(handler, Action.FORM_FLEET));
 
         VBox actionBox = new VBox(6);
         actionBox.setAlignment(Pos.TOP_LEFT);
@@ -108,7 +112,8 @@ public class CityUnitsDialog extends Dialog<Void> {
             headHomeBtn,
             patrolBtn,
             bombardBtn,
-            escortBtn
+            escortBtn,
+            formFleetBtn
         );
 
         unitListView
@@ -161,7 +166,8 @@ public class CityUnitsDialog extends Dialog<Void> {
         Button headHome,
         Button patrol,
         Button bombard,
-        Button escort
+        Button escort,
+        Button formFleet
     ) {
         boolean any = !sel.isEmpty();
         boolean single = sel.size() == 1;
@@ -185,6 +191,9 @@ public class CityUnitsDialog extends Dialog<Void> {
         patrol.setDisable(!single);
         bombard.setDisable(!(single && allBombardCapable));
         escort.setDisable(!(single && allSea));
+
+        boolean singleCapital = single && sel.get(0).getType().isCapitalShip();
+        formFleet.setDisable(!singleCapital);
     }
 
     private static class UnitListItem {

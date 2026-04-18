@@ -259,6 +259,18 @@ public class GameView extends BorderPane {
             Unit selected = query.getSelectedUnit();
             boolean consumed = false;
 
+            // Ctrl+L: leave fleet (handled before switch to preserve L-as-plain-key in future)
+            if (
+                event.getCode() == javafx.scene.input.KeyCode.L &&
+                event.isControlDown()
+            ) {
+                if (selected != null && selected.getFleet() != null) {
+                    controller.leaveFleet(selected);
+                }
+                event.consume();
+                return;
+            }
+
             switch (event.getCode()) {
                 case C:
                     // Center on selected unit
