@@ -27,8 +27,9 @@ public class FleetHarness {
         Robot b = new Robot("B", 2);
         b.setBrain(new com.developingstorm.games.sad.brain.RobotBrain(b));
         Game g = new Game(new Player[] {a, b}, map, ctx);
-        Location bbLoc = findWaterPair(g, 4).flag;
-        Location trLoc = findWaterPair(g, 4).tr;
+        WaterPair pair = findWaterPair(g, 4);
+        Location bbLoc = pair.flag;
+        Location trLoc = pair.tr;
         Unit bb = g.createUnit(Type.BATTLESHIP, a, bbLoc);
         a.addUnit(bb);
         Unit tr = g.createUnit(Type.TRANSPORT, a, trLoc);

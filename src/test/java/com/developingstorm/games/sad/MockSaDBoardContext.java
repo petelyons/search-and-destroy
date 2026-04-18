@@ -2,7 +2,7 @@ package com.developingstorm.games.sad;
 
 import com.developingstorm.games.hexboard.HexBoardContext;
 
-class MockSaDBoardContext implements HexBoardContext {
+public class MockSaDBoardContext implements HexBoardContext {
 
     private static final int MAP_W = 50;
     private static final int MAP_H = 50;

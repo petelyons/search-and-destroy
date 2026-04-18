@@ -2,11 +2,11 @@ package com.developingstorm.games.sad.persistence;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.developingstorm.games.hexboard.HexBoardContext;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.hexboard.LocationMap;
 import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Game;
+import com.developingstorm.games.sad.MockSaDBoardContext;
 import com.developingstorm.games.sad.OrderType;
 import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Type;
@@ -29,72 +29,6 @@ public class GameStateSerializerTest {
 
     @TempDir
     File tempDir;
-
-    /**
-     * Mock implementation of HexBoardContext for testing
-     */
-    private static class MockSaDBoardContext implements HexBoardContext {
-
-        @Override
-        public int getWidth() {
-            return 50;
-        }
-
-        @Override
-        public int getHeight() {
-            return 50;
-        }
-
-        @Override
-        public int getHexSide() {
-            return 24;
-        }
-
-        @Override
-        public int getTerrainImageSelector(int x, int y) {
-            return 0;
-        }
-
-        @Override
-        public int getUnexploredImageSelector() {
-            return 0;
-        }
-
-        @Override
-        public int getPrototypeHex() {
-            return 0;
-        }
-
-        @Override
-        public int getZs() {
-            return 3;
-        }
-
-        @Override
-        public java.awt.Color getBorderColor() {
-            return java.awt.Color.GRAY;
-        }
-
-        @Override
-        public java.awt.Color getSelectionColor() {
-            return java.awt.Color.YELLOW;
-        }
-
-        @Override
-        public java.awt.Color getXorColor() {
-            return null;
-        }
-
-        @Override
-        public boolean showBorder() {
-            return true;
-        }
-
-        @Override
-        public java.awt.Image[] getImages() {
-            return new java.awt.Image[0];
-        }
-    }
 
     @BeforeEach
     public void setup() {
