@@ -20,6 +20,7 @@ public class FleetRegistry {
 
     public Fleet form(Unit flagship, List<Unit> initialMembers) {
         if (flagship == null) throw new SaDException("null flagship");
+        if (initialMembers == null) throw new SaDException("null initialMembers");
         if (flagship.getFleet() != null) {
             throw new SaDException("flagship already in a fleet");
         }
@@ -87,6 +88,7 @@ public class FleetRegistry {
     }
 
     private FleetRole roleFor(Unit u) {
+        // Non-flagship capital ships behave as screens; they remain flag-transfer candidates by type.
         if (u.getType() == Type.TRANSPORT) return FleetRole.TRANSPORT;
         return FleetRole.SCREEN;
     }

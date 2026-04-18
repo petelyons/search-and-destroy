@@ -71,6 +71,12 @@ public class FleetRegistryTest {
     }
 
     @Test
+    public void formRejectsNullInitialMembers() {
+        Unit bb = TestUnits.stubUnit(Type.BATTLESHIP, owner);
+        assertThrows(SaDException.class, () -> registry.form(bb, null));
+    }
+
+    @Test
     public void onUnitDiedRemovesAndTransfersFlag() {
         Unit bb = TestUnits.stubUnit(Type.BATTLESHIP, owner);
         Unit cv = TestUnits.stubUnit(Type.CARRIER, owner);
