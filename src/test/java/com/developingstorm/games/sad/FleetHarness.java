@@ -48,7 +48,10 @@ public class FleetHarness {
         FleetHarness base = withFlagshipAndTransport();
         Location screenLoc = null;
         for (Location l : base.flagship.getLocation().getRing(screenDistFromFlagship)) {
-            if (base.game.getBoard().isWater(l)) { screenLoc = l; break; }
+            if (!base.game.getBoard().isWater(l)) continue;
+            if (base.game.unitAtLocation(l) != null) continue;
+            screenLoc = l;
+            break;
         }
         if (screenLoc == null) throw new SaDException("no screen water hex");
         Unit screen = base.game.createUnit(screenType, base.owner, screenLoc);
