@@ -4,9 +4,13 @@ import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Order;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.commands.AddToFleetCommand;
 import com.developingstorm.games.sad.commands.AssignOrderCommand;
+import com.developingstorm.games.sad.commands.FormFleetCommand;
+import com.developingstorm.games.sad.commands.LeaveFleetCommand;
 import com.developingstorm.games.sad.commands.ResumeGameCommand;
 import com.developingstorm.games.sad.commands.SelectUnitCommand;
+import java.util.List;
 
 /**
  * Implementation of GameController that uses the command pattern.
@@ -62,6 +66,21 @@ public class GameControllerImpl implements GameController {
     public void trackUnit(Unit unit) {
         // Tracking is read-only and thread-safe, can call directly
         game.trackUnit(unit);
+    }
+
+    @Override
+    public void formFleet(Unit flagship, List<Unit> initialMembers) {
+        game.submitCommand(new FormFleetCommand(flagship, initialMembers));
+    }
+
+    @Override
+    public void addToFleet(long fleetId, Unit member) {
+        game.submitCommand(new AddToFleetCommand(fleetId, member));
+    }
+
+    @Override
+    public void leaveFleet(Unit unit) {
+        game.submitCommand(new LeaveFleetCommand(unit));
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.developingstorm.games.sad.controller;
 import com.developingstorm.games.sad.Order;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.hexboard.Location;
+import java.util.List;
 
 /**
  * Interface for controlling game execution from the UI.
@@ -64,6 +65,22 @@ public interface GameController {
      * @param unit The unit to track
      */
     void trackUnit(Unit unit);
+
+    /**
+     * Form a new fleet with the given flagship and initial members.
+     * Submitted to the game thread.
+     */
+    void formFleet(Unit flagship, List<Unit> initialMembers);
+
+    /**
+     * Add a unit to an existing fleet by id.
+     */
+    void addToFleet(long fleetId, Unit member);
+
+    /**
+     * Remove a unit from its current fleet.
+     */
+    void leaveFleet(Unit unit);
 
     /**
      * Post a generic action to be executed on the game thread.
