@@ -214,30 +214,15 @@ public abstract class Unit {
         }
     }
 
-    /**
-     * Minimal no-arg constructor for test stubs. Does NOT place the unit on a board
-     * or create a UnitTurnState. Only used by {@link #createForTest}.
-     */
     Unit() {
-        // Fields populated by createForTest.
     }
 
-    /**
-     * Concrete subclass used only by {@link #createForTest} so tests can obtain a
-     * Unit instance without spinning up a Game.
-     */
     private static final class TestStubUnit extends Unit {
         TestStubUnit() {
             super();
         }
     }
 
-    /**
-     * Creates a minimally-initialized Unit for unit tests. The returned Unit is
-     * NOT attached to a Game or Board and will not function for gameplay — only
-     * {@code getType()}, {@code getOwner()}, {@code getLocation()} and related
-     * simple accessors are safe to call.
-     */
     public static Unit createForTest(long id, Type type, Player owner, Location loc) {
         Unit u = new TestStubUnit();
         u.id = id;

@@ -40,12 +40,18 @@ public class Fleet {
 
     void addMember(Unit u, FleetRole role) {
         if (u == null || role == null) throw new SaDException("null member or role");
+        if (role == FleetRole.FLAGSHIP) {
+            throw new SaDException("use setFlagship to change the flag");
+        }
         if (members.containsKey(u)) throw new SaDException("unit already in fleet");
         members.put(u, role);
     }
 
     void removeMember(Unit u) {
         members.remove(u);
+        if (u == this.flagship) {
+            this.flagship = null;
+        }
     }
 
     void setFlagship(Unit newFlagship) {
