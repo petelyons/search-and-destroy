@@ -54,6 +54,7 @@ public class Game implements UnitLens, LocationLens {
     private final CombatResolver combatResolver;
     private final CityManager cityManager;
     private final MovementResolver movementResolver;
+    private final FleetRegistry fleetRegistry = new FleetRegistry();
 
     public volatile int turn;
 
@@ -754,6 +755,10 @@ public class Game implements UnitLens, LocationLens {
      */
     public GameEventBus getEventBus() {
         return eventBus;
+    }
+
+    public FleetRegistry getFleetRegistry() {
+        return fleetRegistry;
     }
 
     /**

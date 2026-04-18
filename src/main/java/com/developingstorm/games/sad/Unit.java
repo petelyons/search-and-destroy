@@ -46,6 +46,7 @@ public abstract class Unit {
     public volatile Unit onboard;
     public volatile int dist;
     private volatile Order order;
+    private volatile Fleet fleet;
     public volatile String name;
     public volatile long id;
     private volatile UnitTurnState turn;
@@ -972,6 +973,14 @@ public abstract class Unit {
 
     public Order getOrder() {
         return order;
+    }
+
+    public Fleet getFleet() {
+        return fleet;
+    }
+
+    void setFleet(Fleet fleet) {
+        this.fleet = fleet;
     }
 
     public boolean canCarry() {

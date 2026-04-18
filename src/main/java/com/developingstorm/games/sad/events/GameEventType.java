@@ -46,6 +46,9 @@ public enum GameEventType {
     PATHFINDING_PROGRESS,
     PATHFINDING_ERROR,
 
+    // Fleet events
+    FLEET_CHANGED,
+
     // General notification
     MESSAGE,
 }

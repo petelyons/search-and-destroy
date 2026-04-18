@@ -139,6 +139,17 @@ class UnitManager {
         }
 
         u.kill();
+        if (u.getFleet() != null) {
+            Fleet priorFleet = u.getFleet();
+            game.getFleetRegistry().onUnitDied(u);
+            game
+                .getEventBus()
+                .publish(
+                    new com.developingstorm.games.sad.events.FleetChangedEvent(
+                        priorFleet
+                    )
+                );
+        }
         u.getOwner().removeUnit(u);
         allUnits.remove(u);
         game
