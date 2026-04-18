@@ -57,6 +57,7 @@ public class FleetRegistry {
         boolean wasFlagship = u == f.getFlagship();
         f.removeMember(u);
         u.setFleet(null);
+        clearFleetMemberOrder(u);
         if (wasFlagship) {
             Unit next = pickNewFlagship(f);
             if (next != null) {
@@ -76,8 +77,17 @@ public class FleetRegistry {
         for (Unit m : snapshot) {
             f.removeMember(m);
             m.setFleet(null);
+            clearFleetMemberOrder(m);
         }
         byId.remove(f.getId());
+    }
+
+    private static void clearFleetMemberOrder(Unit u) {
+        if (u.isDead()) return;
+        if (u.getOrder() instanceof com.developingstorm.games.sad.orders.FleetMember) {
+            u.clearOrders();
+            u.life().wake();
+        }
     }
 
     private Unit pickNewFlagship(Fleet f) {
