@@ -433,6 +433,10 @@ public enum Type {
         return spotterQuality;
     }
 
+    public boolean isCapitalShip() {
+        return this == BATTLESHIP || this == CARRIER;
+    }
+
     public boolean canCarry(Type t) {
         if (carryCount == 0) {
             return false;
