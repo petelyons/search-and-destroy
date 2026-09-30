@@ -1,0 +1,6 @@
+* text=auto eol=lf
+
+*.sav binary
+*.gif binary
+*.png binary
+*.pspimage binary
