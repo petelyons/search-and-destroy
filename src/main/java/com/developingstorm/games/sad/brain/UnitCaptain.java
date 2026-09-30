@@ -81,6 +81,11 @@ public abstract class UnitCaptain<T extends Unit> {
         return coordinator != null && coordinator.isAssigned(u) && coordinator.getOperationOrder(u) != null;
     }
 
+    /** True if the unit recently gave up on this target (see CommitmentBook.abandon). */
+    protected boolean isAbandoned(Unit u, Location target) {
+        return memory().getCommitments().isAbandoned(u, target, plan.getGame().getTurn());
+    }
+
     protected StrategyMemory memory() {
         return plan.getStrategyMemory();
     }
@@ -101,7 +106,7 @@ public abstract class UnitCaptain<T extends Unit> {
      */
     protected Order occupyUnownedCity(Unit u) {
         // Use TargetPrioritizer to get the best city target for this unit
-        City bestCity = plan.getBestCityTarget(u);
+        City bestCity = plan.getBestCityTarget(u, loc -> isAbandoned(u, loc));
         lastTargetCity = null;
 
         if (bestCity != null) {
@@ -219,6 +224,9 @@ public abstract class UnitCaptain<T extends Unit> {
         for (TargetPrioritizer.CityTarget target : cityTargets) {
             City city = target.city;
             Location cityLoc = city.getLocation();
+            if (isAbandoned(u, cityLoc)) {
+                continue;
+            }
 
             // Try to get a path toward this city. Land units can only walk to cities on
             // their own continent (paths through unexplored hexes may cross water).

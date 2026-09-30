@@ -204,4 +204,27 @@ public class CommitmentRulesTest {
         assertNotNull(book.get(alive));
         assertNull(book.get(dead));
     }
+
+    @Test
+    public void abandonedTargetIsAvoidedUntilExpiry() {
+        Unit inf = unit(Type.INFANTRY);
+        commit(inf, CommitmentKind.CAPTURE_CITY, city);
+        book.abandon(inf, "stuck", 5);
+        book.pruneDead(); // unit is alive but has no commitment now
+        assertNull(book.get(inf));
+        assertTrue(book.isAbandoned(inf, city, 5));
+        assertTrue(book.isAbandoned(inf, city, 5 + CommitmentBook.ABANDON_TURNS - 1));
+        assertFalse(book.isAbandoned(inf, city, 5 + CommitmentBook.ABANDON_TURNS));
+        assertFalse(book.isAbandoned(inf, Location.get(1, 1), 5));
+    }
+
+    @Test
+    public void abandonedMemoryPrunedForDeadUnits() {
+        Unit inf = unit(Type.INFANTRY);
+        commit(inf, CommitmentKind.CAPTURE_CITY, city);
+        book.abandon(inf, "stuck", 5);
+        inf.life().kill();
+        book.pruneDead();
+        assertFalse(book.isAbandoned(inf, city, 5));
+    }
 }

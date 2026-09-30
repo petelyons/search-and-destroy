@@ -140,7 +140,7 @@ public class LandCaptain extends UnitCaptain<Unit> {
             }
         }
         if ((c.kind == CommitmentKind.EXPLORE || c.kind == CommitmentKind.STAGE) && !u.isCarried()) {
-            City best = plan.getBestCityTarget(u);
+            City best = plan.getBestCityTarget(u, loc -> isAbandoned(u, loc));
             if (best != null && best.getContinent() == u.getContinent()) {
                 Path p = u.getPath(best.getLocation());
                 if (p != null && p.length() > 0) {

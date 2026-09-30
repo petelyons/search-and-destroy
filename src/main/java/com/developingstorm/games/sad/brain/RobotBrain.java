@@ -118,6 +118,8 @@ public class RobotBrain implements IBrain {
                     return next;
                 }
                 book.release(u, "no order to continue");
+            } else if (status == CommitmentStatus.INVALID) {
+                book.abandon(u, status.toString(), this.owner.getGame().getTurn());
             } else {
                 book.release(u, preempted != null ? "pre-empted by " + preempted : status.toString());
             }

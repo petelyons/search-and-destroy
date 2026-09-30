@@ -252,4 +252,26 @@ public class RobotBrainCommitmentTest {
         assertNotNull(brain.getBattleplan().getBestCityTarget(inf),
             "a unit aboard a transport should still pick a landing target");
     }
+
+    @Test
+    public void stuckUnitDoesNotRecommitToTheSameCity() {
+        Unit inf = create(Type.INFANTRY, home.getLocation());
+        City target = reachableUnownedCity(inf);
+        assumeTrue(target != null);
+        book().commit(inf, CommitmentKind.CAPTURE_CITY, target.getLocation(), game.getTurn());
+        inf.assignOrder(inf.newMoveOrder(target.getLocation()));
+
+        // The unit never moves (turns aren't played), so it makes no progress
+        for (int i = 0; i < 5; i++) {
+            game.turn++;
+            brain.startNewTurn();
+        }
+
+        assumeFalse(brain.getOperationsCoordinator().isAssigned(inf));
+        Commitment c = book().get(inf);
+        assertFalse(
+            c != null && c.kind == CommitmentKind.CAPTURE_CITY && target.getLocation().equals(c.target),
+            "abandoned target must not be picked again right away"
+        );
+    }
 }

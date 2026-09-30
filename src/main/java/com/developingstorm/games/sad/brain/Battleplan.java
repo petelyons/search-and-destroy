@@ -489,6 +489,10 @@ public class Battleplan {
         return targetPrioritizer.getBestCityTarget(unit);
     }
 
+    public City getBestCityTarget(Unit unit, java.util.function.Predicate<Location> skip) {
+        return targetPrioritizer.getBestCityTarget(unit, skip);
+    }
+
     /**
      * Get the best enemy unit target for a given unit
      */

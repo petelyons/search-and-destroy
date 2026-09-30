@@ -270,6 +270,11 @@ public class TargetPrioritizer {
      * Find best city target for a specific unit
      */
     public City getBestCityTarget(Unit unit) {
+        return getBestCityTarget(unit, loc -> false);
+    }
+
+    /** Best reachable city for the unit, ignoring cities whose location {@code skip} accepts. */
+    public City getBestCityTarget(Unit unit, java.util.function.Predicate<Location> skip) {
         List<CityTarget> cities = prioritizeCities();
 
         // Paths treat unexplored hexes as passable, so a land unit can appear to reach a city
@@ -277,7 +282,7 @@ public class TargetPrioritizer {
         // transport is on water (no continent) and may land anywhere, so it isn't filtered.
         Continent home = unit.getTravel() == Travel.LAND ? unit.getContinent() : null;
         for (CityTarget target : cities) {
-            if (home != null && target.city.getContinent() != home) {
+            if ((home != null && target.city.getContinent() != home) || skip.test(target.city.getLocation())) {
                 continue;
             }
             Location targetLoc = target.city.getLocation();
