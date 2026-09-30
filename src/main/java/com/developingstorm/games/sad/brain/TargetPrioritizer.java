@@ -272,11 +272,12 @@ public class TargetPrioritizer {
     public City getBestCityTarget(Unit unit) {
         List<CityTarget> cities = prioritizeCities();
 
-        boolean land = unit.getTravel() == Travel.LAND;
+        // Paths treat unexplored hexes as passable, so a land unit can appear to reach a city
+        // across water. Only cities on its own continent are really reachable. A unit aboard a
+        // transport is on water (no continent) and may land anywhere, so it isn't filtered.
+        Continent home = unit.getTravel() == Travel.LAND ? unit.getContinent() : null;
         for (CityTarget target : cities) {
-            // Paths treat unexplored hexes as passable, so a land unit can appear to reach a
-            // city across water. Only cities on its own continent are really reachable.
-            if (land && target.city.getContinent() != unit.getContinent()) {
+            if (home != null && target.city.getContinent() != home) {
                 continue;
             }
             Location targetLoc = target.city.getLocation();

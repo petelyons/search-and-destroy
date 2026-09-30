@@ -221,4 +221,35 @@ public class RobotBrainCommitmentTest {
         assertNotNull(c);
         assertNotEquals(CommitmentKind.STAGE, c.kind, "should explore or capture before shipping out");
     }
+
+    @Test
+    public void carriedUnitStillHasALandingTarget() {
+        brain.startNewTurn();
+        // A water hex next to a continent that has an unowned city
+        Location sea = null;
+        City shoreCity = null;
+        for (City c : game.getBoard().getCities()) {
+            if (c.getOwner() != null) {
+                continue;
+            }
+            for (Location l : c.getLocation().getRing(2)) {
+                if (game.getBoard().isWater(l) && game.unitsAtLocation(l).isEmpty()) {
+                    sea = l;
+                    shoreCity = c;
+                    break;
+                }
+            }
+            if (sea != null) {
+                break;
+            }
+        }
+        assumeTrue(sea != null);
+        Unit tr = create(Type.TRANSPORT, sea);
+        Unit inf = create(Type.INFANTRY, sea);
+        tr.addCarried(inf);
+        a.adjustVisibility(shoreCity);
+
+        assertNotNull(brain.getBattleplan().getBestCityTarget(inf),
+            "a unit aboard a transport should still pick a landing target");
+    }
 }
