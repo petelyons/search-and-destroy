@@ -60,8 +60,8 @@ public class TargetPrioritizer {
         List<CityTarget> targets = new ArrayList<>();
 
         for (City city : this.game.getBoard().getCities()) {
-            // Skip our own cities
-            if (city.getOwner() == this.player) {
+            // Skip our own cities, and cities we haven't discovered
+            if (city.getOwner() == this.player || !this.player.isExplored(city.getLocation())) {
                 continue;
             }
 
@@ -120,14 +120,6 @@ public class TargetPrioritizer {
         if (continent != null) {
             int citiesOnContinent = getCitiesOnContinent(continent);
             score += citiesOnContinent * 2.0; // More valuable continents
-        }
-
-        // Factor 6: Current production (avoid cities producing expensive units)
-        if (city.getProduction() != null) {
-            int cost = city.getProduction().getCost();
-            if (cost > 30) {
-                score -= 5.0; // City will complete expensive unit soon
-            }
         }
 
         return Math.max(0, score);

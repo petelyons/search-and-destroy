@@ -14,7 +14,6 @@ import com.developingstorm.games.sad.types.Fighter;
 import com.developingstorm.games.sad.types.Submarine;
 import com.developingstorm.games.sad.types.Transport;
 import com.developingstorm.games.sad.util.Log;
-import com.developingstorm.util.RandomUtil;
 import java.util.Set;
 
 public class General {
@@ -29,8 +28,6 @@ public class General {
     private final TransportCaptain transport;
     private final FighterCaptain fighter;
     private final CarrierCaptain carrier;
-
-    private int defendVsExplore = 50;
 
     private Battleplan plan;
     private OperationsCoordinator operationsCoordinator;
@@ -160,8 +157,9 @@ public class General {
         }
     }
 
+    /** Defend when any of our cities is threatened; otherwise expand. */
     boolean shouldDefend() {
-        return (RandomUtil.getInt(100) <= this.defendVsExplore);
+        return !this.plan.getThreatMap().getThreatenedCities().isEmpty();
     }
 
     Set<Location> getUnloadingZone() {
