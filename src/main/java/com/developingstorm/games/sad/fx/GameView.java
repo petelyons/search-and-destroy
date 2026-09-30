@@ -65,6 +65,24 @@ public class GameView extends BorderPane {
 
         // Start sprite animations (matching Swing's canvas.startAmination() call)
         startAnimation();
+
+        // Render any paths persisted with the game (e.g. from a loaded save).
+        // No MAP_UPDATED event fires on startup, so do an initial pass here.
+        Platform.runLater(this::refreshPathsForCurrentPlayer);
+    }
+
+    private void refreshPathsForCurrentPlayer() {
+        Player currentPlayer = query.getCurrentPlayer();
+        if (currentPlayer != null && !currentPlayer.isRobot()) {
+            boolean[] pathVisibility = mapCanvas.getPathVisibility();
+            mapCanvas.refreshPaths(
+                currentPlayer,
+                pathVisibility[0],
+                pathVisibility[1],
+                pathVisibility[2]
+            );
+            mapCanvas.refresh();
+        }
     }
 
     private void initializeUI() {
@@ -116,6 +134,8 @@ public class GameView extends BorderPane {
             "-fx-background-color: #2b2b2b; -fx-padding: 10;"
         );
         unitInfoPanel.setMinHeight(300);
+        unitInfoPanel.setUnitSelectHandler(u -> commandHandler.selectUnit(u));
+        unitInfoPanel.setCitySelectHandler(c -> mapCanvas.showCityUnitsDialog(c));
 
         // Battle history panel
         battleHistoryPanel = new BattleHistoryPanel();
@@ -156,6 +176,9 @@ public class GameView extends BorderPane {
                             GameEventType.GAME_ABORTED,
                             GameEventType.NEW_TURN,
                             GameEventType.FLEET_CHANGED,
+                            GameEventType.GAME_PAUSED,
+                            GameEventType.GAME_RESUMED,
+                            GameEventType.PLAYER_TYPE_CHANGED,
                         };
                     }
                 }
@@ -203,17 +226,7 @@ public class GameView extends BorderPane {
                 updateStatus();
                 break;
             case MAP_UPDATED:
-                // Refresh paths when map updates (units moved, paths changed, etc.)
-                Player currentPlayer = query.getCurrentPlayer();
-                if (currentPlayer != null && !currentPlayer.isRobot()) {
-                    boolean[] pathVisibility = mapCanvas.getPathVisibility();
-                    mapCanvas.refreshPaths(
-                        currentPlayer,
-                        pathVisibility[0], // air
-                        pathVisibility[1], // ground
-                        pathVisibility[2] // sea
-                    );
-                }
+                refreshPathsForCurrentPlayer();
                 mapCanvas.refresh();
                 break;
             case NEW_TURN:
@@ -226,10 +239,32 @@ public class GameView extends BorderPane {
             case FLEET_CHANGED:
                 mapCanvas.refresh();
                 break;
+            case GAME_PAUSED:
+            case GAME_RESUMED:
+                updatePauseIndicator();
+                break;
+            case PLAYER_TYPE_CHANGED:
+                mapCanvas.refresh();
+                break;
         }
 
         // Always update status
         updateStatus();
+    }
+
+    private void updatePauseIndicator() {
+        boolean paused =
+            game.getGameState() ==
+            com.developingstorm.games.sad.GameState.PAUSED;
+        if (paused) {
+            turnLabel.setText("⏸ PAUSED — Turn " + game.getTurn());
+            turnLabel.setStyle(
+                "-fx-background-color: #884400; -fx-padding: 8;"
+            );
+        } else {
+            turnLabel.setText("Turn " + game.getTurn());
+            turnLabel.setStyle("-fx-background-color: #333; -fx-padding: 8;");
+        }
     }
 
     /**
@@ -347,8 +382,7 @@ public class GameView extends BorderPane {
                     consumed = true;
                     break;
                 case F8:
-                    // Pause/Resume (if needed for debugging)
-                    // TODO: Implement pause/resume if needed
+                    controller.togglePauseExecution();
                     consumed = true;
                     break;
                 default:

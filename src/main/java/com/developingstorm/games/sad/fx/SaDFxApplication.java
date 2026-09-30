@@ -5,6 +5,7 @@ import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Robot;
+import com.developingstorm.games.sad.GameNames;
 import com.developingstorm.games.sad.ShipNames;
 import com.developingstorm.games.sad.UnitNames;
 import com.developingstorm.games.sad.controller.GameController;
@@ -88,6 +89,7 @@ public class SaDFxApplication extends Application {
      */
     private void initializeGame() {
         // Reset naming pools
+        GameNames.reset();
         ShipNames.reset();
         UnitNames.reset();
 
@@ -291,34 +293,41 @@ public class SaDFxApplication extends Application {
      * Load a game from a save file.
      */
     private void loadGame(File saveFile) {
-        try {
-            // Stop current game
-            if (game != null) {
-                game.end();
-            }
-            if (gameThread != null && gameThread.isAlive()) {
-                gameThread.join(1000);
-            }
+        LoadingDialog loadingDialog = new LoadingDialog(
+            primaryStage,
+            "Loading game…"
+        );
+        loadingDialog.show();
 
-            // Load the game
-            GameStateSerializer serializer = new GameStateSerializer();
-            Game loadedGame = serializer.loadGame(saveFile, ctx);
+        // Defer the load so the dialog gets a chance to render before we
+        // block the FX thread on deserialization.
+        Platform.runLater(() -> {
+            try {
+                // Stop current game
+                if (game != null) {
+                    game.end();
+                }
+                if (gameThread != null && gameThread.isAlive()) {
+                    gameThread.join(1000);
+                }
 
-            // Extract and store the save name for future saves
-            this.currentSaveName = serializer.extractSaveName(saveFile);
+                // Load the game
+                GameStateSerializer serializer = new GameStateSerializer();
+                Game loadedGame = serializer.loadGame(saveFile, ctx);
 
-            // Update game reference
-            this.game = loadedGame;
+                // Extract and store the save name for future saves
+                this.currentSaveName = serializer.extractSaveName(saveFile);
 
-            // Recreate controllers with new game
-            controller = new GameControllerImpl(game);
-            queryService = new GameQueryServiceImpl(game);
+                // Update game reference
+                this.game = loadedGame;
 
-            // Create lifecycle handler
-            GameLifecycleHandler lifecycleHandler = createLifecycleHandler();
+                // Recreate controllers with new game
+                controller = new GameControllerImpl(game);
+                queryService = new GameQueryServiceImpl(game);
 
-            // Recreate the view on JavaFX thread
-            Platform.runLater(() -> {
+                // Create lifecycle handler
+                GameLifecycleHandler lifecycleHandler = createLifecycleHandler();
+
                 GameView newGameView = new GameView(
                     game,
                     controller,
@@ -341,10 +350,11 @@ public class SaDFxApplication extends Application {
 
                 // Start the game thread
                 startGameThread();
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-            Platform.runLater(() -> {
+
+                loadingDialog.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+                loadingDialog.close();
                 javafx.scene.control.Alert alert =
                     new javafx.scene.control.Alert(
                         javafx.scene.control.Alert.AlertType.ERROR
@@ -353,8 +363,8 @@ public class SaDFxApplication extends Application {
                 alert.setHeaderText("Failed to load game");
                 alert.setContentText("Error: " + e.getMessage());
                 alert.showAndWait();
-            });
-        }
+            }
+        });
     }
 
     /**
@@ -377,6 +387,7 @@ public class SaDFxApplication extends Application {
             }
 
             // Reset naming pools
+            GameNames.reset();
             ShipNames.reset();
             UnitNames.reset();
 

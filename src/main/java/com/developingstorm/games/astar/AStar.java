@@ -7,17 +7,16 @@ import com.developingstorm.games.sad.events.PathfindingErrorEvent;
 import com.developingstorm.games.sad.events.PathfindingProgressEvent;
 import com.developingstorm.games.sad.util.Log;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
+import java.util.PriorityQueue;
 
 public class AStar {
 
     public AStarNode initialnode; // Start node
     public AStarNode goalnode; // Desired goal node
     public AStarNode workingNode; // Node retrieved from OPEN
-    public AStarNode tempNode; // Temporary node
 
     // public ArrayList openNodes; // Node containers
     public ArrayList<AStarNode> nextNodes; //
@@ -146,56 +145,49 @@ public class AStar {
 
     private List<AStarState> solve(boolean debug) {
         closed = new boolean[this.width][this.height];
-        // this.startTime = System.currentTimeMillis();
 
         // Initializing the initial node
         this.initialnode.f = this.initialnode.estimate(this.goalnode);
         this.initialnode.h = this.initialnode.f;
         this.initialnode.g = 0;
+        this.initialnode.ancestor = null;
 
-        // Instantiating OPEN, CLOSED and M
-        // openNodes = new ArrayList();
+        // OPEN holds the best known node per position; the queue orders them by f
+        // (ties broken toward lower h). Superseded queue entries are skipped on poll.
         openNodes = new HashMap<AStarPosition, AStarNode>();
+        PriorityQueue<AStarNode> openQueue = new PriorityQueue<AStarNode>(
+            Comparator.<AStarNode>comparingInt(n -> n.f).thenComparingInt(n -> n.h)
+        );
         nextNodes = new ArrayList<AStarNode>();
 
         // Placing initial node on OPEN
         this.openNodes.put(this.initialnode.state.pos(), this.initialnode);
+        openQueue.add(this.initialnode);
 
         int count = 0;
 
-        // After finishing the initial phase, we enter the main loop
-        // of the A* algorithm
         while (true) {
             count++;
 
-            // Check if OPEN is empty, exit if this is the case
-            if (this.openNodes.size() == 0) {
+            // Locate next node to retrieve from OPEN, based on lowest f
+            this.workingNode = null;
+            while (!openQueue.isEmpty()) {
+                AStarNode candidate = openQueue.poll();
+                AStarPosition pos = candidate.state.pos();
+                if (this.openNodes.get(pos) == candidate) {
+                    this.openNodes.remove(pos);
+                    this.workingNode = candidate;
+                    break;
+                }
+            }
+
+            // Exit if OPEN is empty
+            if (this.workingNode == null) {
                 Log.debug("No open nodes in A* search:" + count);
                 notifyErrorWatchers(this.initialnode, this.goalnode);
-
-                // solve(true);
                 notifyWatchers(false, null);
                 return null;
             }
-
-            // Locate next node to retrieve from OPEN, based on lowest heuristic
-
-            int low = 0;
-            int num;
-            Collection<AStarNode> nodes = this.openNodes.values();
-            for (AStarNode nx : nodes) {
-                if (low == 0) {
-                    low = nx.f;
-                    workingNode = nx;
-                }
-                num = nx.f;
-                if (num < low) {
-                    low = num;
-                    workingNode = nx;
-                }
-            }
-            // Move selected node from OPEN to n
-            this.openNodes.remove(this.workingNode.state.pos());
 
             if (this.watchers != null) {
                 ArrayList<AStarState> stateList = buildStateList(
@@ -210,43 +202,30 @@ public class AStar {
 
             // Successful exit if n proves to be the goal node
             if (this.workingNode.equals(this.goalnode)) {
-                // this.endTime = System.currentTimeMillis();
-                // printStatistics(n);
                 notifyWatchers(false, null);
                 return buildStateList(this.workingNode);
-            }
-
-            // Retrieve all possible successors of n
-            nextNodes = this.workingNode.successors();
-
-            // Compute f-, g- and h-value for every remaining successor
-            for (int i = 0; i < this.nextNodes.size(); i++) {
-                AStarNode s = this.nextNodes.get(i);
-                s.g = this.workingNode.g + s.cost;
-                s.h = s.estimate(this.goalnode);
-                s.f = s.g + s.h;
-            }
-
-            // Establishing arcs from n to each member of this.nextNodes
-            for (int i = 0; i < this.nextNodes.size(); i++) {
-                tempNode = this.nextNodes.get(i);
-                this.tempNode.ancestor = workingNode;
             }
 
             AStarState state = this.workingNode.state;
             this.closed[state.pos().getX()][state.pos().getY()] = true;
 
-            // Augmenting OPEN with suitable nodes from this.nextNodes
-            for (int i = 0; i < this.nextNodes.size(); i++) {
-                AStarNode n = this.nextNodes.get(i);
-                state = n.state;
-                if (
-                    this.closed[state.pos().getX()][state.pos().getY()] == false
-                ) {
-                    if (
-                        !this.openNodes.containsKey(state.pos())
-                    ) this.openNodes.put(state.pos(), n);
+            // Retrieve all possible successors of n and add or improve them in OPEN
+            nextNodes = this.workingNode.successors();
+            for (AStarNode s : this.nextNodes) {
+                AStarPosition pos = s.state.pos();
+                if (this.closed[pos.getX()][pos.getY()]) {
+                    continue;
                 }
+                s.g = this.workingNode.g + s.cost;
+                AStarNode existing = this.openNodes.get(pos);
+                if (existing != null && existing.g <= s.g) {
+                    continue;
+                }
+                s.h = s.estimate(this.goalnode);
+                s.f = s.g + s.h;
+                s.ancestor = this.workingNode;
+                this.openNodes.put(pos, s);
+                openQueue.add(s);
             }
         }
     }

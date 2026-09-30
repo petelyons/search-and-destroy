@@ -47,6 +47,28 @@ public class Robot extends Player {
         this.brain = brain;
     }
 
+    /**
+     * Initialize a default brain. Used by Player.toRobotForm() after state transfer.
+     */
+    void initBrain() {
+        if (this.brain == null) {
+            this.brain = new RobotBrain(this);
+        }
+    }
+
+    @Override
+    public Player toRobotForm() {
+        return this;
+    }
+
+    @Override
+    public Player toHumanForm() {
+        Player p = new Player(this.name, this.id);
+        transferStateTo(p);
+        this.brain = null;
+        return p;
+    }
+
     @Override
     protected void initProduction(City c) {
         Type t = this.brain.getProduction(c);

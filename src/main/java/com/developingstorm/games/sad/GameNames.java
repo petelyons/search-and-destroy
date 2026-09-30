@@ -21,6 +21,8 @@ public class GameNames {
 
   private static GameNames s_names = new GameNames();
 
+  private final List<String> all;
+
   private List<String> unused;
 
   private GameNames() {
@@ -46,7 +48,8 @@ public class GameNames {
       }
     }
 
-    unused = new ArrayList<String>(names);
+    all = new ArrayList<String>(names);
+    unused = new ArrayList<String>(all);
 
   }
 
@@ -67,6 +70,13 @@ public class GameNames {
   public static void releaseName(String s) {
     s_names.free(s);
 
+  }
+
+  /**
+   * Return all names to the pool. Called when a new game starts.
+   */
+  public static void reset() {
+    s_names.unused = new ArrayList<String>(s_names.all);
   }
 
 }

@@ -218,6 +218,16 @@ public class VisionManager {
     }
 
     /**
+     * Migrate a player's vision map entry to a new Player instance during a type-swap.
+     */
+    public void replacePlayerKey(Player oldPlayer, Player newPlayer) {
+        byte[][] visionMap = visionMaps.remove(oldPlayer);
+        if (visionMap != null) {
+            visionMaps.put(newPlayer, visionMap);
+        }
+    }
+
+    /**
      * Reveals entire map to a player (for debugging/god mode).
      */
     public void revealAll(Player player) {

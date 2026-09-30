@@ -7,7 +7,7 @@ import java.util.Map;
 public class Fleet {
 
     private final long id;
-    private final Player owner;
+    private Player owner;
     private Unit flagship;
     private final Map<Unit, FleetRole> members = new LinkedHashMap<>();
 
@@ -52,6 +52,12 @@ public class Fleet {
         if (u == this.flagship) {
             this.flagship = null;
         }
+    }
+
+    /** Replace owner reference during a player type-swap. Package-private. */
+    void replaceOwner(Player newOwner) {
+        if (newOwner == null) throw new SaDException("owner cannot be null");
+        this.owner = newOwner;
     }
 
     void setFlagship(Unit newFlagship) {

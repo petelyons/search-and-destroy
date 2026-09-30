@@ -97,6 +97,7 @@ public class Game implements UnitLens, LocationLens {
             this.gridMap = grid;
 
             // Reset all naming pools for new game
+            GameNames.reset();
             ShipNames.reset();
             UnitNames.reset();
             UnitNames.autoAssignThemes(players.length);
@@ -108,8 +109,6 @@ public class Game implements UnitLens, LocationLens {
             combatResolver = new CombatResolver(this, unitManager);
 
             initGameTrace();
-
-            Location.test();
 
             paused = false;
 
@@ -245,6 +244,59 @@ public class Game implements UnitLens, LocationLens {
 
     public Player[] getPlayers() {
         return players;
+    }
+
+    /**
+     * Replace a player with a swapped-type instance carrying the same state.
+     * Rewires every reference: players[], currentPlayer, every owned unit/city's
+     * owner field, and every fleet whose owner matches.
+     *
+     * Must be called on the game thread, between turns.
+     */
+    public void replacePlayer(Player oldPlayer, Player replacement) {
+        if (oldPlayer == null || replacement == null) {
+            throw new SaDException("replacePlayer requires non-null arguments");
+        }
+        if (oldPlayer.getId() != replacement.getId()) {
+            throw new SaDException("replacePlayer requires same id");
+        }
+
+        for (int i = 0; i < this.players.length; i++) {
+            if (this.players[i] == oldPlayer) {
+                this.players[i] = replacement;
+            }
+        }
+        if (this.currentPlayer == oldPlayer) {
+            this.currentPlayer = replacement;
+        }
+        for (Unit u : new ArrayList<>(replacement.getUnits())) {
+            u.replaceOwnerForTypeSwap(replacement);
+        }
+        for (City c : new ArrayList<>(replacement.getCities())) {
+            if (replacement.ownsCity(c)) {
+                c.replaceOwnerForTypeSwap(replacement);
+            }
+        }
+        for (Fleet f : fleetRegistry.allFleets()) {
+            if (f.getOwner() == oldPlayer) {
+                f.replaceOwner(replacement);
+            }
+        }
+
+        eventBus.publish(new PlayerTypeChangedEvent(replacement));
+    }
+
+    /**
+     * Toggle the given player between Human and AI control. Returns the new instance.
+     * Caller is responsible for ensuring this runs on the game thread between turns.
+     */
+    public Player togglePlayerType(Player p) {
+        Player swapped = p.isRobot() ? p.toHumanForm() : p.toRobotForm();
+        if (swapped == p) {
+            return p;
+        }
+        replacePlayer(p, swapped);
+        return swapped;
     }
 
     /**
@@ -506,6 +558,38 @@ public class Game implements UnitLens, LocationLens {
         signalGameThread();
     }
 
+    /**
+     * Toggle game-loop execution between RUNNING and PAUSED. Has no effect when
+     * the game is in AWAITING_ORDERS or GAME_OVER.
+     */
+    public void togglePauseExecution() {
+        synchronized (this) {
+            if (this.gameState == GameState.RUNNING) {
+                transitionState(GameState.RUNNING, GameState.PAUSED);
+            } else if (this.gameState == GameState.PAUSED) {
+                transitionState(GameState.PAUSED, GameState.RUNNING);
+                notify();
+            }
+        }
+    }
+
+    /**
+     * If the game has been paused by the user, block the game thread until resumed.
+     * Called at safe boundaries inside the main game loop.
+     */
+    public void checkPause() {
+        synchronized (this) {
+            while (this.gameState == GameState.PAUSED && !this.endPlay) {
+                try {
+                    wait(200);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }
+    }
+
     public synchronized Unit selectedUnit() {
         if (this.selectedUnit != null && this.selectedUnit.isDead()) {
             selectedUnit = null;
@@ -624,6 +708,10 @@ public class Game implements UnitLens, LocationLens {
             do {
                 // Process any pending commands at the start of each iteration
                 processCommands();
+
+                // Honor a user-requested pause between turns.
+                checkPause();
+                if (this.endPlay) return;
 
                 uc = this.currentPlayer.unitCount();
                 cc = this.currentPlayer.cityCount();

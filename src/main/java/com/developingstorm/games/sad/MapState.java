@@ -262,21 +262,6 @@ public class MapState implements AStarState {
                 }
             }
         }
-        /*
-    // Put the location closest to the goal first
-    Direction dir = this.loc.direction(this.goal);
-    MapState ms = new MapState(this.loc.relative(dir));
-    for (x = 0; x < v.size(); x++) {
-      MapState temp = (MapState) v.get(x);
-      if (temp.equals(ms)) {
-        if (x != 0) {
-          v.remove(temp);
-          v.add(0, ms);
-        }
-        break;
-      }
-    }
-    */
         return v;
     }
 

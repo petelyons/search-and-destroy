@@ -343,7 +343,7 @@ public class MapCanvas extends StackPane {
         java.util.Map<Location, java.util.List<Unit>> ownUnitsByLocation =
             new java.util.HashMap<>();
         for (Unit unit : query.getAllUnits()) {
-            if (unit.isCarried() && unit.inSentryMode()) continue;
+            if (unit.isCarried()) continue;
             if (humanPlayer != null && unit.getOwner() != humanPlayer) continue;
             ownUnitsByLocation
                 .computeIfAbsent(unit.getLocation(), k -> new java.util.ArrayList<>())
@@ -397,7 +397,7 @@ public class MapCanvas extends StackPane {
         } else {
             // Spectator / no-fog mode: draw all enemy units live
             for (Unit unit : query.getAllUnits()) {
-                if (unit.isCarried() && unit.inSentryMode()) continue;
+                if (unit.isCarried()) continue;
                 drawUnit(unit);
             }
         }
@@ -1573,7 +1573,7 @@ public class MapCanvas extends StackPane {
      * Users select one or more units and pick an action via inline buttons;
      * the action is applied to every selected unit.
      */
-    private void showCityUnitsDialog(City city) {
+    void showCityUnitsDialog(City city) {
         List<Unit> unitsAtCity = query.getUnitsAtLocation(city.getLocation());
 
         if (unitsAtCity == null || unitsAtCity.isEmpty()) {

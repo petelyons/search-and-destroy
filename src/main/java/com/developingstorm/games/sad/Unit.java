@@ -480,6 +480,12 @@ public abstract class Unit {
             }
         }
 
+        // If a carrier-capable unit (Transport/Cargo/Carrier) arrived at a city,
+        // immediately pick up compatible waiting units rather than waiting for next turn.
+        if (this.canCarry() && this.game.isCity(this.loc)) {
+            this.autoLoad();
+        }
+
         // If the unit ran out of fuel, it dies
         if (!this.life.hasFuel()) {
             this.game.killUnit(this);
@@ -504,6 +510,17 @@ public abstract class Unit {
 
     public Player getOwner() {
         return owner;
+    }
+
+    /**
+     * Rewrite owner reference during a player type-swap. Same id required.
+     * Package-private — only Game.replacePlayer should call this.
+     */
+    void replaceOwnerForTypeSwap(Player newOwner) {
+        if (newOwner == null || newOwner.getId() != this.owner.getId()) {
+            throw new SaDException("replaceOwnerForTypeSwap requires same-id owner");
+        }
+        this.owner = newOwner;
     }
 
     public int getAttack() {
@@ -750,6 +767,10 @@ public abstract class Unit {
         );
 
         for (Unit carriedUnit : unitsToUnload) {
+            // Respect explicit skip-turn — user wants this unit to stay aboard.
+            if (carriedUnit.turn().isDone()) {
+                continue;
+            }
             // Find an adjacent hex for this unit to move to
             Location disembarkHex = null;
             for (Location adjacent : neighbors) {
@@ -1264,6 +1285,26 @@ public abstract class Unit {
             }
         }
         return false;
+    }
+
+    /**
+     * End unloading mode and put any cargo that was woken for unloading back
+     * to sentry, so it stays aboard.
+     */
+    public void cancelUnloading() {
+        if (!unloadingMode) {
+            return;
+        }
+        setUnloadingMode(false);
+        if (carries == null) {
+            return;
+        }
+        for (Unit u : carries) {
+            if (!u.hasOrders()) {
+                u.orderSentry();
+            }
+        }
+        Log.info(this, "Unloading cancelled");
     }
 
     /**

@@ -140,7 +140,7 @@ public class BoardHex {
 
     public BoardHex relative(Direction dir) {
         Location c = this.loc.relative(dir);
-        if (this.board.onBoard(c)) {
+        if (c != null && this.board.onBoard(c)) {
             return this.board.get(c.x, c.y);
         }
         return null;

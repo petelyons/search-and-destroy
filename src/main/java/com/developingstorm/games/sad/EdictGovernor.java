@@ -15,7 +15,7 @@ import java.util.List;
 public class EdictGovernor {
 
     private final City c;
-    private final Player player;
+    private Player player;
     private volatile SendAirUnits airPath;
     private volatile SendLandUnits landPath;
     private volatile SendSeaUnits seaPath;
@@ -140,6 +140,14 @@ public class EdictGovernor {
         List<Edict> edicts = getEdicts();
         for (Edict e : edicts) {
             e.execute(this.game);
+        }
+    }
+
+    /** Rewrite player reference (and that of any held edicts) during a type-swap. */
+    void replacePlayerForTypeSwap(Player newPlayer) {
+        this.player = newPlayer;
+        for (Edict e : getEdicts()) {
+            e.replacePlayerForTypeSwap(newPlayer);
         }
     }
 

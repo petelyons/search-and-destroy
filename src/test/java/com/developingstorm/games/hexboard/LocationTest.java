@@ -2,6 +2,9 @@ package com.developingstorm.games.hexboard;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -227,5 +230,70 @@ public class LocationTest {
             },
             "Negative distance should throw IllegalArgumentException"
         );
+    }
+
+    @Test
+    public void testDistanceIsSymmetric() {
+        Location a = Location.get(34, 30);
+        Location b = Location.get(36, 22);
+        assertEquals(8, a.distance(b));
+        assertEquals(8, b.distance(a));
+    }
+
+    @Test
+    public void testDistanceMatchesNeighborSteps() {
+        // Breadth-first search over hex neighbors gives the true step count
+        Location[] origins = {
+            Location.get(0, 0), Location.get(49, 49), Location.get(25, 24),
+            Location.get(34, 30), Location.get(7, 13), Location.get(0, 49)
+        };
+        for (Location origin : origins) {
+            Map<Location, Integer> steps = new HashMap<>();
+            ArrayDeque<Location> queue = new ArrayDeque<>();
+            steps.put(origin, 0);
+            queue.add(origin);
+            while (!queue.isEmpty()) {
+                Location cur = queue.poll();
+                for (Location n : cur.getRing(1)) {
+                    if (!steps.containsKey(n)) {
+                        steps.put(n, steps.get(cur) + 1);
+                        queue.add(n);
+                    }
+                }
+            }
+            assertEquals(50 * 50, steps.size(), "BFS should reach the whole board");
+            for (Map.Entry<Location, Integer> e : steps.entrySet()) {
+                assertEquals(e.getValue().intValue(), origin.distance(e.getKey()),
+                    "distance " + origin + " -> " + e.getKey());
+                assertEquals(e.getValue().intValue(), e.getKey().distance(origin),
+                    "distance " + e.getKey() + " -> " + origin);
+            }
+        }
+    }
+
+    @Test
+    public void testCircleIsFullPerimeter() {
+        Location center = Location.get(25, 24);
+        for (int d = 1; d <= 5; d++) {
+            java.util.List<Location> circle = center.getCircle(d);
+            assertEquals(6 * d, circle.size(), "circle of radius " + d);
+            for (Location l : circle) {
+                assertEquals(d, center.distance(l));
+            }
+        }
+    }
+
+    @Test
+    public void testCircleAtEdgeHasNoNulls() {
+        java.util.List<Location> circle = Location.get(0, 0).getCircle(3);
+        assertFalse(circle.isEmpty());
+        assertFalse(circle.contains(null), "off-board hexes should be omitted");
+    }
+
+    @Test
+    public void testRelativeOffBoardIsNull() {
+        // Odd row at the east edge: NE is off the board
+        assertNull(Location.get(49, 1).relative(Direction.NORTH_EAST));
+        assertNull(Location.get(0, 0).relative(Direction.NORTH_WEST));
     }
 }

@@ -5,7 +5,7 @@ import com.developingstorm.games.hexboard.HexBoard;
 import com.developingstorm.games.hexboard.HexBoardContext;
 import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.Location;
-import com.developingstorm.games.sad.util.Log;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -71,10 +71,6 @@ public class Board extends HexBoard {
                         getTerrain(c.getLocation())
                 );
             }
-        }
-        Continent cont = this.getContinent(Location.get(12, 35));
-        if (cont == null) {
-            throw new SaDException("Location 12/35 should be a continent");
         }
     }
 
@@ -237,21 +233,23 @@ public class Board extends HexBoard {
     }
 
     private void markContinent(Location loc, int c, Continent cont) {
+        // Iterative flood fill so large continents can't overflow the stack
+        ArrayDeque<Location> pending = new ArrayDeque<Location>();
         this.contData[loc.x][loc.y] = c;
         cont.add(loc);
-        List<BoardHex> ring = getRing(loc, 1);
+        pending.add(loc);
 
-        for (BoardHex hex : ring) {
-            Location l2 = hex.getLocation();
-            if (l2.x < 0 || l2.y < 0) {
-                continue;
-            }
-            if (
-                this.contData[l2.x][l2.y] == 0 && this.mapData[l2.x][l2.y] > 0
-            ) {
-                this.contData[l2.x][l2.y] = c;
-                cont.add(Location.get(l2.x, l2.y));
-                markContinent(l2, c, cont); // recursive!
+        while (!pending.isEmpty()) {
+            Location cur = pending.poll();
+            for (BoardHex hex : getRing(cur, 1)) {
+                Location l2 = hex.getLocation();
+                if (
+                    this.contData[l2.x][l2.y] == 0 && this.mapData[l2.x][l2.y] > 0
+                ) {
+                    this.contData[l2.x][l2.y] = c;
+                    cont.add(l2);
+                    pending.add(l2);
+                }
             }
         }
     }
@@ -266,10 +264,6 @@ public class Board extends HexBoard {
             for (int y = 0; y < this.map.getHeight(); y++) {
                 int md = this.mapData[x][y];
                 int contd = this.contData[x][y];
-
-                if (x == 12 && y == 35) {
-                    Log.info("Running test for 12/35");
-                }
 
                 if (md > 0 && contd == 0) {
                     count++;

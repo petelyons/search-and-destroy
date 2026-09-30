@@ -8,10 +8,12 @@ import com.developingstorm.util.Graph;
 import com.developingstorm.util.GraphNode;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -70,11 +72,9 @@ public class Player implements UnitLens, LocationLens {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (obj == null) return false;
-        if (getClass() != obj.getClass()) return false;
+        if (!(obj instanceof Player)) return false;
         Player other = (Player) obj;
-        if (this.id != other.id) return false;
-        return true;
+        return this.id == other.id;
     }
 
     /**
@@ -911,6 +911,51 @@ public class Player implements UnitLens, LocationLens {
     }
 
     @SuppressWarnings("static-method")
+    /**
+     * Build a robot version of this player carrying the same state. Subclasses override.
+     */
+    public Player toRobotForm() {
+        Robot r = new Robot(this.name, this.id);
+        transferStateTo(r);
+        r.initBrain();
+        return r;
+    }
+
+    /**
+     * Build a human version of this player carrying the same state. Subclasses override.
+     */
+    public Player toHumanForm() {
+        return this;
+    }
+
+    /**
+     * Move transferable state from this player to {@code target}. After this call,
+     * this player is drained — used only by toRobotForm/toHumanForm.
+     */
+    protected void transferStateTo(Player target) {
+        target.board = this.board;
+        target.cities = this.cities;
+        target.units = this.units;
+        target.game = this.game;
+        target.unownedCities = this.unownedCities;
+        target.enemyCities = this.enemyCities;
+        target.enemyUnits = this.enemyUnits;
+        target.visible = this.visible;
+        target.explored = this.explored;
+        target.enemyActivity = this.enemyActivity;
+        target.contactMap = this.contactMap;
+        target.endTurnRequested = this.endTurnRequested;
+        target.edictFactory = new EdictFactory(target);
+
+        Unit u;
+        while ((u = this.pendingPlay.poll()) != null) {
+            target.pendingPlay.offer(u);
+        }
+        while ((u = this.pendingOrders.poll()) != null) {
+            target.pendingOrders.offer(u);
+        }
+    }
+
     public boolean isRobot() {
         return false;
     }
@@ -951,57 +996,15 @@ public class Player implements UnitLens, LocationLens {
 
     public class HopState {}
 
-    public int findRoute(
-        Graph<City, HopState> graph,
-        Queue<GraphNode<City, HopState>> queue,
-        GraphNode<City, HopState> dest
-    ) {
-        GraphNode<City, HopState> start = queue.peek();
-        Set<GraphNode<City, HopState>> relatives = start.relatives();
-
-        for (GraphNode<City, HopState> gn : relatives) {
-            if (gn.equals(dest)) {
-                queue.add(dest);
-
-                int dist = start
-                    .getContent()
-                    .getLocation()
-                    .distance(dest.getContent().getLocation());
-                return dist;
-            }
-        }
-
-        Queue<GraphNode<City, HopState>> shortestQueue = null;
-        int shortestRoute = Integer.MAX_VALUE;
-        for (GraphNode<City, HopState> gn : relatives) {
-            if (queue.contains(gn)) {
-                continue;
-            }
-            Queue<GraphNode<City, HopState>> queue2 = new LinkedList<
-                GraphNode<City, HopState>
-            >();
-            queue2.add(gn);
-            int rdist = findRoute(graph, queue2, dest);
-            if (rdist == -1) {
-                continue;
-            }
-            if (rdist < shortestRoute) {
-                shortestQueue = queue2;
-                shortestRoute = rdist;
-            }
-        }
-
-        if (shortestQueue == null) {
-            return -1;
-        } else {
-            for (GraphNode<City, HopState> qe : shortestQueue) {
-                queue.add(qe);
-            }
-            return shortestRoute;
-        }
-    }
-
+    /**
+     * Find the next city an air unit should fly to from {@code city} to reach
+     * the nearest (fewest hops) owned city that borders unexplored territory.
+     * Each hop must be within {@code dist}. Returns null if none is reachable.
+     */
     public City findHopCity(City city, int dist) {
+        if (city == null) {
+            return null;
+        }
         final int distFinal = dist; // Capture parameter for anonymous class
 
         Graph<City, HopState> graph = new Graph<City, HopState>() {
@@ -1013,10 +1016,9 @@ public class Player implements UnitLens, LocationLens {
 
         GraphNode<City, HopState> startCityNode = graph.buildGraphNodes(city);
 
-        List<City> frontier = frontierCities(dist);
-        List<City> reachableFrontier = new ArrayList<City>();
-        for (City c : frontier) {
-            if (graph.containsKey(c)) {
+        Set<City> reachableFrontier = new HashSet<City>();
+        for (City c : frontierCities(dist)) {
+            if (c != city && graph.containsKey(c)) {
                 reachableFrontier.add(c);
             }
         }
@@ -1025,22 +1027,31 @@ public class Player implements UnitLens, LocationLens {
             return null;
         }
 
+        // Breadth-first search, remembering the first hop taken to reach each node
+        Map<GraphNode<City, HopState>, GraphNode<City, HopState>> firstHop =
+            new HashMap<GraphNode<City, HopState>, GraphNode<City, HopState>>();
         Queue<GraphNode<City, HopState>> queue = new LinkedList<
             GraphNode<City, HopState>
         >();
-        int shortest = Integer.MAX_VALUE;
-        City nextHop = null;
-        for (City c : reachableFrontier) {
-            if (graph.containsKey(c)) {
-                queue.clear();
-                queue.add(startCityNode);
-                int route = findRoute(graph, queue, graph.get(c));
-                if (route < shortest) {
-                    nextHop = queue.peek().getContent();
+        firstHop.put(startCityNode, null);
+        queue.add(startCityNode);
+
+        while (!queue.isEmpty()) {
+            GraphNode<City, HopState> node = queue.poll();
+            for (GraphNode<City, HopState> next : node.relatives()) {
+                if (firstHop.containsKey(next)) {
+                    continue;
                 }
+                GraphNode<City, HopState> hop =
+                    (node == startCityNode) ? next : firstHop.get(node);
+                if (reachableFrontier.contains(next.getContent())) {
+                    return hop.getContent();
+                }
+                firstHop.put(next, hop);
+                queue.add(next);
             }
         }
-        return nextHop;
+        return null;
     }
 
     public Game getGame() {
@@ -1118,6 +1129,9 @@ public class Player implements UnitLens, LocationLens {
         //   forEachUnit((Unit u)->{Log.info(u, (u.life().hasMoves() ? "HAS MOVES" : "NO MOVES")); });
 
         forEachUnit((Unit u) -> {
+            if (u.turn().isDone()) {
+                return;
+            }
             if (u.life().hasMoves()) {
                 if (!u.isCarried()) {
                     units.add(u);

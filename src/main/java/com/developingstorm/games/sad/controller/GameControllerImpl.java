@@ -3,6 +3,7 @@ package com.developingstorm.games.sad.controller;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Order;
+import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.commands.AddToFleetCommand;
 import com.developingstorm.games.sad.commands.AssignOrderCommand;
@@ -10,6 +11,8 @@ import com.developingstorm.games.sad.commands.FormFleetCommand;
 import com.developingstorm.games.sad.commands.LeaveFleetCommand;
 import com.developingstorm.games.sad.commands.ResumeGameCommand;
 import com.developingstorm.games.sad.commands.SelectUnitCommand;
+import com.developingstorm.games.sad.commands.TogglePauseExecutionCommand;
+import com.developingstorm.games.sad.commands.TogglePlayerTypeCommand;
 import java.util.List;
 
 /**
@@ -94,5 +97,15 @@ public class GameControllerImpl implements GameController {
         // Submit action and resume in sequence
         game.submitCommand(game2 -> action.run());
         game.submitCommand(new ResumeGameCommand(null));
+    }
+
+    @Override
+    public void togglePlayerType(Player player) {
+        game.submitCommand(new TogglePlayerTypeCommand(player));
+    }
+
+    @Override
+    public void togglePauseExecution() {
+        game.submitCommand(new TogglePauseExecutionCommand());
     }
 }

@@ -192,6 +192,20 @@ public class City {
         this.owner.captureCity(this);
     }
 
+    /**
+     * Rewrite the owner reference during a player type-swap, preserving
+     * production and edicts. Package-private — only Game.replacePlayer should call this.
+     */
+    void replaceOwnerForTypeSwap(Player newOwner) {
+        if (newOwner == null || newOwner.getId() != this.owner.getId()) {
+            throw new SaDException("replaceOwnerForTypeSwap requires same-id owner");
+        }
+        this.owner = newOwner;
+        if (this.edicts != null) {
+            this.edicts.replacePlayerForTypeSwap(newOwner);
+        }
+    }
+
     public String getName() {
         return name;
     }

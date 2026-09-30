@@ -1,6 +1,7 @@
 package com.developingstorm.games.sad.controller;
 
 import com.developingstorm.games.sad.Order;
+import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.hexboard.Location;
 import java.util.List;
@@ -97,4 +98,16 @@ public interface GameController {
      * @param action The action to execute
      */
     void postAndResume(Runnable action);
+
+    /**
+     * Toggle the given player between Human and AI control.
+     * Executed on the game thread.
+     */
+    void togglePlayerType(Player player);
+
+    /**
+     * Toggle the game loop between RUNNING and PAUSED.
+     * No effect when waiting for orders or after game over.
+     */
+    void togglePauseExecution();
 }

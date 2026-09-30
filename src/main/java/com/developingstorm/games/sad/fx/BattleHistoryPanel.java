@@ -49,7 +49,7 @@ public class BattleHistoryPanel extends VBox {
         Label titleLabel = new Label("Battle History");
         titleLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
         titleLabel.setTextFill(Color.WHITE);
-        titleLabel.setAlignment(Pos.CENTER);
+        titleLabel.setAlignment(Pos.CENTER_LEFT);
         titleLabel.setMaxWidth(Double.MAX_VALUE);
 
         // Separator
@@ -128,7 +128,7 @@ public class BattleHistoryPanel extends VBox {
     private HBox createBattleRow(CombatResult result) {
         HBox row = new HBox(6);
         row.setPadding(new Insets(4));
-        row.setAlignment(Pos.CENTER);
+        row.setAlignment(Pos.CENTER_LEFT);
         row.setStyle("-fx-background-color: #333;");
         row.setMinHeight(45);
 
@@ -138,6 +138,7 @@ public class BattleHistoryPanel extends VBox {
         VBox attackerBox = createUnitBox(
             result.getAttackerTypeEnum(),
             result.getAttackerOwner(),
+            result.getAttackerName(),
             result.getAttackerInitialHits(),
             result.getAttackerFinalHits(),
             attackerWon
@@ -153,6 +154,7 @@ public class BattleHistoryPanel extends VBox {
         VBox defenderBox = createUnitBox(
             result.getDefenderTypeEnum(),
             result.getDefenderOwner(),
+            result.getDefenderName(),
             result.getDefenderInitialHits(),
             result.getDefenderFinalHits(),
             !attackerWon
@@ -173,12 +175,13 @@ public class BattleHistoryPanel extends VBox {
     private VBox createUnitBox(
         com.developingstorm.games.sad.Type unitType,
         Player owner,
+        String unitName,
         int initialHits,
         int finalHits,
         boolean isWinner
     ) {
         VBox box = new VBox(2);
-        box.setAlignment(Pos.CENTER);
+        box.setAlignment(Pos.CENTER_LEFT);
 
         // Unit icon
         Image unitImage = TerrainImages.getInstance().getUnitImage(unitType);
@@ -215,12 +218,20 @@ public class BattleHistoryPanel extends VBox {
             );
         }
 
+        // Unit name
+        String displayName = (unitName != null && !unitName.isEmpty())
+            ? unitName
+            : unitType.toString();
+        Label nameLabel = new Label(displayName);
+        nameLabel.setFont(Font.font("System", FontWeight.BOLD, 10));
+        nameLabel.setTextFill(Color.WHITE);
+
         // Health text: initialHits→finalHits
         Label hitsLabel = new Label(initialHits + "\u2192" + finalHits);
         hitsLabel.setFont(Font.font("System", 9));
         hitsLabel.setTextFill(isWinner ? Color.LIGHTGREEN : Color.LIGHTCORAL);
 
-        box.getChildren().addAll(iconPane, hitsLabel);
+        box.getChildren().addAll(iconPane, nameLabel, hitsLabel);
         return box;
     }
 

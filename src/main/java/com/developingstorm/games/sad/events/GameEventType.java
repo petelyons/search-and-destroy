@@ -34,6 +34,7 @@ public enum GameEventType {
 
     // Player events
     PLAYER_SELECTED,
+    PLAYER_TYPE_CHANGED,
 
     // City events
     CITY_CAPTURED,

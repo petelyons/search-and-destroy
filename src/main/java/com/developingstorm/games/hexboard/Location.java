@@ -8,15 +8,12 @@ import java.util.Map;
 import java.util.Set;
 
 import com.developingstorm.games.astar.AStarPosition;
-import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.util.json.JsonObj;
 
 /**
  * 
  */
 public class Location implements AStarPosition {
-
-  static final Direction[] s_directions = new Direction[] { Direction.NORTH_WEST, Direction.NORTH_WEST, Direction.NORTH_EAST, Direction.WEST, Direction.WEST, Direction.EAST, Direction.SOUTH_WEST, Direction.SOUTH_EAST, Direction.SOUTH_EAST };
 
   public final int x;
   public final int y;
@@ -42,23 +39,11 @@ public class Location implements AStarPosition {
     return get(val.x, val.y);
   }
 
+  /**
+   * The neighbor in the given direction, or null if it is off the board.
+   */
   public Location relative(Direction dir) {
-    Location loc = this.directionMap.get(dir);
-    if (loc == null) {
-      if (dir == Direction.NORTH_EAST) {
-        return this.directionMap.get(Direction.NORTH_WEST);
-      } else if (dir == Direction.NORTH_WEST) {
-        return this.directionMap.get(Direction.NORTH_EAST);
-        
-      }
-      if (dir == Direction.SOUTH_EAST) {
-        return this.directionMap.get(Direction.SOUTH_WEST);
-      } else if (dir == Direction.SOUTH_WEST) {
-        return this.directionMap.get(Direction.SOUTH_EAST);
-        
-      }
-    }
-    return loc;
+    return this.directionMap.get(dir);
   }
   
   private static class LocStruct {
@@ -71,38 +56,7 @@ public class Location implements AStarPosition {
   }
   
   private LocStruct internalRelative(Direction dir) {
-
-    if (dir == null) {
-      throw new IllegalArgumentException();
-    }
-
-    int xx;
-    int yy;
-    boolean oddRow = ((y % 2) != 0);
-    int oddMod = (oddRow) ? 1 : 0;
-    int evenMod = (oddRow) ? 0 : 1;
-
-    if (dir == Direction.NORTH_WEST) {
-      xx = x - evenMod;
-      yy = y - 1;
-    } else if (dir == Direction.NORTH_EAST) {
-      xx = x + oddMod;
-      yy = y - 1;
-    } else if (dir == Direction.EAST) {
-      xx = x + 1;
-      yy = y;
-    } else if (dir == Direction.SOUTH_EAST) {
-      xx = x + oddMod;
-      yy = y + 1;
-    } else if (dir == Direction.SOUTH_WEST) {
-      xx = x - evenMod;
-      yy = y + 1;
-    } else { // dir == Direction.WEST
-      xx = x - 1;
-      yy = y;
-    }
-
-    return new LocStruct(xx, yy);
+    return relativeLoc(new LocStruct(x, y), dir);
   }
   
   
@@ -150,9 +104,6 @@ public class Location implements AStarPosition {
   }
   
   
-  public static void test() {
-  }
-
   public Location relative(Direction dir, int dist) {
 
     if (dir == null || dist <= 0) {
@@ -212,30 +163,17 @@ public class Location implements AStarPosition {
   }
   
   
+  /**
+   * On-board locations exactly {@code dist} hexes away.
+   */
   public List<Location> getCircle(int dist) {
-    LocStruct e = internalRelative(Direction.EAST, dist);
-    LocStruct w = internalRelative(Direction.WEST, dist);
-    Set<Location> set = new HashSet<Location>();
-    set.add(get(e));
-    set.add(get(w));
-    LocStruct westEnd = w;
-    LocStruct eastEnd = e;
-    for (int x = 0; x < dist; x++) {
-      westEnd = relativeLoc(westEnd, Direction.NORTH_EAST);
-      eastEnd = relativeLoc(eastEnd, Direction.NORTH_WEST);
-      set.add(get(westEnd));
-      set.add(get(eastEnd));
+    List<Location> circle = new ArrayList<Location>();
+    for (Location loc : getRing(dist)) {
+      if (distance(loc) == dist) {
+        circle.add(loc);
+      }
     }
-
-    westEnd = w;
-    eastEnd = e;
-    for (int x = 0; x < dist; x++) {
-      westEnd = relativeLoc(westEnd, Direction.SOUTH_EAST);
-      eastEnd = relativeLoc(eastEnd, Direction.SOUTH_WEST);
-      set.add(get(westEnd));
-      set.add(get(eastEnd));
-    }
-    return new ArrayList<Location>(set);
+    return circle;
   }
 
 
@@ -303,57 +241,18 @@ public class Location implements AStarPosition {
     return best;
   }
 
-  public Direction direction(Location loc) {
-    int xx;
-    int yy;
-
-    if (loc.x == x)
-      xx = 0;
-    else if (loc.x < x)
-      xx = -1;
-    else
-      xx = 1;
-    if (loc.y == y)
-      yy = 0;
-    else if (loc.y < y)
-      yy = -1;
-    else
-      yy = 1;
-
-    int offset = (3 * (yy + 1) + (xx + 1));
-    return s_directions[offset];
-  }
   
   
 
   public int distance(Location loc) {
-  
-    if (loc.y == y && loc.x == x) {
-      return 0;
-    }
-    if (this.neighbors.contains(loc)) {
-      return 1;
-    }
-    
-    int dist = 0;
-    Location walker = this;
-    while (true) {
-      Direction dir = walker.direction(loc);
-      walker = walker.relative(dir);
-      //Log.debug("MOVED " + dir + " to " + walker);
-      if (walker == null) {
-        throw new SaDException("Could not calculate distance between " + this + " and " + loc);
-      }
-      dist++;
-      if (dist > 100) {
-       
-        throw new SaDException("Could not calculate distance between " + this + " and " + loc);
-      }
-      if (walker.equals(loc)) {
-        return dist;
-      }
-    }
+    // Convert odd-r offset coordinates (odd rows shifted east) to axial/cube
+    int q1 = x - (y - (y & 1)) / 2;
+    int q2 = loc.x - (loc.y - (loc.y & 1)) / 2;
+    int dq = q2 - q1;
+    int dr = loc.y - y;
+    return Math.max(Math.abs(dq), Math.max(Math.abs(dr), Math.abs(dq + dr)));
   }
+
 
   
  

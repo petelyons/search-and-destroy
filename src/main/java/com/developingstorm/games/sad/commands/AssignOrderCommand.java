@@ -2,6 +2,7 @@ package com.developingstorm.games.sad.commands;
 
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Order;
+import com.developingstorm.games.sad.OrderType;
 import com.developingstorm.games.sad.Unit;
 
 /**
@@ -20,6 +21,10 @@ public class AssignOrderCommand implements GameCommand {
     @Override
     public void execute(Game game) {
         if (unit != null && order != null) {
+            // A player issuing any other order to an unloading transport ends the unload
+            if (order.getType() != OrderType.UNLOAD) {
+                unit.cancelUnloading();
+            }
             unit.assignOrder(order);
         }
     }

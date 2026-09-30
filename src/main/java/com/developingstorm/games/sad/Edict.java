@@ -50,6 +50,10 @@ public abstract class Edict {
 
 
   public abstract void execute(Game game);
-  
+
+  /** Rewrite owner reference during a player type-swap. Package-private. */
+  void replacePlayerForTypeSwap(Player newPlayer) {
+    this.player = newPlayer;
+  }
 
 }

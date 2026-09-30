@@ -171,9 +171,40 @@ public class GameMenuBar extends MenuBar {
         exploreMode.setToggleGroup(modeGroup);
         exploreMode.setOnAction(e -> onExploreMode());
 
-        controlsMenu.getItems().addAll(gameMode, exploreMode);
+        MenuItem pauseItem = new MenuItem("Pause/Resume");
+        pauseItem.setAccelerator(new KeyCodeCombination(KeyCode.F8));
+        pauseItem.setOnAction(e -> controller.togglePauseExecution());
+
+        Menu playersMenu = createPlayersMenu();
+
+        controlsMenu.getItems().addAll(
+            gameMode,
+            exploreMode,
+            new SeparatorMenuItem(),
+            pauseItem,
+            playersMenu
+        );
 
         return controlsMenu;
+    }
+
+    private Menu createPlayersMenu() {
+        Menu playersMenu = new Menu("Toggle Player");
+        playersMenu.setOnShowing(e -> rebuildPlayersMenu(playersMenu));
+        rebuildPlayersMenu(playersMenu);
+        return playersMenu;
+    }
+
+    private void rebuildPlayersMenu(Menu playersMenu) {
+        playersMenu.getItems().clear();
+        com.developingstorm.games.sad.Player[] players = query.getPlayers();
+        if (players == null) return;
+        for (com.developingstorm.games.sad.Player p : players) {
+            String label = p.getName() + " — " + (p.isRobot() ? "AI" : "Human");
+            MenuItem item = new MenuItem(label);
+            item.setOnAction(e -> controller.togglePlayerType(p));
+            playersMenu.getItems().add(item);
+        }
     }
 
     private Menu createDebugMenu() {

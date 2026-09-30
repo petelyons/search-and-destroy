@@ -25,6 +25,10 @@ public class DirectionalMove extends Order {
     ResponseCode resp;
     Location ul = this.unit.getLocation();
     Location dest = ul.relative(this.dir);
+    if (dest == null) {
+      Log.info(this.unit, "Can't move " + this.dir.toString() + " off the board");
+      return new OrderResponse(ResponseCode.CANCEL_ORDER, this, null);
+    }
     resp = this.game.resolveMove(this.unit, dest);
     if (resp == ResponseCode.TURN_COMPLETE) {
       resp = ResponseCode.ORDER_AND_TURN_COMPLETE;

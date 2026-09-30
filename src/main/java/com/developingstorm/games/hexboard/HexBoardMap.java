@@ -43,7 +43,7 @@ public class HexBoardMap {
     }
 
     public int getHeight() {
-        return width;
+        return height;
     }
 
     public Location random() {
