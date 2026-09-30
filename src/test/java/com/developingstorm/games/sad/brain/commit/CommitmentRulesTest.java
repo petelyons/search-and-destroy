@@ -7,10 +7,8 @@ import com.developingstorm.games.hexboard.LocationMap;
 import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +22,6 @@ public class CommitmentRulesTest {
         final Set<Location> owned = new HashSet<>();
         final Map<Location, Integer> distance = new HashMap<>();
         final Set<Location> loadingPoints = new HashSet<>();
-        final Set<Location> unloadingPoints = new HashSet<>();
         final Set<Location> enemyNear = new HashSet<>();
         final Set<Unit> inOperation = new HashSet<>();
 
@@ -32,7 +29,6 @@ public class CommitmentRulesTest {
         public boolean ownedByMe(Location city) { return owned.contains(city); }
         public int pathDistance(Unit u, Location target) { return distance.getOrDefault(target, -1); }
         public boolean isLoadingPoint(Location l) { return loadingPoints.contains(l); }
-        public boolean isUnloadingPoint(Location l) { return unloadingPoints.contains(l); }
         public boolean enemyWithin(Location l, int dist) { return enemyNear.contains(l); }
         public boolean assignedToOperation(Unit u) { return inOperation.contains(u); }
     }
@@ -169,29 +165,6 @@ public class CommitmentRulesTest {
     public void exploreStaysActive() {
         Commitment c = commit(unit(Type.INFANTRY), CommitmentKind.EXPLORE, null);
         assertEquals(CommitmentStatus.ACTIVE, rules.status(c, ctx));
-    }
-
-    @Test
-    public void transportCaptureCompletesWhenEmpty() {
-        Unit tr = unit(Type.TRANSPORT);
-        Location beach = Location.get(12, 12);
-        ctx.unloadingPoints.add(beach);
-        ctx.distance.put(beach, 3);
-        tr.carries = new ArrayList<>(List.of(unit(Type.INFANTRY)));
-        Commitment c = commit(tr, CommitmentKind.CAPTURE_CITY, beach);
-        assertEquals(CommitmentStatus.ACTIVE, rules.status(c, ctx));
-        tr.carries.clear();
-        assertEquals(CommitmentStatus.COMPLETE, rules.status(c, ctx));
-    }
-
-    @Test
-    public void transportCaptureInvalidWhenPointGone() {
-        Unit tr = unit(Type.TRANSPORT);
-        Location beach = Location.get(12, 12);
-        ctx.distance.put(beach, 3);
-        tr.carries = new ArrayList<>(List.of(unit(Type.INFANTRY)));
-        Commitment c = commit(tr, CommitmentKind.CAPTURE_CITY, beach);
-        assertEquals(CommitmentStatus.INVALID, rules.status(c, ctx));
     }
 
     @Test

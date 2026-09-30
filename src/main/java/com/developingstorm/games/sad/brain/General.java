@@ -150,8 +150,6 @@ public class General {
             case Type.ARMOR_ID:
             case Type.INFANTRY_ID:
                 return this.land;
-            case Type.TRANSPORT_ID:
-                return this.transport;
             default:
                 return null;
         }

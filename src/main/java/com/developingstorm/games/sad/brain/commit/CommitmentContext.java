@@ -16,8 +16,6 @@ public interface CommitmentContext {
 
     boolean isLoadingPoint(Location l);
 
-    boolean isUnloadingPoint(Location l);
-
     boolean enemyWithin(Location l, int dist);
 
     boolean assignedToOperation(Unit u);

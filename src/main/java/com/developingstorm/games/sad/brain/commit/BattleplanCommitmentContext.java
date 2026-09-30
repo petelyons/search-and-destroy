@@ -46,11 +46,6 @@ public class BattleplanCommitmentContext implements CommitmentContext {
     }
 
     @Override
-    public boolean isUnloadingPoint(Location l) {
-        return this.plan.getExpandUnloadingPoints().contains(l) || this.plan.getDefenseUnloadingPoints().contains(l);
-    }
-
-    @Override
     public boolean enemyWithin(Location l, int dist) {
         return !this.plan.getThreatMap().getNearbyEnemies(l, dist).isEmpty();
     }

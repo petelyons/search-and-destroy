@@ -4,8 +4,6 @@ import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.Order;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
-import com.developingstorm.games.sad.brain.commit.Commitment;
-import com.developingstorm.games.sad.brain.commit.CommitmentKind;
 import com.developingstorm.games.sad.types.Transport;
 import com.developingstorm.games.sad.util.Log;
 import java.util.List;
@@ -36,7 +34,7 @@ public class TransportCaptain extends UnitCaptain<Transport> {
         if (coordinator != null && coordinator.isAssigned(u)) {
             Order operationOrder = coordinator.getOperationOrder(u);
             if (operationOrder != null) {
-                return committed(u, CommitmentKind.OPERATION, null, operationOrder);
+                return operationOrder;
             }
         }
 
@@ -51,11 +49,7 @@ public class TransportCaptain extends UnitCaptain<Transport> {
             }
 
             // Prioritize expansion zones with unoccupied cities
-            Location beach = u.getClosestLocation(plan.getExpandUnloadingPoints());
             order = goToExpansionUnloadingPoint(u);
-            if (order != null && beach != null) {
-                return committed(u, CommitmentKind.CAPTURE_CITY, beach, order);
-            }
             if (order == null) {
                 order = goToUnloadingPoint(u);
             }
@@ -76,33 +70,6 @@ public class TransportCaptain extends UnitCaptain<Transport> {
             order = explore(u);
         }
         return order;
-    }
-
-    @Override
-    public Order continueCommitment(Unit u, Commitment c) {
-        switch (c.kind) {
-            case OPERATION:
-                return coordinator == null ? null : coordinator.getOperationOrder(u);
-            case CAPTURE_CITY:
-                if (u.hasCargo() && atUnloadPoint(u)) {
-                    return unload(u);
-                }
-                if (isInDanger(u) && !hasNearbyEscort(u)) {
-                    Log.info(u, "Waiting for escort in dangerous waters");
-                    return sentry(u);
-                }
-                return u.getLocation().equals(c.target) ? null : u.newMoveOrder(c.target);
-            default:
-                return null;
-        }
-    }
-
-    @Override
-    public String preemption(Unit u, Commitment c) {
-        if (c.kind != CommitmentKind.OPERATION && hasOperationOrder(u)) {
-            return "operation assignment";
-        }
-        return null;
     }
 
     /**
@@ -126,7 +93,7 @@ public class TransportCaptain extends UnitCaptain<Transport> {
     /**
      * Check if this transport is in dangerous waters (nearby enemies)
      */
-    private boolean isInDanger(Unit u) {
+    private boolean isInDanger(Transport u) {
         ThreatMap threatMap = plan.getThreatMap();
         double threatLevel = threatMap.getThreatLevel(u.getLocation());
 
@@ -141,7 +108,7 @@ public class TransportCaptain extends UnitCaptain<Transport> {
     /**
      * Check if there's a friendly destroyer nearby that can escort us
      */
-    private boolean hasNearbyEscort(Unit u) {
+    private boolean hasNearbyEscort(Transport u) {
         List<Unit> friendlyUnits = plan.getPlayer().getUnits();
         Location transportLoc = u.getLocation();
 

@@ -10,7 +10,7 @@ public class Commitment {
 
     public final Unit unit;
     public final CommitmentKind kind;
-    /** City, loading point, unloading hex or defended city; null for OPERATION and EXPLORE. */
+    /** City, loading point or defended city; null for OPERATION and EXPLORE. */
     public final Location target;
     public final int startTurn;
     int lastProgressTurn;

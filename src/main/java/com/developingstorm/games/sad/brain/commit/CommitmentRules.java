@@ -21,7 +21,7 @@ public class CommitmentRules {
             case DEFEND:
                 return defend(c, ctx);
             case CAPTURE_CITY:
-                return c.unit.isTransport() ? deliver(c, ctx) : capture(c, ctx);
+                return capture(c, ctx);
             case STAGE:
                 if (c.unit.isCarried()) {
                     return CommitmentStatus.COMPLETE;
@@ -48,17 +48,6 @@ public class CommitmentRules {
     private static CommitmentStatus capture(Commitment c, CommitmentContext ctx) {
         if (ctx.ownedByMe(c.target)) {
             return CommitmentStatus.COMPLETE;
-        }
-        return progress(c, ctx);
-    }
-
-    /** A transport's CAPTURE_CITY targets the unloading hex for the invasion. */
-    private static CommitmentStatus deliver(Commitment c, CommitmentContext ctx) {
-        if (!c.unit.hasCargo()) {
-            return CommitmentStatus.COMPLETE;
-        }
-        if (!ctx.isUnloadingPoint(c.target)) {
-            return CommitmentStatus.INVALID;
         }
         return progress(c, ctx);
     }
