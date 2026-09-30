@@ -35,12 +35,25 @@ public class RobotBrain implements IBrain {
         return config;
     }
 
+    Battleplan getBattleplan() {
+        return battleplan;
+    }
+
+    StrategyMemory getStrategyMemory() {
+        return strategyMemory;
+    }
+
+    OperationsCoordinator getOperationsCoordinator() {
+        return operationsCoordinator;
+    }
+
     @Override
     public void startNewTurn() {
         battleplan = new Battleplan(
             this.owner.getGame(),
             this.owner,
-            this.config
+            this.config,
+            this.strategyMemory
         );
         Log.info(this.battleplan.toString());
 

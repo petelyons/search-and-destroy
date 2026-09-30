@@ -66,7 +66,8 @@ public class Battleplan {
     public Battleplan(
         final Game game,
         final Robot p,
-        final AIConfiguration config
+        final AIConfiguration config,
+        final StrategyMemory memory
     ) {
         this.game = game;
         this.board = game.getBoard();
@@ -96,7 +97,7 @@ public class Battleplan {
 
         // Initialize strategic intelligence systems
         this.threatMap = new ThreatMap(game, player);
-        this.strategyMemory = new StrategyMemory();
+        this.strategyMemory = memory;
         this.targetPrioritizer = new TargetPrioritizer(game, player, threatMap);
 
         // Initialize continent-based strategies

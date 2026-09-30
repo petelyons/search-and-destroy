@@ -38,6 +38,10 @@ public class OperationsCoordinator {
     // Turn counter
     private int currentTurn;
 
+    StrategyMemory getMemory() {
+        return memory;
+    }
+
     public OperationsCoordinator(Player player, StrategyMemory memory) {
         this.player = player;
         this.memory = memory;
