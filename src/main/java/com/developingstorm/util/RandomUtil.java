@@ -18,6 +18,13 @@ public class RandomUtil {
   private RandomUtil() {
   }
 
+  /**
+   * Reseed the shared generator so a run can be repeated.
+   */
+  public static void setSeed(long seed) {
+    s_rand = new Random(seed);
+  }
+
   public static int getInt(int max) {
     return s_rand.nextInt(max);
   }

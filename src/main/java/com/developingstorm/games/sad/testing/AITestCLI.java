@@ -76,6 +76,9 @@ public class AITestCLI {
                     }
                     handleCreateBaseline(args[1]);
                     break;
+                case "metrics":
+                    handleMetrics(args);
+                    break;
                 case "help":
                 case "--help":
                 case "-h":
@@ -154,6 +157,81 @@ public class AITestCLI {
                     ? config1.getName()
                     : config2.getName();
             System.out.println("Winner: " + winnerConfig);
+        }
+    }
+
+    /**
+     * Run seeded games sequentially with behavior monitoring and print averaged metrics.
+     * Games must run one at a time: RandomUtil, A* and LocationMap state are static.
+     */
+    private static void handleMetrics(String[] args) throws Exception {
+        int games = 20;
+        int turnLimit = 150;
+        String mapName = DEFAULT_MAP;
+        long seed = 1000;
+        String out = null;
+        String compare = null;
+        for (int i = 1; i < args.length; i++) {
+            String a = args[i];
+            if (i + 1 >= args.length) {
+                throw new IllegalArgumentException("Missing value for " + a);
+            }
+            String v = args[++i];
+            switch (a) {
+                case "--games": games = Integer.parseInt(v); break;
+                case "--turn-limit": turnLimit = Integer.parseInt(v); break;
+                case "--map": mapName = v; break;
+                case "--seed": seed = Long.parseLong(v); break;
+                case "--out": out = v; break;
+                case "--compare": compare = v; break;
+                default: throw new IllegalArgumentException("Unknown option: " + a);
+            }
+        }
+
+        System.out.println("Behavior metrics: " + games + " games, map " + mapName +
+            ", turn limit " + turnLimit + ", seed " + seed);
+        List<BehaviorReport> reports = new java.util.ArrayList<>();
+        double turnMsSum = 0;
+        for (int g = 0; g < games; g++) {
+            com.developingstorm.util.RandomUtil.setSeed(seed + g);
+            HexBoardMap map = loadMap(mapName);
+            HeadlessGameRunner runner = new HeadlessGameRunner(map, createContext(map), turnLimit, null, null);
+            runner.setMonitorEnabled(true);
+            runner.setQuiet(true);
+            HeadlessGameRunner.GameResult result = runner.run();
+            System.out.println("  game " + (g + 1) + ": " + result);
+            if (result.getBehaviorReport() != null) {
+                reports.add(result.getBehaviorReport());
+            }
+            turnMsSum += result.getMeanTurnMs();
+        }
+
+        BehaviorReport avg = BehaviorReport.average(reports);
+        BehaviorReport baseline = null;
+        if (compare != null) {
+            String text = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(compare)));
+            baseline = BehaviorReport.fromJson(
+                (com.developingstorm.games.sad.util.json.JsonObj) com.developingstorm.games.sad.util.json.JsonParser.parse(text)
+            );
+        }
+        System.out.println();
+        System.out.print(MetricsTable.render(avg, baseline));
+        System.out.printf("mean turn ms: %.1f%n", games == 0 ? 0.0 : turnMsSum / games);
+
+        if (out != null) {
+            com.developingstorm.games.sad.util.json.JsonObj json = avg.toJson();
+            json.put("meanTurnMs", games == 0 ? 0.0 : turnMsSum / games);
+            json.put("games", (long) games);
+            json.put("turnLimit", (long) turnLimit);
+            json.put("map", mapName);
+            json.put("seed", seed);
+            java.nio.file.Path path = java.nio.file.Paths.get(out);
+            if (path.getParent() != null) {
+                java.nio.file.Files.createDirectories(path.getParent());
+            }
+            java.nio.file.Files.write(path,
+                com.developingstorm.games.sad.util.json.JsonFormatter.format(json).getBytes());
+            System.out.println("Wrote " + out);
         }
     }
 
@@ -322,6 +400,10 @@ public class AITestCLI {
         System.out.println("Commands:");
         System.out.println("  list");
         System.out.println("      List all available AI configurations");
+        System.out.println();
+        System.out.println("  metrics [--games N] [--turn-limit T] [--map M] [--seed S] [--out f.json] [--compare base.json]");
+        System.out.println("      Run seeded AI-vs-AI games and report behavior metrics");
+        System.out.println("      Example: metrics --games 20 --compare ai-configs/baselines/2026-09-baseline-MedMap.json");
         System.out.println();
         System.out.println("  single <config1> <config2>");
         System.out.println(

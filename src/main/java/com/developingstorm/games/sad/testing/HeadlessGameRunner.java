@@ -61,6 +61,7 @@ public class HeadlessGameRunner {
 
     // Behavior metrics and timing
     private boolean monitorEnabled = false;
+    private boolean quiet = false;
     private AIBehaviorMonitor monitor;
     private long runStartTime;
     private int timeoutSeconds;
@@ -268,7 +269,9 @@ public class HeadlessGameRunner {
         }
 
         // Report turn status (NEW_TURN fires once per round, after every player has moved)
-        reportTurnStatus(currentTurn);
+        if (!quiet) {
+            reportTurnStatus(currentTurn);
+        }
 
         // Start timing this turn
         turnStartTime = System.currentTimeMillis();
@@ -465,6 +468,13 @@ public class HeadlessGameRunner {
      */
     public void setMonitorEnabled(boolean enabled) {
         this.monitorEnabled = enabled;
+    }
+
+    /**
+     * Suppress per-round status lines.
+     */
+    public void setQuiet(boolean quiet) {
+        this.quiet = quiet;
     }
 
     private GameResult runGame() {
