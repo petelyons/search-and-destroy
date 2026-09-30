@@ -47,6 +47,7 @@ public class UnitSerializer {
         json.put("hits", unit.life.hits);
         json.put("dist", unit.dist);
         json.put("unloadingMode", unit.isUnloadingMode());
+        json.put("createdTurn", unit.getCreatedTurn());
 
         // Carrying units
         List<Unit> carrying = unit.carries;
@@ -206,6 +207,9 @@ public class UnitSerializer {
         Boolean unloadingMode = json.getBoolean("unloadingMode");
         data.unloadingMode = (unloadingMode != null) ? unloadingMode : false;
 
+        Integer createdTurn = json.getInteger("createdTurn");
+        data.createdTurn = (createdTurn != null) ? createdTurn : 0;
+
         // Extract carrying IDs (to be resolved later)
         Object[] carryingArray = json.getArray("carrying");
         if (carryingArray != null) {
@@ -258,6 +262,7 @@ public class UnitSerializer {
         public int hits;
         public int dist;
         public boolean unloadingMode;
+        public int createdTurn;
         public List<Long> carryingIds;
         public Long onboardId;
         public Long fleetId;

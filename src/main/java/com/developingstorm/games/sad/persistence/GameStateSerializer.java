@@ -467,6 +467,7 @@ public class GameStateSerializer {
             unit.life.hits = unitData.hits;
             unit.dist = unitData.dist;
             unit.setUnloadingMode(unitData.unloadingMode);
+            unit.setCreatedTurn(unitData.createdTurn);
 
             // Restore production location
             unit.productionContinentName = unitData.productionContinentName;

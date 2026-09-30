@@ -50,8 +50,14 @@ public class LandCaptain extends UnitCaptain<Unit> {
      * Check if unit is in a city that just produced it
      */
     private boolean isInProducingCity(Unit u) {
-        // If unit is in a city location, it was likely just produced
-        // (units move out of cities after being produced in subsequent turns)
-        return plan.getBoard().getCity(u.getLocation()) != null;
+        return isJustProduced(
+            u,
+            plan.getGame().getTurn(),
+            plan.getBoard().getCity(u.getLocation()) != null
+        );
+    }
+
+    static boolean isJustProduced(Unit u, int currentTurn, boolean inCity) {
+        return inCity && u.getCreatedTurn() == currentTurn;
     }
 }

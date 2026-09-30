@@ -44,6 +44,7 @@ public abstract class Unit {
     private volatile Game game;
     public volatile ArrayList<Unit> carries;
     public volatile Unit onboard;
+    private volatile int createdTurn;
     public volatile int dist;
     private volatile Order order;
     private volatile Fleet fleet;
@@ -248,6 +249,7 @@ public abstract class Unit {
         this.order = null;
         this.turn = new UnitTurnState(game, this);
         this.life = new Life();
+        this.createdTurn = game.getTurn();
         synchronized (this) {
             s_unitCounter++;
             this.id = s_unitCounter;
@@ -593,6 +595,15 @@ public abstract class Unit {
         if (this.onboard != null) {
             this.onboard.removeCarried(this);
         }
+    }
+
+    /** Game turn on which this unit was built (0 for units loaded from older saves). */
+    public int getCreatedTurn() {
+        return createdTurn;
+    }
+
+    public void setCreatedTurn(int turn) {
+        this.createdTurn = turn;
     }
 
     public boolean isCarried() {
