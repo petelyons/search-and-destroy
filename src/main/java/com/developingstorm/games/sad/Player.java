@@ -1164,6 +1164,32 @@ public class Player implements UnitLens, LocationLens {
         return units;
     }
 
+    /**
+     * Play every unit the user interacted with since the last pass. These run even if carried,
+     * since carried units are not in the unplayed list. The queue is drained completely:
+     * each order the user gives adds an entry, and most go stale (the unit already moved in
+     * the main loop), so taking one entry per pass left carried units' orders stuck behind them.
+     */
+    void playPendingUnits(List<Unit> unplayed) {
+        Set<Unit> played = new HashSet<>();
+        Unit pending;
+        while ((pending = popPendingPlay()) != null) {
+            if (!pending.hasOrders() || pending.isDead() || !played.add(pending)) {
+                continue;
+            }
+            unplayed.remove(pending);
+            try {
+                pending.turn().attemptTurn();
+            } catch (SaDException e) {
+                // Unit may have died during turn execution - log and continue
+                Log.warn(
+                    pending,
+                    "Exception during turn execution: " + e.getMessage()
+                );
+            }
+        }
+    }
+
     public void play() {
         int previousMovesLeft = 0;
         long turnStartTime = System.currentTimeMillis();
@@ -1195,23 +1221,7 @@ public class Player implements UnitLens, LocationLens {
                 break;
             }
 
-            Unit pending = popPendingPlay();
-            // Move the unit the user interacted with
-            if (pending != null && pending.hasOrders() && !pending.isDead()) {
-                if (unplayed.contains(pending)) {
-                    unplayed.remove(pending);
-                }
-                // Execute turn for pending unit even if carried (not in unplayed list)
-                try {
-                    pending.turn().attemptTurn();
-                } catch (SaDException e) {
-                    // Unit may have died during turn execution - log and continue
-                    Log.warn(
-                        pending,
-                        "Exception during turn execution: " + e.getMessage()
-                    );
-                }
-            }
+            playPendingUnits(unplayed);
 
             for (Unit u : unplayed) {
                 if (!u.hasOrders() || u.isDead()) {
