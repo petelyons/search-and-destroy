@@ -8,6 +8,10 @@ import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.MockSaDBoardContext;
 import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Robot;
+import com.developingstorm.games.sad.Type;
+import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.hexboard.Location;
+import com.developingstorm.games.sad.brain.commit.CommitmentKind;
 import org.junit.jupiter.api.Test;
 
 public class RobotBrainMemoryTest {
@@ -31,5 +35,22 @@ public class RobotBrainMemoryTest {
         assertSame(first, second, "memory must survive across turns");
         assertSame(brain.getStrategyMemory(), first);
         assertSame(brain.getOperationsCoordinator().getMemory(), first);
+    }
+
+    @Test
+    public void newTurnPrunesCommitmentsOfDeadUnits() {
+        LocationMap.init(30, 30);
+        Player p = new Player("A", 1);
+        Unit alive = Unit.createForTest(1, Type.INFANTRY, p, Location.get(1, 1));
+        Unit dead = Unit.createForTest(2, Type.INFANTRY, p, Location.get(2, 2));
+        StrategyMemory memory = new StrategyMemory();
+        memory.getCommitments().commit(alive, CommitmentKind.EXPLORE, null, 1);
+        memory.getCommitments().commit(dead, CommitmentKind.EXPLORE, null, 1);
+        dead.life().kill();
+
+        memory.startNewTurn();
+
+        assertNotNull(memory.getCommitments().get(alive));
+        assertNull(memory.getCommitments().get(dead));
     }
 }

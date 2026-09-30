@@ -3,6 +3,7 @@ package com.developingstorm.games.sad.brain;
 import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.Continent;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.brain.commit.CommitmentBook;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -196,6 +197,12 @@ public class StrategyMemory {
         }
     }
 
+    private final CommitmentBook commitments = new CommitmentBook();
+
+    public CommitmentBook getCommitments() {
+        return commitments;
+    }
+
     public StrategyMemory() {
         this.activeInvasions = new HashMap<>();
         this.defensePlans = new HashMap<>();
@@ -226,6 +233,7 @@ public class StrategyMemory {
 
         // Clean up dead units from plans
         cleanupDeadUnits();
+        commitments.pruneDead();
     }
 
     /**
