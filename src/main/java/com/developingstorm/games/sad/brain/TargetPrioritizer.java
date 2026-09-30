@@ -5,6 +5,7 @@ import com.developingstorm.games.sad.City;
 import com.developingstorm.games.sad.Continent;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Player;
+import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Unit;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -279,8 +280,13 @@ public class TargetPrioritizer {
     public City getBestCityTarget(Unit unit) {
         List<CityTarget> cities = prioritizeCities();
 
+        boolean land = unit.getTravel() == Travel.LAND;
         for (CityTarget target : cities) {
-            // Check if unit can reach this city
+            // Paths treat unexplored hexes as passable, so a land unit can appear to reach a
+            // city across water. Only cities on its own continent are really reachable.
+            if (land && target.city.getContinent() != unit.getContinent()) {
+                continue;
+            }
             Location targetLoc = target.city.getLocation();
             if (unit.getPath(targetLoc) != null) {
                 return target.city;

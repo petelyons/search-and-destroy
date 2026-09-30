@@ -387,12 +387,10 @@ public class Battleplan {
             }
         }
 
-        // PRIORITY 2: Support active amphibious operations
-        // Check if we need units for planned invasions
-        Type operationNeed = getOperationProductionNeed(city);
-        if (operationNeed != null) {
-            return operationNeed;
-        }
+        // Operation-driven production (getOperationProductionNeed) is disabled: operations
+        // only claim units when first planned, so their unfilled slots made every coastal city
+        // build transports forever once memory persisted across turns. Re-enable when
+        // operation staffing is fixed (robot AI sub-project 2).
 
         // PRIORITY 3: Emergency defense under threat
         // Check if this city is under immediate threat
@@ -596,7 +594,7 @@ public class Battleplan {
     /**
      * Get the production pair that includes this city, if any.
      */
-    private ProductionPair getProductionPair(City city) {
+    ProductionPair getProductionPair(City city) {
         return productionPairs
             .stream()
             .filter(pair -> pair.contains(city))

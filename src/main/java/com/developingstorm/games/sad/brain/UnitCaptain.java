@@ -10,6 +10,8 @@ import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.brain.commit.Commitment;
+import com.developingstorm.games.sad.brain.commit.CommitmentKind;
 import com.developingstorm.games.sad.util.Log;
 import com.developingstorm.util.CollectionUtil;
 import com.developingstorm.util.RandomUtil;
@@ -30,6 +32,12 @@ public abstract class UnitCaptain<T extends Unit> {
     protected Battleplan plan;
     protected General general;
     protected OperationsCoordinator coordinator;
+
+    /** City chosen by the last occupyUnownedCity / moveTowardBestCity call, or null. */
+    protected Location lastTargetCity;
+
+    /** Loading point chosen by the last goToLoadingPoint call, or null. */
+    protected Location lastLoadingPoint;
 
     protected UnitCaptain(General general, Battleplan plan) {
         this(general, plan, null);
@@ -53,6 +61,39 @@ public abstract class UnitCaptain<T extends Unit> {
     public abstract Order plan(T u);
 
     /**
+     * Next order toward an active commitment, or null if the captain can't continue it.
+     * Captains that don't use commitments keep this default.
+     */
+    public Order continueCommitment(Unit u, Commitment c) {
+        return null;
+    }
+
+    /**
+     * Reason a higher-priority goal should replace the unit's active commitment, or null to
+     * keep it.
+     */
+    public String preemption(Unit u, Commitment c) {
+        return null;
+    }
+
+    /** True when the unit is in an operation that has an order for it right now. */
+    protected boolean hasOperationOrder(Unit u) {
+        return coordinator != null && coordinator.isAssigned(u) && coordinator.getOperationOrder(u) != null;
+    }
+
+    protected StrategyMemory memory() {
+        return plan.getStrategyMemory();
+    }
+
+    /** Record that the unit is committed to {@code kind}/{@code target} if an order was produced. */
+    protected Order committed(Unit u, CommitmentKind kind, Location target, Order o) {
+        if (o != null) {
+            memory().getCommitments().commit(u, kind, target, plan.getGame().getTurn());
+        }
+        return o;
+    }
+
+    /**
      * Build an order to find best unoccupied city and move toward it.
      * Prioritizes unoccupied cities over enemy cities using the TargetPrioritizer.
      * @param u
@@ -61,8 +102,10 @@ public abstract class UnitCaptain<T extends Unit> {
     protected Order occupyUnownedCity(Unit u) {
         // Use TargetPrioritizer to get the best city target for this unit
         City bestCity = plan.getBestCityTarget(u);
+        lastTargetCity = null;
 
         if (bestCity != null) {
+            lastTargetCity = bestCity.getLocation();
             Player cityOwner = bestCity.getOwner();
             if (cityOwner == null) {
                 Log.info(
@@ -108,6 +151,7 @@ public abstract class UnitCaptain<T extends Unit> {
         }
 
         Location loc = u.getClosestLocation(validLoadingPoints);
+        lastLoadingPoint = loc;
         if (loc != null) {
             Log.info(u, "Going to load point");
             return u.newMoveOrder(loc);
@@ -160,6 +204,8 @@ public abstract class UnitCaptain<T extends Unit> {
         List<TargetPrioritizer.CityTarget> cityTargets =
             plan.getPrioritizedCities();
 
+        lastTargetCity = null;
+        lastLoadingPoint = null;
         if (cityTargets.isEmpty()) {
             return null;
         }
@@ -174,8 +220,10 @@ public abstract class UnitCaptain<T extends Unit> {
             City city = target.city;
             Location cityLoc = city.getLocation();
 
-            // Try to get a path toward this city
-            Path path = u.getPath(cityLoc);
+            // Try to get a path toward this city. Land units can only walk to cities on
+            // their own continent (paths through unexplored hexes may cross water).
+            boolean walkable = !isLandUnit || plan.getBoard().getContinent(cityLoc) == ourContinent;
+            Path path = walkable ? u.getPath(cityLoc) : null;
             if (path != null && path.length() > 0) {
                 // Move as far as we can toward this city
                 Log.info(
@@ -186,6 +234,7 @@ public abstract class UnitCaptain<T extends Unit> {
                         String.format("%.1f", target.score) +
                         ")"
                 );
+                lastTargetCity = cityLoc;
                 return u.newMoveOrder(cityLoc);
             }
 
@@ -379,41 +428,6 @@ public abstract class UnitCaptain<T extends Unit> {
         }
 
         order = RandomUtil.randomValue(list);
-        return order;
-    }
-
-    protected Order occupyLandStrategy(Unit u) {
-        // If on transport and ready to disembark, move to adjacent land
-        if (u.isCarried()) {
-            if (needsToDisembark(u)) {
-                return disembarkFromTransport(u);
-            }
-            return sentry(u);
-        }
-
-        // First try to reach a city this turn
-        Order order = occupyUnownedCity(u);
-
-        // If no city reachable this turn, move toward the best strategic city target
-        if (order == null) {
-            order = moveTowardBestCity(u);
-        }
-
-        // If no strategic city target, explore the frontier
-        if (order == null) {
-            order = explore(u);
-        }
-
-        // If can't explore, go to loading point for transport
-        if (order == null) {
-            order = goToLoadingPoint(u);
-        }
-
-        // Last resort: skip turn
-        if (order == null) {
-            Log.info(u, "Nothing to do");
-            order = u.newSkipTurn();
-        }
         return order;
     }
 

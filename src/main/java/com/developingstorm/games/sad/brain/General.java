@@ -144,6 +144,22 @@ public class General {
         return order;
     }
 
+    /**
+     * Captain that manages commitments for this unit's type, or null for types that are
+     * re-planned every turn.
+     */
+    UnitCaptain<?> captainFor(Unit u) {
+        switch (u.getType().getId()) {
+            case Type.ARMOR_ID:
+            case Type.INFANTRY_ID:
+                return this.land;
+            case Type.TRANSPORT_ID:
+                return this.transport;
+            default:
+                return null;
+        }
+    }
+
     boolean shouldDefend() {
         return (RandomUtil.getInt(100) <= this.defendVsExplore);
     }
