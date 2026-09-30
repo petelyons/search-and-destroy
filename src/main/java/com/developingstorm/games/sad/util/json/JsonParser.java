@@ -7,7 +7,8 @@ import java.util.Map.Entry;
 public class JsonParser {
 
     StringBuilder builder;
-    static final String NUMERIC = "0123456789-.";
+    // Includes exponent characters: JsonFormatter writes small doubles as e.g. 4.8E-4
+    static final String NUMERIC = "0123456789-.eE+";
 
     enum TokenType {
         BEGIN_CURLY,

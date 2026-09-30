@@ -189,4 +189,15 @@ public class BehaviorTrackerTest {
         assertEquals(avg.get("LAND.idle"), back.get("LAND.idle"), EPS);
         assertEquals(avg.stdErr("LAND.idle"), back.stdErr("LAND.idle"), EPS);
     }
+
+    @Test
+    public void jsonRoundTripSurvivesTinyValues() {
+        BehaviorReport a = BehaviorReport.of(Map.of("AIR.idle", 0.00048));
+        BehaviorReport b = BehaviorReport.of(Map.of("AIR.idle", 0.0));
+        BehaviorReport avg = BehaviorReport.average(List.of(a, b));
+        String text = com.developingstorm.games.sad.util.json.JsonFormatter.format(avg.toJson());
+        BehaviorReport back = BehaviorReport.fromJson(
+            (com.developingstorm.games.sad.util.json.JsonObj) com.developingstorm.games.sad.util.json.JsonParser.parse(text));
+        assertEquals(avg.get("AIR.idle"), back.get("AIR.idle"), 1e-12);
+    }
 }
