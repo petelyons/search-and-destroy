@@ -52,6 +52,10 @@ public class Move extends Order {
         this.avoidEnemies = avoidEnemies;
     }
 
+    public Location getDestination() {
+        return loc;
+    }
+
     public OrderResponse executeInternal() {
         ResponseCode resp = ResponseCode.CANCEL_ORDER;
 

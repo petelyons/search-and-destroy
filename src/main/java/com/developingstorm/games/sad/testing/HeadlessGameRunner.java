@@ -25,8 +25,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -51,9 +49,7 @@ public class HeadlessGameRunner {
     private final AIConfiguration player2Config;
 
     private Game game;
-    private Thread gameThread;
     private final AtomicReference<GameResult> result;
-    private final CountDownLatch gameDone;
     private final AtomicBoolean abortRequested;
 
     // Turn monitoring
@@ -62,6 +58,14 @@ public class HeadlessGameRunner {
     private long turnStartTime;
     private int lastTurn = -1;
     private boolean turnLimitReached = false;
+
+    // Behavior metrics and timing
+    private boolean monitorEnabled = false;
+    private AIBehaviorMonitor monitor;
+    private long runStartTime;
+    private int timeoutSeconds;
+    private long turnDurationSum;
+    private int turnDurationCount;
 
     /**
      * Create a headless game runner with default settings.
@@ -95,7 +99,6 @@ public class HeadlessGameRunner {
         this.player1Config = player1Config;
         this.player2Config = player2Config;
         this.result = new AtomicReference<>();
-        this.gameDone = new CountDownLatch(1);
         this.abortRequested = new AtomicBoolean(false);
     }
 
@@ -132,6 +135,10 @@ public class HeadlessGameRunner {
 
         // Subscribe to events
         GameEventBus eventBus = game.getEventBus();
+        if (monitorEnabled) {
+            monitor = new AIBehaviorMonitor(game);
+            eventBus.addListener(monitor);
+        }
         eventBus.addListener(
             new GameEventListener() {
                 @Override
@@ -194,10 +201,21 @@ public class HeadlessGameRunner {
             return;
         }
 
-        // Determine which player based on turn number (turns alternate between players)
-        // Turn 1 = Player 1, Turn 2 = Player 2, Turn 3 = Player 1, etc.
-        int playerIndex = ((currentTurn - 1) % game.getPlayers().length);
-        Player currentPlayer = game.getPlayers()[playerIndex];
+        long elapsedMs = System.currentTimeMillis() - runStartTime;
+        if (timeoutSeconds > 0 && elapsedMs > timeoutSeconds * 1000L) {
+            abortRequested.set(true);
+            result.set(
+                new GameResult(
+                    null,
+                    currentTurn,
+                    elapsedMs / 1000.0,
+                    GameResult.EndReason.TIMEOUT,
+                    "Game exceeded " + timeoutSeconds + "s"
+                )
+            );
+            game.end();
+            return;
+        }
 
         // Check for turn timeout using metrics from TurnCompleteEvent
         // Note: We check all players since events may arrive out of order
@@ -249,8 +267,8 @@ public class HeadlessGameRunner {
             }
         }
 
-        // Report turn status
-        reportTurnStatus(currentTurn, currentPlayer);
+        // Report turn status (NEW_TURN fires once per round, after every player has moved)
+        reportTurnStatus(currentTurn);
 
         // Start timing this turn
         turnStartTime = System.currentTimeMillis();
@@ -263,12 +281,14 @@ public class HeadlessGameRunner {
     private void handleTurnComplete(TurnCompleteEvent event) {
         // Store metrics for this player's turn
         turnMetrics.put(event.getPlayer().getId(), event);
+        turnDurationSum += event.getDurationMs();
+        turnDurationCount++;
     }
 
     /**
      * Report turn status to stdout.
      */
-    private void reportTurnStatus(int turn, Player player) {
+    private void reportTurnStatus(int turn) {
         // Count cities per player
         int[] cityCounts = new int[game.getPlayers().length + 1];
         for (City city : game.getBoard().getCities()) {
@@ -299,11 +319,10 @@ public class HeadlessGameRunner {
             }
         }
 
-        // Get turn duration from metrics (this player's actual turn duration)
+        // Round duration = sum of each player's latest turn duration
         long turnDuration = 0;
-        TurnCompleteEvent metrics = turnMetrics.get(player.getId());
-        if (metrics != null) {
-            turnDuration = metrics.getDurationMs();
+        for (TurnCompleteEvent metrics : turnMetrics.values()) {
+            turnDuration += metrics.getDurationMs();
         }
 
         // Count units per player by type
@@ -372,7 +391,7 @@ public class HeadlessGameRunner {
         double explorationPct = (exploredSamples * 100.0) / totalSamples;
 
         // Report
-        System.out.printf("T%3d|P%d|Cities:", turn, player.getId());
+        System.out.printf("Round %3d|Cities:", turn);
         for (int i = 1; i < cityCounts.length; i++) {
             if (i > 1) System.out.print("/");
             System.out.printf("%d", cityCounts[i]);
@@ -429,6 +448,26 @@ public class HeadlessGameRunner {
      * @throws InterruptedException if the thread is interrupted
      */
     public GameResult run(int timeoutSeconds) throws InterruptedException {
+        this.timeoutSeconds = timeoutSeconds;
+        this.runStartTime = System.currentTimeMillis();
+        GameResult r = runGame();
+        if (r != null) {
+            r.attach(
+                monitor != null ? monitor.report() : null,
+                turnDurationCount == 0 ? 0.0 : (double) turnDurationSum / turnDurationCount
+            );
+        }
+        return r;
+    }
+
+    /**
+     * Enable behavior metrics collection. Must be called before {@link #run()}.
+     */
+    public void setMonitorEnabled(boolean enabled) {
+        this.monitorEnabled = enabled;
+    }
+
+    private GameResult runGame() {
         System.out.println("Initializing game...");
         System.out.flush();
         initializeGame();
@@ -559,6 +598,8 @@ public class HeadlessGameRunner {
         private final double durationSeconds;
         private final EndReason endReason;
         private final String errorMessage;
+        private BehaviorReport behaviorReport;
+        private double meanTurnMs;
 
         public GameResult(
             Integer winnerPlayerNumber,
@@ -581,6 +622,21 @@ public class HeadlessGameRunner {
             this.durationSeconds = durationSeconds;
             this.endReason = endReason;
             this.errorMessage = errorMessage;
+        }
+
+        void attach(BehaviorReport report, double meanTurnMs) {
+            this.behaviorReport = report;
+            this.meanTurnMs = meanTurnMs;
+        }
+
+        /** Behavior metrics, or null if monitoring was not enabled. */
+        public BehaviorReport getBehaviorReport() {
+            return behaviorReport;
+        }
+
+        /** Mean duration of a single player's turn, in milliseconds. */
+        public double getMeanTurnMs() {
+            return meanTurnMs;
         }
 
         public Integer getWinnerPlayerNumber() {
