@@ -1,15 +1,18 @@
 package com.developingstorm.games.sad.brain;
 
 import com.developingstorm.games.sad.Order;
-import com.developingstorm.games.sad.types.Armor;
+import com.developingstorm.games.sad.Unit;
 
-public class ArmorCaptain extends UnitCaptain<Armor> {
+/**
+ * Plans infantry and armor: amphibious operation first, then local defense, then expansion.
+ */
+public class LandCaptain extends UnitCaptain<Unit> {
 
-    public ArmorCaptain(General gen, Battleplan plan) {
+    public LandCaptain(General gen, Battleplan plan) {
         super(gen, plan);
     }
 
-    public ArmorCaptain(
+    public LandCaptain(
         General gen,
         Battleplan plan,
         OperationsCoordinator coordinator
@@ -18,7 +21,7 @@ public class ArmorCaptain extends UnitCaptain<Armor> {
     }
 
     @Override
-    public Order plan(Armor u) {
+    public Order plan(Unit u) {
         // Check if assigned to an amphibious operation
         if (coordinator != null && coordinator.isAssigned(u)) {
             Order operationOrder = coordinator.getOperationOrder(u);
@@ -27,7 +30,7 @@ public class ArmorCaptain extends UnitCaptain<Armor> {
             }
         }
 
-        // Armor can defend, but not if:
+        // Land units can defend, but not if:
         // - Being carried on a transport (in transit for amphibious ops)
         // - In a city producing them (just spawned, need to get to front)
         boolean canDefend = !u.isCarried() && !isInProducingCity(u);
@@ -46,7 +49,7 @@ public class ArmorCaptain extends UnitCaptain<Armor> {
     /**
      * Check if unit is in a city that just produced it
      */
-    private boolean isInProducingCity(Armor u) {
+    private boolean isInProducingCity(Unit u) {
         // If unit is in a city location, it was likely just produced
         // (units move out of cities after being produced in subsequent turns)
         return plan.getBoard().getCity(u.getLocation()) != null;

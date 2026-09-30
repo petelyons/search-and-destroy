@@ -50,7 +50,7 @@ public class UnitMatchups {
         ));
 
         // Armor - effective against infantry
-        // Source: ArmorCaptain.java (uses occupyLandStrategy)
+        // Source: LandCaptain.java (uses occupyLandStrategy)
         PRIMARY_TARGETS.put(Type.ARMOR, setOf(
             Type.INFANTRY
         ));
@@ -59,7 +59,7 @@ public class UnitMatchups {
         ));
 
         // Infantry - effective against other infantry
-        // Source: InfantryCaptain.java (uses occupyLandStrategy)
+        // Source: LandCaptain.java (uses occupyLandStrategy)
         PRIMARY_TARGETS.put(Type.INFANTRY, setOf(
             Type.INFANTRY
         ));

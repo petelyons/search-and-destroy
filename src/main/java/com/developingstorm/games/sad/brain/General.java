@@ -4,7 +4,6 @@ import com.developingstorm.games.hexboard.Location;
 import com.developingstorm.games.sad.Order;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
-import com.developingstorm.games.sad.types.Armor;
 import com.developingstorm.games.sad.types.Battleship;
 import com.developingstorm.games.sad.types.Bomber;
 import com.developingstorm.games.sad.types.Cargo;
@@ -12,7 +11,6 @@ import com.developingstorm.games.sad.types.Carrier;
 import com.developingstorm.games.sad.types.Cruiser;
 import com.developingstorm.games.sad.types.Destroyer;
 import com.developingstorm.games.sad.types.Fighter;
-import com.developingstorm.games.sad.types.Infantry;
 import com.developingstorm.games.sad.types.Submarine;
 import com.developingstorm.games.sad.types.Transport;
 import com.developingstorm.games.sad.util.Log;
@@ -21,13 +19,12 @@ import java.util.Set;
 
 public class General {
 
-    private final ArmorCaptain armor;
     private final BattleshipCaptain battleship;
     private final BomberCaptain bomber;
     private final CargoCaptain cargo;
     private final CruiserCaptain cruiser;
     private final DestroyerCaptain destroyer;
-    private final InfantryCaptain infantry;
+    private final LandCaptain land;
     private final SubmarineCaptain submarine;
     private final TransportCaptain transport;
     private final FighterCaptain fighter;
@@ -46,14 +43,13 @@ public class General {
         this.plan = plan;
         this.operationsCoordinator = coordinator;
 
-        armor = new ArmorCaptain(this, plan, coordinator);
         battleship = new BattleshipCaptain(this, plan);
         bomber = new BomberCaptain(this, plan);
         cargo = new CargoCaptain(this, plan);
         cruiser = new CruiserCaptain(this, plan);
         destroyer = new DestroyerCaptain(this, plan);
         fighter = new FighterCaptain(this, plan);
-        infantry = new InfantryCaptain(this, plan, coordinator);
+        land = new LandCaptain(this, plan, coordinator);
         submarine = new SubmarineCaptain(this, plan);
         transport = new TransportCaptain(this, plan, coordinator);
         carrier = new CarrierCaptain(this, plan);
@@ -79,13 +75,6 @@ public class General {
         return this.transport.plan(u);
     }
 
-    private Order plan(Armor u) {
-        return this.armor.plan(u);
-    }
-
-    private Order plan(Infantry u) {
-        return this.infantry.plan(u);
-    }
 
     private Order plan(Destroyer u) {
         return this.destroyer.plan(u);
@@ -115,10 +104,8 @@ public class General {
         Order order = null;
         switch (u.getType().getId()) {
             case Type.ARMOR_ID:
-                order = plan((Armor) u);
-                break;
             case Type.INFANTRY_ID:
-                order = plan((Infantry) u);
+                order = this.land.plan(u);
                 break;
             case Type.FIGHTER_ID:
                 order = plan((Fighter) u);
