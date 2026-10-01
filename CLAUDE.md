@@ -86,6 +86,7 @@ A transport has three states: **loading**, **unloading**, and **normal**.
 - Set to `true` when the Unload order executes
 - Persists across turns
 - Cleared when the transport moves away from coast (no adjacent land hexes) OR when the cargo list becomes empty (`removeCarried()`)
+- Cleared when a human player gives the transport a Sentry order (`AssignOrderCommand` → `Unit.cancelUnloading()`); woken cargo goes back to sentry. Move orders do not clear it.
 
 ### Loading Flow
 

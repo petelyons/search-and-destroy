@@ -118,4 +118,23 @@ public class HumanUnloadCancelTest {
         assertFalse(infantry.isCarried(), "unit should step ashore toward its destination");
         assertTrue(game.getBoard().isLand(infantry.getLocation()));
     }
+
+    @Test
+    public void movingTheTransportKeepsUnloading() {
+        setUp();
+        new Unload(game, transport).executeInternal();
+        Location elsewhere = null;
+        for (Location adj : transport.getLocation().getRing(1)) {
+            if (game.getBoard().isWater(adj)) {
+                elsewhere = adj;
+                break;
+            }
+        }
+        assertNotNull(elsewhere);
+
+        new AssignOrderCommand(transport, transport.newMoveOrder(elsewhere)).execute(game);
+
+        assertTrue(transport.isUnloadingMode(), "a move order should not end unloading");
+        assertFalse(infantry.inSentryMode(), "woken cargo stays awake");
+    }
 }

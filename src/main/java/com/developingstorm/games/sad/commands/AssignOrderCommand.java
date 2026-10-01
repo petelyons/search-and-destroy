@@ -21,8 +21,9 @@ public class AssignOrderCommand implements GameCommand {
     @Override
     public void execute(Game game) {
         if (unit != null && order != null) {
-            // A player issuing any other order to an unloading transport ends the unload
-            if (order.getType() != OrderType.UNLOAD) {
+            // Sentry is how a player ends an unload. Moving keeps unloading on, so cargo wakes
+            // at each coastal stop (unloading still ends when the transport leaves the coast).
+            if (order.getType() == OrderType.SENTRY) {
                 unit.cancelUnloading();
             }
             unit.assignOrder(order);
