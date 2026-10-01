@@ -10,6 +10,7 @@ import com.developingstorm.games.sad.PathFinder;
 import com.developingstorm.games.sad.ResponseCode;
 import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Unit;
+import com.developingstorm.games.sad.events.MoveRefusedEvent;
 import com.developingstorm.games.sad.util.Log;
 
 public class UnitTurnState {
@@ -28,6 +29,17 @@ public class UnitTurnState {
         updateOrderState();
     }
 
+    /** Tell the UI a human player's order couldn't reach its target hex. */
+    private void reportRefusal(Unit u, Order order) {
+        if (u.getOwner().isRobot() || order == null) {
+            return;
+        }
+        Location target = order.getTarget();
+        if (target != null) {
+            this.game.getEventBus().publish(new MoveRefusedEvent(u, target));
+        }
+    }
+
     private boolean executeOrder(Unit u, Order alt) {
         boolean blocked = false;
         Order executedOrder = (alt != null) ? alt : u.getOrder();
@@ -39,6 +51,7 @@ public class UnitTurnState {
         Log.debug(u, "Response from order: " + code);
         if (code == ResponseCode.CANCEL_ORDER) {
             Log.info(u, "Cancelling order");
+            reportRefusal(u, executedOrder);
             u.clearOrders();
         } else if (code == ResponseCode.STEP_COMPLETE) {
             u.clearOrders();

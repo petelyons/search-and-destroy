@@ -20,6 +20,11 @@ public class DirectionalMove extends Order {
     super(g, u, type);
     this.dir = dir;
   }
+  @Override
+  public Location getTarget() {
+    return this.unit.getLocation().relative(this.dir);
+  }
+
   public OrderResponse executeInternal() {
     Log.info(this.unit, "Moving " + this.dir.toString());
     ResponseCode resp;

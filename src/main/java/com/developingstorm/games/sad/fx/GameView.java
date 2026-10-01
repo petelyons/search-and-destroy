@@ -179,6 +179,7 @@ public class GameView extends BorderPane {
                             GameEventType.GAME_PAUSED,
                             GameEventType.GAME_RESUMED,
                             GameEventType.PLAYER_TYPE_CHANGED,
+                            GameEventType.MOVE_REFUSED,
                         };
                     }
                 }
@@ -242,6 +243,11 @@ public class GameView extends BorderPane {
             case GAME_PAUSED:
             case GAME_RESUMED:
                 updatePauseIndicator();
+                break;
+            case MOVE_REFUSED:
+                mapCanvas.showRefused(
+                    ((com.developingstorm.games.sad.events.MoveRefusedEvent) event).getTarget()
+                );
                 break;
             case PLAYER_TYPE_CHANGED:
                 mapCanvas.refresh();

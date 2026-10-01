@@ -33,6 +33,13 @@ abstract public class Order {
   public OrderType getType() {
     return orderType;
   }
+
+  /**
+   * The hex this order is trying to reach, or null if it has no single target.
+   */
+  public com.developingstorm.games.hexboard.Location getTarget() {
+    return null;
+  }
   
   public OrderResponse execute() {
     OrderResponse resp = executeInternal();

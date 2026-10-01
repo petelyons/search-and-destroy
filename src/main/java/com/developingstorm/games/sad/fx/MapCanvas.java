@@ -1727,6 +1727,17 @@ public class MapCanvas extends StackPane {
     }
 
     /**
+     * Flash a red X on a hex the player's unit could not move to.
+     */
+    public void showRefused(Location target) {
+        double[] center = getHexCenter(target);
+        sprites.add(
+            new com.developingstorm.games.sad.fx.sprites.FxRefusedSprite(center[0], center[1])
+        );
+        refresh();
+    }
+
+    /**
      * Move a unit to a destination.
      * Creates and issues a move order for the unit.
      * Public for use by mode classes.

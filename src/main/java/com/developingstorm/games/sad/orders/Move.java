@@ -56,6 +56,11 @@ public class Move extends Order {
         return loc;
     }
 
+    @Override
+    public Location getTarget() {
+        return loc;
+    }
+
     public OrderResponse executeInternal() {
         ResponseCode resp = ResponseCode.CANCEL_ORDER;
 
@@ -278,6 +283,8 @@ public class Move extends Order {
                 Log.info(this.unit, "Unit died during move");
             } else if (resp == ResponseCode.CANCEL_ORDER) {
                 Log.warn(this.unit, "Move CANCELLED by resolveMove");
+                // Report the refusal as-is (it used to become ORDER_COMPLETE below)
+                return new OrderResponse(resp, this, null);
             } else if (resp != ResponseCode.STEP_COMPLETE) {
                 Log.warn(
                     this.unit,

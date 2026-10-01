@@ -50,6 +50,9 @@ public enum GameEventType {
     // Fleet events
     FLEET_CHANGED,
 
+    // A human player's order was refused
+    MOVE_REFUSED,
+
     // General notification
     MESSAGE,
 }

@@ -16,6 +16,7 @@ public class HumanUnloadCancelTest {
     private Unit infantry;
 
     private void setUp() {
+        com.developingstorm.util.RandomUtil.setSeed(20260930L);
         LocationMap.init(50, 50);
         HexBoardMap map = HexBoardMap.loadMapAsResource(getClass(), "MedMap.sdm");
         HexBoardContext ctx = new MockSaDBoardContext();
@@ -69,7 +70,8 @@ public class HumanUnloadCancelTest {
         new Unload(game, transport).executeInternal();
         Location shore = null;
         for (Location adj : transport.getLocation().getRing(1)) {
-            if (game.getBoard().isLand(adj) && game.canPlaceUnit(infantry, adj)) {
+            // Not a city: moving into one is a capture attempt, not a disembark
+            if (game.getBoard().isLand(adj) && !game.getBoard().isCity(adj) && game.canPlaceUnit(infantry, adj)) {
                 shore = adj;
                 break;
             }
