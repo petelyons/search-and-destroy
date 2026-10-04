@@ -180,6 +180,7 @@ public class GameView extends BorderPane {
                             GameEventType.GAME_RESUMED,
                             GameEventType.PLAYER_TYPE_CHANGED,
                             GameEventType.MOVE_REFUSED,
+                            GameEventType.GAME_OVER,
                         };
                     }
                 }
@@ -237,6 +238,11 @@ public class GameView extends BorderPane {
             case GAME_ABORTED:
                 handleGameAborted();
                 break;
+            case GAME_OVER:
+                handleGameOver(
+                    ((com.developingstorm.games.sad.events.GameOverEvent) event).getWinner()
+                );
+                break;
             case FLEET_CHANGED:
                 mapCanvas.refresh();
                 break;
@@ -271,6 +277,21 @@ public class GameView extends BorderPane {
             turnLabel.setText("Turn " + game.getTurn());
             turnLabel.setStyle("-fx-background-color: #333; -fx-padding: 8;");
         }
+    }
+
+    /**
+     * The game loop has stopped because a player lost. Say who won; the map stays up so the
+     * player can look around, then start or load a game from the menu.
+     */
+    private void handleGameOver(com.developingstorm.games.sad.Player winner) {
+        GameOverMessage msg = GameOverMessage.of(winner, game.getHumanPlayer());
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+            javafx.scene.control.Alert.AlertType.INFORMATION
+        );
+        alert.setTitle("Game Over");
+        alert.setHeaderText(msg.header());
+        alert.setContentText(msg.content());
+        alert.show();
     }
 
     /**
