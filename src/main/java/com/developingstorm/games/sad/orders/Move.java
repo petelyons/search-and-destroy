@@ -118,6 +118,11 @@ public class Move extends Order {
             }
 
             while (this.unit.life().movesLeft() > 0 && !this.unit.isDead()) {
+                // Arrived with moves to spare: the order is done (the path has no next step)
+                if (this.unit.getLocation().equals(this.loc)) {
+                    autoSleepIfAppropriate();
+                    return new OrderResponse(ResponseCode.ORDER_COMPLETE, this, null);
+                }
                 // ENEMY DETECTION: Check for threats before each step
                 if (this.avoidEnemies) {
                     int detectionRange = this.unit.getType().getDist() * 2;

@@ -110,4 +110,40 @@ public class MoveRefusedEventTest {
         assertTrue(events.isEmpty());
         assertEquals(landStep, inf.getLocation());
     }
+
+    @Test
+    public void arrivingWithMovesLeftIsNotARefusal() {
+        // Open water: a hex whose 2-ring is all water, so a 2-step path exists
+        Location from = null;
+        Location to = null;
+        for (int x = 3; x < 47 && from == null; x++) {
+            for (int y = 3; y < 47; y++) {
+                Location l = Location.get(x, y);
+                boolean open = game.getBoard().isWater(l);
+                for (Location n : l.getRing(2)) {
+                    open &= game.getBoard().isWater(n) && game.unitsAtLocation(n).isEmpty();
+                }
+                if (open) {
+                    from = l;
+                    for (Location n : l.getRing(2)) {
+                        if (l.distance(n) == 2) {
+                            to = n;
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        org.junit.jupiter.api.Assumptions.assumeTrue(from != null && to != null);
+        Unit dd = game.createUnit(Type.DESTROYER, human, from);
+        human.addUnit(dd);
+        dd.turn().beginTurn();
+        dd.assignOrder(dd.newMoveOrder(to));
+
+        dd.turn().attemptTurn();
+
+        assertEquals(to, dd.getLocation());
+        assertTrue(events.isEmpty(), "arrival must not flash a refusal X");
+    }
 }
