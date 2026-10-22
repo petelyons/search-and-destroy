@@ -849,17 +849,10 @@ public class Player implements UnitLens, LocationLens {
         return out;
     }
 
-    public void unitsNeedOrders() {
-        if (isRobot()) {
-            throw new SaDException(
-                "The override method should have been called!"
-            );
-        }
-
-        Log.info(
-            this,
-            "unitsNeedOrders() called, checking pendingOrders queue"
-        );
+    /**
+     * The unit the player should give orders to next.
+     */
+    Unit chooseUnitNeedingOrders() {
         Unit pending = popPendingOrders();
         while (pending != null) {
             Log.info(
@@ -885,28 +878,41 @@ public class Player implements UnitLens, LocationLens {
 
         if (pending != null) {
             Log.info(this, "Selecting unit from pendingOrders: " + pending);
-            this.game.selectUnit(pending);
+            return pending;
         } else {
             Log.info(this, "No units in pendingOrders need orders");
         }
 
-        pending = this.game.selectedUnit();
-        if (pending != null) {
-            if (!pending.life().hasMoves()) {
-                pending = null;
-            }
+        // Keep the current selection only if it can still play. "Has moves" isn't enough:
+        // carried units keep their moves after skipping or finishing their turn.
+        List<Unit> unplayed = unplayedUnits();
+        Unit selected = this.game.selectedUnit();
+        if (selected != null && unplayed.contains(selected)) {
+            return selected;
+        }
+        if (unplayed.isEmpty()) {
+            throw new SaDException(
+                "Trying to get orders when no units are playable!"
+            );
+        }
+        return unplayed.get(0);
+    }
+
+    public void unitsNeedOrders() {
+        if (isRobot()) {
+            throw new SaDException(
+                "The override method should have been called!"
+            );
         }
 
-        if (pending == null) {
-            List<Unit> unplayed = unplayedUnits();
-            if (unplayed.isEmpty()) {
-                throw new SaDException(
-                    "Trying to get orders when no units are playable!"
-                );
-            }
-            this.game.selectUnit(unplayed.get(0));
+        Log.info(
+            this,
+            "unitsNeedOrders() called, checking pendingOrders queue"
+        );
+        Unit next = chooseUnitNeedingOrders();
+        if (next != this.game.selectedUnit()) {
+            this.game.selectUnit(next);
         }
-
         this.game.pause();
     }
 
