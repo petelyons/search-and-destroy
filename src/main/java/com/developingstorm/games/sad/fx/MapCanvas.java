@@ -340,37 +340,16 @@ public class MapCanvas extends StackPane {
         }
 
         // 1) Draw own units (no fog of war for own units).
-        java.util.Map<Location, java.util.List<Unit>> ownUnitsByLocation =
-            new java.util.HashMap<>();
-        for (Unit unit : query.getAllUnits()) {
-            if (unit.isCarried()) continue;
-            if (humanPlayer != null && unit.getOwner() != humanPlayer) continue;
-            ownUnitsByLocation
-                .computeIfAbsent(unit.getLocation(), k -> new java.util.ArrayList<>())
-                .add(unit);
-        }
-
         Unit selectedUnit = query.getSelectedUnit();
+        java.util.Map<Location, java.util.List<Unit>> ownUnitsByLocation =
+            MapUnitPicker.ownUnitsByLocation(query.getAllUnits(), humanPlayer, selectedUnit);
         for (java.util.Map.Entry<Location, java.util.List<Unit>> entry :
                 ownUnitsByLocation.entrySet()) {
             Location loc = entry.getKey();
             java.util.List<Unit> unitsAtLoc = entry.getValue();
             if (unitsAtLoc.isEmpty()) continue;
 
-            Unit unitToDraw = null;
-            if (selectedUnit != null && unitsAtLoc.contains(selectedUnit)) {
-                unitToDraw = selectedUnit;
-            } else {
-                for (Unit u : unitsAtLoc) {
-                    if (u.life().hasMoves() && !u.inSentryMode()) {
-                        unitToDraw = u;
-                        break;
-                    }
-                }
-                if (unitToDraw == null) unitToDraw = unitsAtLoc.get(0);
-            }
-
-            drawUnit(unitToDraw);
+            drawUnit(MapUnitPicker.unitToDraw(unitsAtLoc, selectedUnit));
             if (unitsAtLoc.size() > 1) drawStackBadge(loc, unitsAtLoc.size());
         }
 
