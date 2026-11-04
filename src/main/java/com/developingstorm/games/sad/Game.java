@@ -694,9 +694,6 @@ public class Game implements UnitLens, LocationLens {
     }
 
     public void play() {
-        int uc;
-        int cc;
-
         try {
             synchronized (this) {
                 if (this.endPlay) {
@@ -713,22 +710,14 @@ public class Game implements UnitLens, LocationLens {
                 checkPause();
                 if (this.endPlay) return;
 
-                uc = this.currentPlayer.unitCount();
-                cc = this.currentPlayer.cityCount();
-                if (cc == 0 && uc == 0) {
-                    eventBus.publish(new GameOverEvent(nextPlayer()));
-                    transitionState(this.gameState, GameState.GAME_OVER);
+                if (checkForDefeat()) {
                     return;
-                } else if (cc == 0) {
-                    if (!this.currentPlayer.hasUnitsThatCaptureACity()) {
-                        eventBus.publish(new GameOverEvent(nextPlayer()));
-                        transitionState(this.gameState, GameState.GAME_OVER);
-                        return;
-                    }
                 }
 
-                if (!(uc == 0 && cc == 0)) {
-                    this.currentPlayer.play();
+                this.currentPlayer.play();
+                // The player may have won mid-turn
+                if (checkForDefeat()) {
+                    return;
                 }
                 currentPlayer = nextPlayer();
 
@@ -748,6 +737,30 @@ public class Game implements UnitLens, LocationLens {
             t.printStackTrace();
             eventBus.publish(new GameAbortedEvent());
         }
+    }
+
+    /**
+     * End the game once only one player is still in it. Called between turns and after each
+     * pass of a player's turn, so a win is declared the moment it happens.
+     *
+     * @return true if the game is over
+     */
+    public boolean checkForDefeat() {
+        if (this.gameState == GameState.GAME_OVER) {
+            return true;
+        }
+        List<Player> remaining = new ArrayList<>();
+        for (Player p : this.players) {
+            if (p != null && !p.hasLost()) {
+                remaining.add(p);
+            }
+        }
+        if (remaining.size() > 1) {
+            return false;
+        }
+        eventBus.publish(new GameOverEvent(remaining.isEmpty() ? null : remaining.get(0)));
+        transitionState(this.gameState, GameState.GAME_OVER);
+        return true;
     }
 
     public synchronized int getTurn() {

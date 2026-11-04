@@ -1251,6 +1251,12 @@ public class Player implements UnitLens, LocationLens {
                 }
             }
 
+            // Declare a win the moment it happens, not at the end of the turn
+            if (this.game.checkForDefeat()) {
+                Log.info(this, "Game over during turn");
+                return;
+            }
+
             unplayed = unplayedUnits();
             OrderStateCounts orderStats = analyseUnplayed(unplayed);
 
@@ -1333,6 +1339,11 @@ public class Player implements UnitLens, LocationLens {
         List<Unit> units = getUnitsOnContinent(cont);
         UnitStats stats = new UnitStats(units, cities);
         return stats;
+    }
+
+    /** Out of the game: no cities, and no land units that could take one. */
+    public boolean hasLost() {
+        return cityCount() == 0 && !hasUnitsThatCaptureACity();
     }
 
     public boolean hasUnitsThatCaptureACity() {

@@ -58,4 +58,39 @@ public class GameOverDetectionTest {
 
         assertSame(human, winner.get());
     }
+
+    @Test
+    public void defeatIsDeclaredTheMomentItHappens() {
+        com.developingstorm.util.RandomUtil.setSeed(20261104L);
+        LocationMap.init(50, 50);
+        HexBoardMap map = HexBoardMap.loadMapAsResource(getClass(), "MedMap.sdm");
+        Player human = new Player("Human", 1);
+        Robot robot = new Robot("Robot", 2);
+        robot.setBrain(new com.developingstorm.games.sad.brain.RobotBrain(robot));
+        Game game = new Game(new Player[] {human, robot}, map, new MockSaDBoardContext());
+        AtomicReference<Player> winner = new AtomicReference<>();
+        game.getEventBus().addListener(new GameEventListener() {
+            @Override
+            public void onGameEvent(GameEvent event) {
+                winner.set(((GameOverEvent) event).getWinner());
+            }
+
+            @Override
+            public GameEventType[] getInterestedEventTypes() {
+                return new GameEventType[] { GameEventType.GAME_OVER };
+            }
+        });
+
+        assertFalse(game.checkForDefeat(), "both players still in it");
+        assertNull(winner.get());
+
+        // Mid-turn, the robot loses its last city
+        for (City c : new java.util.ArrayList<>(robot.getCities())) {
+            c.setOwner(human);
+        }
+
+        assertTrue(game.checkForDefeat());
+        assertSame(human, winner.get());
+        assertEquals(GameState.GAME_OVER, game.getGameState());
+    }
 }
