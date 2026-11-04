@@ -40,4 +40,15 @@ final class MapUnitPicker {
         }
         return unitsAtLoc.get(0);
     }
+
+    /** Units on the hex for the stack badge, counting everything aboard transports and carriers. */
+    static int stackCount(List<Unit> unitsAtLoc) {
+        java.util.Set<Unit> all = new java.util.HashSet<>(unitsAtLoc);
+        for (Unit u : unitsAtLoc) {
+            if (u.carries != null) {
+                all.addAll(u.carries);
+            }
+        }
+        return all.size();
+    }
 }

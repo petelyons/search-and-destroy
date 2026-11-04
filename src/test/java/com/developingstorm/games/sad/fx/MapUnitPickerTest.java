@@ -43,4 +43,16 @@ public class MapUnitPickerTest {
         assertEquals(List.of(transport), byLoc.get(sea));
         assertSame(transport, MapUnitPicker.unitToDraw(byLoc.get(sea), transport));
     }
+
+    @Test
+    public void stackCountIncludesAllCargo() {
+        Unit more = Unit.createForTest(3, Type.INFANTRY, human, sea);
+        more.onboard = transport;
+        transport.carries = new java.util.ArrayList<>(List.of(cargo, more));
+
+        Map<Location, List<Unit>> byLoc =
+            MapUnitPicker.ownUnitsByLocation(List.of(transport, cargo, more), human, cargo);
+
+        assertEquals(3, MapUnitPicker.stackCount(byLoc.get(sea)));
+    }
 }

@@ -350,7 +350,8 @@ public class MapCanvas extends StackPane {
             if (unitsAtLoc.isEmpty()) continue;
 
             drawUnit(MapUnitPicker.unitToDraw(unitsAtLoc, selectedUnit));
-            if (unitsAtLoc.size() > 1) drawStackBadge(loc, unitsAtLoc.size());
+            int count = MapUnitPicker.stackCount(unitsAtLoc);
+            if (count > 1) drawStackBadge(loc, count);
         }
 
         // 2) Draw enemy contacts from the human player's ContactMap. Skip
