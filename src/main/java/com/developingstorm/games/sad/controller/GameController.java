@@ -48,6 +48,13 @@ public interface GameController {
     void resumeGame(Unit unit);
 
     /**
+     * Put a unit back on its suspended patrol and resume the game.
+     *
+     * @param unit The lookout to resume
+     */
+    void resumePatrol(Unit unit);
+
+    /**
      * Explicitly pause the game.
      * This is different from waiting for orders - it's a user-initiated pause.
      */

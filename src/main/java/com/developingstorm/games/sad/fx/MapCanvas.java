@@ -1185,6 +1185,16 @@ public class MapCanvas extends StackPane {
         });
         menu.getItems().add(sentryItem);
 
+        // Resume a patrol that stopped to report
+        if (unit.getSuspendedPatrol() != null) {
+            MenuItem resumeItem = new MenuItem("Resume patrol");
+            resumeItem.setOnAction(e -> {
+                controller.resumePatrol(unit);
+                refresh();
+            });
+            menu.getItems().add(resumeItem);
+        }
+
         // Unload (only for units that can carry)
         if (unit.canCarry()) {
             MenuItem unloadItem = new MenuItem("Unload");

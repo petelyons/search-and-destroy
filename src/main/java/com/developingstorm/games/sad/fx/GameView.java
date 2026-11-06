@@ -373,6 +373,13 @@ public class GameView extends BorderPane {
                         consumed = true;
                     }
                     break;
+                case R:
+                    // Resume a patrol that stopped to report
+                    if (selected != null && selected.getSuspendedPatrol() != null) {
+                        commandHandler.resumePatrol(selected);
+                        consumed = true;
+                    }
+                    break;
                 case H:
                     // Head home
                     if (selected != null) {

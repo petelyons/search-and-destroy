@@ -49,6 +49,12 @@ public class GameControllerImpl implements GameController {
     }
 
     @Override
+    public void resumePatrol(Unit unit) {
+        game.submitCommand(new com.developingstorm.games.sad.commands.ResumePatrolCommand(unit));
+        game.submitCommand(new ResumeGameCommand(unit));
+    }
+
+    @Override
     public void pauseGame() {
         // Submit pause command
         game.submitCommand(game2 -> {

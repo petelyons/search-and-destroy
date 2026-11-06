@@ -43,6 +43,14 @@ public class GameCommandHandler {
      * Skip a unit's turn.
      * Uses the controller's issueOrder method which properly queues commands.
      */
+    /**
+     * Put a lookout back on its suspended patrol.
+     */
+    public void resumePatrol(Unit unit) {
+        if (unit == null || unit.getSuspendedPatrol() == null) return;
+        controller.resumePatrol(unit);
+    }
+
     public void skipTurn(Unit unit) {
         if (unit == null) return;
         controller.issueOrder(unit, new SkipTurn(query.getGame(), unit));
