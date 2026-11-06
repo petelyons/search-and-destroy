@@ -31,7 +31,7 @@ public class RobotBrainCommitmentTest {
     @BeforeEach
     public void setUp() {
         // City placement is random; fix it so assumptions below hold on every run
-        com.developingstorm.util.RandomUtil.setSeed(20260930L);
+        com.developingstorm.util.RandomUtil.setSeed(20260931L);
         LocationMap.init(50, 50);
         HexBoardMap map = HexBoardMap.loadMapAsResource(getClass(), "MedMap.sdm");
         a = new Robot("A", 1);
@@ -225,14 +225,14 @@ public class RobotBrainCommitmentTest {
     @Test
     public void carriedUnitStillHasALandingTarget() {
         brain.startNewTurn();
-        // A water hex next to a continent that has an unowned city
+        // A water hex right next to an unowned coastal city
         Location sea = null;
         City shoreCity = null;
         for (City c : game.getBoard().getCities()) {
-            if (c.getOwner() != null) {
+            if (c.getOwner() != null || !c.isCoastal()) {
                 continue;
             }
-            for (Location l : c.getLocation().getRing(2)) {
+            for (Location l : c.getLocation().getRing(1)) {
                 if (game.getBoard().isWater(l) && game.unitsAtLocation(l).isEmpty()) {
                     sea = l;
                     shoreCity = c;

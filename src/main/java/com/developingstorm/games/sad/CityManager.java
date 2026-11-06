@@ -21,29 +21,38 @@ class CityManager {
     }
 
     /**
-     * Finds an unowned coastal city on the board.
-     */
-    City findUnownedCoastalCity() {
-        for (City c : board.getCities()) {
-            if (board.isCoast(c.getLocation()) && c.getOwner() == null) {
-                return c;
-            }
-        }
-        return null;
-    }
-
-    /**
      * Assigns coastal cities to players at game start.
      */
     void assignCities() {
         Player[] players = game.getPlayers();
+        java.util.Set<Continent> taken = new java.util.HashSet<>();
         for (Player p : players) {
-            City c = findUnownedCoastalCity();
+            City c = pickStartCity(taken);
             if (c == null) {
                 throw new SaDException("Not enough coastal cities!");
             }
             c.setOwner(p);
+            taken.add(c.getContinent());
         }
+    }
+
+    /**
+     * A random unowned coastal city, preferring a continent no earlier player started on.
+     * Falls back to any unowned coastal city when the map has too few continents.
+     */
+    private City pickStartCity(java.util.Set<Continent> taken) {
+        java.util.List<City> fresh = new java.util.ArrayList<>();
+        java.util.List<City> any = new java.util.ArrayList<>();
+        for (City c : board.getCities()) {
+            if (c.getOwner() == null && board.isCoast(c.getLocation())) {
+                any.add(c);
+                if (!taken.contains(c.getContinent())) {
+                    fresh.add(c);
+                }
+            }
+        }
+        java.util.List<City> pool = fresh.isEmpty() ? any : fresh;
+        return pool.isEmpty() ? null : pool.get(com.developingstorm.util.RandomUtil.getInt(pool.size()));
     }
 
     /**

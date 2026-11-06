@@ -39,7 +39,13 @@ public class DetectionIntegrationTest {
         playerB = new Robot("B", 2);
         playerB.setBrain(new RobotBrain(playerB));
 
+        // Fixed seed: starting cities are random, and one near the test hexes would see the sub
+        com.developingstorm.util.RandomUtil.setSeed(20261106L);
         game = new Game(new Player[] { playerA, playerB }, map, ctx);
+        for (City c : playerA.getCities()) {
+            assertTrue(c.getLocation().distance(Location.get(14, 10)) > 4,
+                "setup: player A's city " + c + " is too close to the test hexes");
+        }
     }
 
     private Unit spawn(Type type, Player owner, Location loc) {

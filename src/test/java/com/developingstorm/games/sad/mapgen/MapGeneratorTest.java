@@ -111,4 +111,27 @@ public class MapGeneratorTest {
             assertArrayEquals(map.getData(), back.getData(), size.toString());
         }
     }
+
+    @Test
+    public void everySmallMapStartsAGame() {
+        for (long seed = 1; seed <= 50; seed++) {
+            RandomUtil.setSeed(seed);
+            HexBoardMap map = MapGenerator.generate(MapSize.SMALL);
+            com.developingstorm.games.sad.Robot a = new com.developingstorm.games.sad.Robot("A", 1);
+            a.setBrain(new com.developingstorm.games.sad.brain.RobotBrain(a));
+            com.developingstorm.games.sad.Robot b = new com.developingstorm.games.sad.Robot("B", 2);
+            b.setBrain(new com.developingstorm.games.sad.brain.RobotBrain(b));
+            com.developingstorm.games.sad.Game game = new com.developingstorm.games.sad.Game(
+                new com.developingstorm.games.sad.Player[] {a, b}, map,
+                new com.developingstorm.games.sad.MockSaDBoardContext());
+
+            long continentsWithCoastalCities = game.getBoard().getCities().stream()
+                .filter(com.developingstorm.games.sad.City::isCoastal)
+                .map(com.developingstorm.games.sad.City::getContinent)
+                .distinct().count();
+            if (continentsWithCoastalCities >= 2) {
+                assertNotEquals(a.getCities().get(0).getContinent(), b.getCities().get(0).getContinent(), "seed " + seed);
+            }
+        }
+    }
 }
