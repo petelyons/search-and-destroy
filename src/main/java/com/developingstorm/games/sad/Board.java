@@ -5,6 +5,7 @@ import com.developingstorm.games.hexboard.HexBoard;
 import com.developingstorm.games.hexboard.HexBoardContext;
 import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.hexboard.Location;
+import com.developingstorm.games.sad.mapgen.CityPlacer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -101,55 +102,7 @@ public class Board extends HexBoard {
         if (this.continents.size() == 0) {
             throw new SaDException("Map must have some land");
         }
-
-        boolean[] usedConts = new boolean[this.continents.size() + 1];
-        int usedCount = 0;
-        for (int x = 0; x < count; x++) {
-            boolean again = false;
-            int againCount = 0;
-            Location loc;
-            do {
-                loc = randomLand();
-                again = false;
-                for (int z = 0; z < x; z++) {
-                    Location locz = getCity(z).getLocation();
-                    if (
-                        loc.isNear(locz, 2) &&
-                        this.contData[locz.x][locz.y] ==
-                        this.contData[loc.x][loc.y]
-                    ) {
-                        again = true;
-                        againCount++;
-                        if (againCount == 100) again = false;
-                        break;
-                    }
-                }
-
-                if (again == false) {
-                    int continent = this.contData[loc.x][loc.y];
-                    if (usedConts[continent] == false) {
-                        usedConts[continent] = true;
-                        usedCount++;
-                    } else {
-                        // sprinkle cities to 90% of the continents before
-                        // putting cities on
-                        // the same continent
-                        if (
-                            usedCount <
-                            this.continents.size() -
-                            (this.continents.size() / 10)
-                        ) {
-                            again = true;
-                        }
-                    }
-                }
-            } while (again);
-
-            if (loc == null) {
-                throw new SaDException(
-                    "A city cannot be placed at a null location!"
-                );
-            }
+        for (Location loc : CityPlacer.place(this.map, count)) {
             City nc = new City(loc, this.game);
             this.cities.add(nc);
             this.ctoks.put(loc, nc);
