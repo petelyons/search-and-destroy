@@ -11,7 +11,9 @@ public enum ResponseCode {
     DIED("Died"),
     BLOCKED("Blocked"),
     CANCEL_ORDER("Cancel-Order"),
-    ORDER_COMPLETE("Order-Complete(Needs-New-Order)");
+    ORDER_COMPLETE("Order-Complete(Needs-New-Order)"),
+    // A move stopped early because its interrupt check fired (a patrol saw something)
+    INTERRUPTED("Interrupted");
 
     private final String displayName;
 

@@ -26,6 +26,11 @@ public class Move extends Order {
     protected Location loc;
     private final boolean avoidEnemies; // Flag to enable enemy avoidance behavior
 
+    // Opt-ins used by patrols (lookouts): stop instead of fighting, and stop to report
+    private java.util.function.BooleanSupplier interrupt;
+    private boolean stopAtEnemies;
+    private Location blockedAt;
+
     public Move(Game g, Unit u, Location loc) {
         this(g, u, loc, false); // Default: no avoidance for backward compatibility
     }
@@ -54,6 +59,37 @@ public class Move extends Order {
 
     public Location getDestination() {
         return loc;
+    }
+
+    /** Checked after each step taken with moves left; returning true stops the move with INTERRUPTED. */
+    public void setInterrupt(java.util.function.BooleanSupplier check) {
+        this.interrupt = check;
+    }
+
+    /**
+     * When set, a step onto a hex holding another player's unit (seen or not) or into a city
+     * that isn't the mover's returns BLOCKED instead of attacking or entering it.
+     */
+    public void setStopAtEnemies(boolean stop) {
+        this.stopAtEnemies = stop;
+    }
+
+    /** The hex that stopped the move with BLOCKED, or null. */
+    public Location getBlockedAt() {
+        return blockedAt;
+    }
+
+    private boolean blockedByEnemy(Location step) {
+        if (!this.stopAtEnemies) {
+            return false;
+        }
+        for (Unit u : this.game.unitsAtLocation(step)) {
+            if (u.getOwner() != this.unit.getOwner()) {
+                return true;
+            }
+        }
+        City city = this.game.getBoard().getCity(step);
+        return city != null && city.getOwner() != this.unit.getOwner();
     }
 
     @Override
@@ -206,6 +242,10 @@ public class Move extends Order {
                         " to " +
                         this.loc
                 );
+                if (blockedByEnemy(dest)) {
+                    this.blockedAt = dest;
+                    return new OrderResponse(ResponseCode.BLOCKED, this, null);
+                }
                 resp = this.game.resolveMove(this.unit, dest, this.loc);
 
                 // If transport is in unloading mode and just completed a move step,
@@ -218,6 +258,10 @@ public class Move extends Order {
                 }
 
                 if (resp == ResponseCode.STEP_COMPLETE) {
+                    if (this.interrupt != null && this.unit.life().movesLeft() > 0
+                            && this.interrupt.getAsBoolean()) {
+                        return new OrderResponse(ResponseCode.INTERRUPTED, this, null);
+                    }
                     continue;
                 } else if (resp == ResponseCode.TURN_COMPLETE) {
                     return new OrderResponse(resp, this, null);
@@ -270,6 +314,10 @@ public class Move extends Order {
                     " to " +
                     dest
             );
+            if (blockedByEnemy(dest)) {
+                this.blockedAt = dest;
+                return new OrderResponse(ResponseCode.BLOCKED, this, null);
+            }
             resp = this.game.resolveMove(this.unit, dest, this.loc);
 
             // If transport is in unloading mode and completed a move,

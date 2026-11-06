@@ -53,6 +53,9 @@ public enum GameEventType {
     // A human player's order was refused
     MOVE_REFUSED,
 
+    // A patrolling lookout spotted an enemy or found its route blocked
+    PATROL_REPORT,
+
     // General notification
     MESSAGE,
 }

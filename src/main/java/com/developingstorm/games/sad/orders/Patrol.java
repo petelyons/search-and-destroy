@@ -11,6 +11,8 @@ import com.developingstorm.games.sad.SaDException;
 import com.developingstorm.games.sad.Travel;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.combat.EnemyDetector;
+import com.developingstorm.games.sad.events.PatrolReportEvent;
+import com.developingstorm.games.sad.PatrolLookout;
 import com.developingstorm.games.sad.util.Log;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +40,7 @@ public class Patrol extends Order {
     private int currentWaypointIndex;
     private boolean reverseDirection; // For linear mode
     private Move currentMove;
+    private Unit pendingSighting;
 
     /**
      * Creates a new patrol order
@@ -112,16 +115,13 @@ public class Patrol extends Order {
                 this.unit.life().movesLeft()
         );
 
-        // Check for enemy units before moving
-        // Skip enemy detection for now to avoid recursion issues
-        // TODO: Implement proper enemy engagement with visited tracking
-        /*
-        Unit enemyTarget = detectNearbyEnemy();
-        if (enemyTarget != null && shouldEngageEnemy(enemyTarget)) {
-            Log.info(this.unit, "Patrol: engaging enemy " + enemyTarget);
-            // Attack logic would go here
+        // A human patrol is a lookout: stop and report an unreported enemy in sight
+        if (isLookout()) {
+            Unit seen = PatrolLookout.unreportedEnemyInSight(this.game, this.unit);
+            if (seen != null) {
+                return reportSighting(seen);
+            }
         }
-        */
 
         // If we have a current move in progress, continue it
         if (this.currentMove != null) {
@@ -162,6 +162,11 @@ public class Patrol extends Order {
                     this,
                     null
                 );
+            } else if (code == ResponseCode.INTERRUPTED && this.pendingSighting != null) {
+                return reportSighting(this.pendingSighting);
+            } else if (isLookout()) {
+                // Enemy in the way, no path, or the step was refused: stop and tell the player
+                return reportBlocked();
             } else {
                 // Move cancelled or failed
                 Log.warn(
@@ -195,6 +200,13 @@ public class Patrol extends Order {
         );
 
         this.currentMove = new Move(this.game, this.unit, targetWaypoint);
+        if (isLookout()) {
+            this.currentMove.setStopAtEnemies(true);
+            this.currentMove.setInterrupt(() -> {
+                this.pendingSighting = PatrolLookout.unreportedEnemyInSight(this.game, this.unit);
+                return this.pendingSighting != null;
+            });
+        }
         return executeInternal();
     }
 
@@ -243,6 +255,44 @@ public class Patrol extends Order {
     public void restoreState(int waypointIndex, boolean reverse) {
         this.currentWaypointIndex = waypointIndex;
         this.reverseDirection = reverse;
+    }
+
+    /** Human patrols act as lookouts; robot patrols behave as before. */
+    private boolean isLookout() {
+        return !this.unit.getOwner().isRobot();
+    }
+
+    private OrderResponse reportSighting(Unit enemy) {
+        this.unit.getOwner().markReported(enemy);
+        suspend();
+        this.game.getEventBus().publish(new PatrolReportEvent(
+            PatrolReportEvent.Kind.SIGHTING, this.unit, enemy, enemy.getLocation(), this.game.getTurn()));
+        return new OrderResponse(ResponseCode.ORDER_COMPLETE, this, null);
+    }
+
+    private OrderResponse reportBlocked() {
+        Location waypoint = getCurrentWaypoint();
+        Unit blocker = null;
+        Location at = this.currentMove != null ? this.currentMove.getBlockedAt() : null;
+        if (at != null) {
+            for (Unit u : this.game.unitsAtLocation(at)) {
+                if (u.getOwner() != this.unit.getOwner()) {
+                    blocker = u;
+                    break;
+                }
+            }
+        }
+        suspend();
+        this.game.getEventBus().publish(new PatrolReportEvent(
+            PatrolReportEvent.Kind.BLOCKED, this.unit, blocker, waypoint, this.game.getTurn()));
+        return new OrderResponse(ResponseCode.ORDER_COMPLETE, this, null);
+    }
+
+    /** Park this patrol on the unit so the player can resume it; the next move starts afresh. */
+    private void suspend() {
+        this.currentMove = null;
+        this.pendingSighting = null;
+        this.unit.suspendPatrol(this);
     }
 
     public List<Location> getWaypoints() {
