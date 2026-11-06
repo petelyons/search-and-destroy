@@ -15,7 +15,15 @@ A hex-grid, turn-based strategy game. Players start with one city and one infant
 - Hex grid with two terrain types: **land** and **water**
 - Land is grouped into **continents** (computed by flood-fill at board creation)
 - Cities are always on land tiles
-- Players start at coastal cities on different continents
+- Players start at coastal cities on different continents (`CityManager.assignCities`; falls back to any coastal city if the map has too few continents)
+
+### Generated maps
+
+- New Game generates a fresh map (`mapgen.MapGenerator.generate(MapSize)`): Small 25×25, Medium 50×50 (default, also used at launch), Large 75×75, X-Large 100×100
+- Separate continents of varied size and count; edge hexes are always water (`forceWaterEdges`, the one place to change that); all water is one connected ocean with no lakes
+- Cities are placed by `mapgen.CityPlacer` on every map: at least 3 hexes apart, shared by continent area, and continents with inland ground get both a coastal and an inland city
+- All randomness goes through `RandomUtil`, so a seed reproduces a map
+- The hand-made maps (`MedMap.sdm`, `BorderLand.sdm`, `SampleMap.sdm`) are kept for the headless AI tools (`AITestCLI`) and tests
 
 ## Victory and Defeat
 
