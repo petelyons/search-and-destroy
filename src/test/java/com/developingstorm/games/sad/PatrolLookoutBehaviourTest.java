@@ -247,4 +247,98 @@ public class PatrolLookoutBehaviourTest {
         assertTrue(reports.isEmpty());
         assertNull(rd.getSuspendedPatrol());
     }
+
+    @Test
+    public void resumeWithNoMovesKeepsTheWaypoint() {
+        Unit dd = place(Type.DESTROYER, human, sea);
+        Patrol p = patrol(dd, sea, far);
+        p.restoreState(1, false); // heading out to far
+        dd.suspendPatrol(p);
+        dd.life().burnMoves(); // woke on its last step: no moves left, turn not over
+
+        assertTrue(dd.resumePatrol());
+        dd.turn().attemptTurn();
+
+        assertEquals(1, p.getCurrentWaypointIndex(), "resuming with no moves must not skip a waypoint");
+        assertFalse(p.isReverseDirection());
+        assertEquals(sea, dd.getLocation());
+        assertSame(p, dd.getOrder());
+    }
+
+    @Test
+    public void loadedTransportWakesOnce() {
+        Unit dd = place(Type.DESTROYER, human, sea);
+        Patrol p = patrol(dd, sea, far);
+        Unit tr = place(Type.TRANSPORT, robot, justOutOfSight());
+        for (int i = 0; i < 3; i++) {
+            Unit inf = place(Type.INFANTRY, robot, tr.getLocation());
+            tr.addCarried(inf);
+        }
+
+        dd.turn().attemptTurn();
+        assertEquals(1, reports.size());
+        assertSame(tr, reports.get(0).getEnemy(), "the card names the transport, not its cargo");
+
+        dd.resumePatrol();
+        dd.turn().attemptTurn();
+        assertEquals(1, reports.size(), "cargo must not wake the patrol again");
+        assertSame(p, dd.getOrder());
+    }
+
+    @Test
+    public void enemySeenOnTheLastStepIsReported() {
+        Unit dd = place(Type.DESTROYER, human, sea);
+        patrol(dd, sea, far);
+        // Only the final hex of this turn's path (far, 3 steps = all its moves) can see it
+        Path path = dd.getPath(far);
+        int range = Type.DESTROYER.getVisionDistance();
+        Location hidden = null;
+        for (int r = 1; r <= 5 && hidden == null; r++) {
+            for (Location l : far.getRing(r)) {
+                if (far.distance(l) != range || !game.getBoard().isWater(l) || !game.unitsAtLocation(l).isEmpty()) {
+                    continue;
+                }
+                boolean seenEarlier = sea.distance(l) <= range;
+                for (Location step : path) {
+                    if (!step.equals(far) && step.distance(l) <= range) {
+                        seenEarlier = true;
+                    }
+                }
+                if (!seenEarlier) {
+                    hidden = l;
+                    break;
+                }
+            }
+        }
+        org.junit.jupiter.api.Assumptions.assumeTrue(hidden != null, "a hex only the last step can see");
+        place(Type.TRANSPORT, robot, hidden);
+
+        dd.turn().attemptTurn();
+
+        assertEquals(far, dd.getLocation());
+        assertEquals(1, reports.size(), "sighting on the turn's last step");
+        assertEquals(PatrolReportEvent.Kind.SIGHTING, reports.get(0).getKind());
+    }
+
+    @Test
+    public void lowFuelAirLookoutHeadsHome() {
+        City home = human.getCities().get(0);
+        Location c = home.getLocation();
+        Location out = hexAt(c, 4);
+        Unit f = place(Type.FIGHTER, human, out);
+        Patrol p = f.newPatrolOrder(List.of(c, hexAt(c, 9), c), Patrol.PatrolMode.LOOP);
+        p.restoreState(1, false); // heading away from home
+        // Only just enough fuel left to get home
+        while (f.life().getFuel() > out.distance(c) + 1) {
+            f.life().burnMoves();
+            f.life().resetForTurn();
+        }
+        assertTrue(f.life().mustLand());
+        f.assignOrder(p);
+
+        f.turn().attemptTurn();
+
+        assertFalse(f.isDead(), "a lookout that must land should head home, not fly on");
+        assertTrue(f.getLocation().distance(c) < out.distance(c), "moved toward home: " + f.getLocation());
+    }
 }

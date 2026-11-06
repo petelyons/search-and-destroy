@@ -10,6 +10,7 @@ public final class PatrolLookout {
     /**
      * The nearest enemy within the patroller's vision distance that its vision type can see
      * (submarines need WATER or COMPLETE vision) and its owner hasn't reported; null if none.
+     * Carried units are cargo, not sightings: the player is told about the ship carrying them.
      */
     public static Unit unreportedEnemyInSight(Game game, Unit patroller) {
         Player owner = patroller.getOwner();
@@ -18,7 +19,7 @@ public final class PatrolLookout {
         Unit nearest = null;
         int nearestDist = Integer.MAX_VALUE;
         for (Unit u : game.units()) {
-            if (u.getOwner() == owner || u.isDead() || owner.isReported(u)) {
+            if (u.getOwner() == owner || u.isDead() || u.isCarried() || owner.isReported(u)) {
                 continue;
             }
             int d = patroller.getLocation().distance(u.getLocation());

@@ -79,6 +79,10 @@ public class Move extends Order {
         return blockedAt;
     }
 
+    private boolean interrupted() {
+        return this.interrupt != null && this.interrupt.getAsBoolean();
+    }
+
     private boolean blockedByEnemy(Location step) {
         if (!this.stopAtEnemies) {
             return false;
@@ -258,12 +262,15 @@ public class Move extends Order {
                 }
 
                 if (resp == ResponseCode.STEP_COMPLETE) {
-                    if (this.interrupt != null && this.unit.life().movesLeft() > 0
-                            && this.interrupt.getAsBoolean()) {
+                    if (interrupted()) {
                         return new OrderResponse(ResponseCode.INTERRUPTED, this, null);
                     }
                     continue;
                 } else if (resp == ResponseCode.TURN_COMPLETE) {
+                    // The last step of the turn can bring something into sight too
+                    if (interrupted()) {
+                        return new OrderResponse(ResponseCode.INTERRUPTED, this, null);
+                    }
                     return new OrderResponse(resp, this, null);
                 } else if (resp == ResponseCode.DIED) {
                     return new OrderResponse(resp, this, null);

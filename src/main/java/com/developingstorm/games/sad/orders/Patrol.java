@@ -123,6 +123,21 @@ public class Patrol extends Order {
             }
         }
 
+        // Nothing to do without moves (e.g. resumed after waking on its last step)
+        if (!this.unit.life().hasMoves()) {
+            return new OrderResponse(ResponseCode.TURN_COMPLETE, this, null);
+        }
+
+        // A plane that can no longer finish the route goes home to refuel, then carries on
+        if (this.unit.getTravel() == Travel.AIR && this.unit.life().mustLand() && !this.unit.hasLanded()) {
+            this.currentMove = null;
+            OrderResponse home = this.unit.newHeadHomeOrder().execute();
+            if (home.getCode() == ResponseCode.DIED) {
+                return new OrderResponse(ResponseCode.DIED, this, null);
+            }
+            return new OrderResponse(ResponseCode.TURN_COMPLETE, this, null);
+        }
+
         // If we have a current move in progress, continue it
         if (this.currentMove != null) {
             OrderResponse response = this.currentMove.execute();
@@ -263,11 +278,23 @@ public class Patrol extends Order {
     }
 
     private OrderResponse reportSighting(Unit enemy) {
+        // One report per hex: whatever shares it (cargo, a plane over a ship) is reported with it
+        for (Unit u : this.game.unitsAtLocation(enemy.getLocation())) {
+            if (u.getOwner() != this.unit.getOwner()) {
+                this.unit.getOwner().markReported(u);
+            }
+        }
         this.unit.getOwner().markReported(enemy);
         suspend();
         this.game.getEventBus().publish(new PatrolReportEvent(
             PatrolReportEvent.Kind.SIGHTING, this.unit, enemy, enemy.getLocation(), this.game.getTurn()));
-        return new OrderResponse(ResponseCode.ORDER_COMPLETE, this, null);
+        return woken();
+    }
+
+    /** The patrol is suspended; the unit waits for the player, this turn if it has moves left. */
+    private OrderResponse woken() {
+        ResponseCode code = this.unit.life().hasMoves() ? ResponseCode.ORDER_COMPLETE : ResponseCode.ORDER_AND_TURN_COMPLETE;
+        return new OrderResponse(code, this, null);
     }
 
     private OrderResponse reportBlocked() {
@@ -285,7 +312,7 @@ public class Patrol extends Order {
         suspend();
         this.game.getEventBus().publish(new PatrolReportEvent(
             PatrolReportEvent.Kind.BLOCKED, this.unit, blocker, waypoint, this.game.getTurn()));
-        return new OrderResponse(ResponseCode.ORDER_COMPLETE, this, null);
+        return woken();
     }
 
     /** Park this patrol on the unit so the player can resume it; the next move starts afresh. */
