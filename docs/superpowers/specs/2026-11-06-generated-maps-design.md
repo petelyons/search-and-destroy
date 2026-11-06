@@ -91,6 +91,9 @@ need a stable map.
 
 - **Map edges.** All edge hexes are water, so continents never touch the map edge and the
   ocean wraps around everything. This makes the one-ocean rule easy to guarantee.
+  - Pete isn't sure he likes this but accepted it for now.
+  - Keep the edge rule in one obvious place, so it's easy to drop later. Without it, the
+    one-ocean and no-lake checks must still hold, with land allowed to touch the edge.
 - **Land share.** Roughly 30–40% of the map is land, close to MedMap's 37%. Exact numbers
   and how they vary are up to the builder.
 - **City count** stays at `(width + height) / 2`: 25, 50, 75 and 100 cities by size.
