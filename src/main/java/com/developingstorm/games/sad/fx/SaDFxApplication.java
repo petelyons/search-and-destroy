@@ -5,6 +5,8 @@ import com.developingstorm.games.hexboard.HexBoardMap;
 import com.developingstorm.games.sad.Game;
 import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Robot;
+import com.developingstorm.games.sad.mapgen.MapGenerator;
+import com.developingstorm.games.sad.mapgen.MapSize;
 import com.developingstorm.games.sad.GameNames;
 import com.developingstorm.games.sad.ShipNames;
 import com.developingstorm.games.sad.UnitNames;
@@ -96,8 +98,8 @@ public class SaDFxApplication extends Application {
         // Reset save name for new game
         this.currentSaveName = null;
 
-        // Load map
-        this.map = HexBoardMap.loadMapAsResource(this, "MedMap.sdm");
+        // Generate a fresh map
+        this.map = MapGenerator.generate(MapSize.MEDIUM);
         this.ctx = new HexBoardContext() {
             @Override
             public int getPrototypeHex() {
@@ -267,14 +269,14 @@ public class SaDFxApplication extends Application {
                 int player1Type,
                 String player2Name,
                 int player2Type,
-                String mapResource
+                MapSize mapSize
             ) {
                 SaDFxApplication.this.newGame(
                     player1Name,
                     player1Type,
                     player2Name,
                     player2Type,
-                    mapResource
+                    mapSize
                 );
             }
         };
@@ -375,7 +377,7 @@ public class SaDFxApplication extends Application {
         int player1Type,
         String player2Name,
         int player2Type,
-        String mapResource
+        MapSize mapSize
     ) {
         try {
             // Stop current game
@@ -394,8 +396,8 @@ public class SaDFxApplication extends Application {
             // Reset save name for new game
             this.currentSaveName = null;
 
-            // Load map
-            this.map = HexBoardMap.loadMapAsResource(this, mapResource);
+            // Generate a fresh map
+            this.map = MapGenerator.generate(mapSize);
 
             // Create players
             Player[] players = new Player[2];

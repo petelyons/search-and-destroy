@@ -1,5 +1,6 @@
 package com.developingstorm.games.sad.fx;
 
+import com.developingstorm.games.sad.mapgen.MapSize;
 import javafx.geometry.Insets;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
@@ -20,27 +21,12 @@ public class NewGameDialog extends Dialog<NewGameDialog.NewGameSettings> {
         public String player2Name;
         public int player1Type; // 0=Human, 1=Robot
         public int player2Type;
-        public String mapResource; // e.g. "MedMap.sdm"
-    }
-
-    private static class MapOption {
-        final String displayName;
-        final String resource;
-
-        MapOption(String displayName, String resource) {
-            this.displayName = displayName;
-            this.resource = resource;
-        }
-
-        @Override
-        public String toString() {
-            return displayName;
-        }
+        public MapSize mapSize;
     }
 
     public NewGameDialog(Window owner) {
         setTitle("New Game");
-        setHeaderText("Create a new game. Pick the players and the map.");
+        setHeaderText("Create a new game. Pick the players and the map size.");
         initOwner(owner);
 
         getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
@@ -70,17 +56,13 @@ public class NewGameDialog extends Dialog<NewGameDialog.NewGameSettings> {
         grid.add(player2Name, 1, 1);
         grid.add(player2Type, 2, 1);
 
-        // Map selection
-        ComboBox<MapOption> mapChoice = new ComboBox<>();
-        mapChoice.getItems().addAll(
-            new MapOption("MedMap (Small)", "MedMap.sdm"),
-            new MapOption("BorderLand (Large)", "BorderLand.sdm"),
-            new MapOption("SampleMap (Large)", "SampleMap.sdm")
-        );
-        mapChoice.setValue(mapChoice.getItems().get(0));
+        // Map size: a fresh map is generated for every game
+        ComboBox<MapSize> mapSize = new ComboBox<>();
+        mapSize.getItems().addAll(MapSize.values());
+        mapSize.setValue(MapSize.MEDIUM);
 
-        grid.add(new Label("Map:"), 0, 2);
-        grid.add(mapChoice, 1, 2);
+        grid.add(new Label("Map size:"), 0, 2);
+        grid.add(mapSize, 1, 2);
 
         getDialogPane().setContent(grid);
 
@@ -93,7 +75,7 @@ public class NewGameDialog extends Dialog<NewGameDialog.NewGameSettings> {
                 if (settings.player2Name.isEmpty()) settings.player2Name = "Player 2";
                 settings.player1Type = "Robot".equals(player1Type.getValue()) ? 1 : 0;
                 settings.player2Type = "Robot".equals(player2Type.getValue()) ? 1 : 0;
-                settings.mapResource = mapChoice.getValue().resource;
+                settings.mapSize = mapSize.getValue();
                 return settings;
             }
             return null;

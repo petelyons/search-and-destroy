@@ -49,13 +49,13 @@ public interface GameLifecycleHandler {
      * @param player1Type Type for player 1 (0=Human, 1=Robot)
      * @param player2Name Name for player 2
      * @param player2Type Type for player 2 (0=Human, 1=Robot)
-     * @param mapResource Map resource filename (e.g. "MedMap.sdm")
+     * @param mapSize Size of the map to generate
      */
     void newGame(
         String player1Name,
         int player1Type,
         String player2Name,
         int player2Type,
-        String mapResource
+        com.developingstorm.games.sad.mapgen.MapSize mapSize
     );
 }

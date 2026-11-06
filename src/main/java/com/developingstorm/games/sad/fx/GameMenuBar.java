@@ -291,7 +291,7 @@ public class GameMenuBar extends MenuBar {
             settings.player1Type,
             settings.player2Name,
             settings.player2Type,
-            settings.mapResource
+            settings.mapSize
         );
     }
 
