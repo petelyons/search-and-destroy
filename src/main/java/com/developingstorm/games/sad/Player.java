@@ -806,6 +806,35 @@ public class Player implements UnitLens, LocationLens {
         markRegion(loc, Vision.COMPLETE, dist);
     }
 
+    /** Enemy units a patrol has already reported to this player, by unit id. */
+    private final Set<Long> reportedEnemies = new HashSet<>();
+
+    public boolean isReported(Unit enemy) {
+        return this.reportedEnemies.contains(enemy.id);
+    }
+
+    public void markReported(Unit enemy) {
+        this.reportedEnemies.add(enemy.id);
+    }
+
+    /**
+     * Forget reported enemies that are dead or no longer in sight, so that one reappearing
+     * later counts as a new sighting.
+     */
+    public void forgetUnseenReports() {
+        if (this.reportedEnemies.isEmpty() || this.game == null) {
+            return;
+        }
+        Set<Long> stillSeen = new HashSet<>();
+        for (Unit u : this.game.units()) {
+            if (this.reportedEnemies.contains(u.id) && !u.isDead()
+                    && u.isVisible(getVisibility(u.getLocation()))) {
+                stillSeen.add(u.id);
+            }
+        }
+        this.reportedEnemies.retainAll(stillSeen);
+    }
+
     public Vision getVisibility(Location loc) {
         Vision v = this.visible[loc.x][loc.y];
         return v != null ? v : Vision.NONE;
@@ -1084,6 +1113,7 @@ public class Player implements UnitLens, LocationLens {
         scanForContacts();
         calcEnemyActivity();
         calcContinentsLoadingPositions();
+        forgetUnseenReports();
 
         for (Unit u : this.units) {
             u.turn().beginTurn();
