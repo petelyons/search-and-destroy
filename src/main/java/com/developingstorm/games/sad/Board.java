@@ -28,7 +28,7 @@ public class Board extends HexBoard {
     private boolean isInitialized = false;
 
     public Board(Game game, HexBoardMap grid, HexBoardContext ctx) {
-        super(ctx);
+        super(sizedTo(grid, ctx));
         map = grid;
         mapData = this.map.getData();
         ctoks = new HashMap<Location, City>();
@@ -37,6 +37,27 @@ public class Board extends HexBoard {
         cities = new ArrayList<City>();
 
         calcContinents();
+    }
+
+    /**
+     * The board is as big as its own map. The context the app passes in describes whatever map
+     * is currently open, which is a different size when a game of another size is loaded.
+     */
+    private static HexBoardContext sizedTo(HexBoardMap grid, HexBoardContext ctx) {
+        return new HexBoardContext() {
+            public int getPrototypeHex() { return ctx.getPrototypeHex(); }
+            public java.awt.Image[] getImages() { return ctx.getImages(); }
+            public int getHexSide() { return ctx.getHexSide(); }
+            public boolean showBorder() { return ctx.showBorder(); }
+            public java.awt.Color getBorderColor() { return ctx.getBorderColor(); }
+            public java.awt.Color getSelectionColor() { return ctx.getSelectionColor(); }
+            public java.awt.Color getXorColor() { return ctx.getXorColor(); }
+            public int getZs() { return ctx.getZs(); }
+            public int getWidth() { return grid.getWidth(); }
+            public int getHeight() { return grid.getHeight(); }
+            public int getTerrainImageSelector(int x, int y) { return ctx.getTerrainImageSelector(x, y); }
+            public int getUnexploredImageSelector() { return ctx.getUnexploredImageSelector(); }
+        };
     }
 
     public Location randomLand() {

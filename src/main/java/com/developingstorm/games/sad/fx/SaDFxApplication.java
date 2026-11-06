@@ -320,8 +320,9 @@ public class SaDFxApplication extends Application {
                 // Extract and store the save name for future saves
                 this.currentSaveName = serializer.extractSaveName(saveFile);
 
-                // Update game reference
+                // Update game reference (and the open map, which the board context describes)
                 this.game = loadedGame;
+                this.map = loadedGame.getBoard().map;
 
                 // Recreate controllers with new game
                 controller = new GameControllerImpl(game);
