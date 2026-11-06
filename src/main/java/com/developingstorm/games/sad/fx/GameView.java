@@ -42,7 +42,7 @@ public class GameView extends BorderPane {
     private MapCanvas mapCanvas;
     private Label turnLabel;
     private UnitInfoPanel unitInfoPanel;
-    private BattleHistoryPanel battleHistoryPanel;
+    private ReportsPanel reportsPanel;
     private javafx.scene.control.ScrollPane scrollPane;
     private GameMenuBar menuBar;
 
@@ -138,12 +138,15 @@ public class GameView extends BorderPane {
         unitInfoPanel.setCitySelectHandler(c -> mapCanvas.showCityUnitsDialog(c));
 
         // Battle history panel
-        battleHistoryPanel = new BattleHistoryPanel();
-        VBox.setVgrow(battleHistoryPanel, Priority.ALWAYS);
+        reportsPanel = new ReportsPanel(
+            loc -> mapCanvas.centerOnLocation(loc),
+            u -> commandHandler.resumePatrol(u)
+        );
+        VBox.setVgrow(reportsPanel, Priority.ALWAYS);
 
         rightSidebar
             .getChildren()
-            .addAll(turnLabel, unitInfoPanel, battleHistoryPanel);
+            .addAll(turnLabel, unitInfoPanel, reportsPanel);
         setRight(rightSidebar);
 
         // Set some styling
@@ -181,6 +184,7 @@ public class GameView extends BorderPane {
                             GameEventType.PLAYER_TYPE_CHANGED,
                             GameEventType.MOVE_REFUSED,
                             GameEventType.GAME_OVER,
+                            GameEventType.PATROL_REPORT,
                         };
                     }
                 }
@@ -195,6 +199,7 @@ public class GameView extends BorderPane {
             case UNIT_SELECTED:
                 UnitSelectedEvent use = (UnitSelectedEvent) event;
                 unitInfoPanel.setUnit(use.getUnit());
+                reportsPanel.refresh(); // Resume buttons follow the units' current state
                 mapCanvas.refresh();
                 break;
             case UNIT_TRACKED:
@@ -219,7 +224,9 @@ public class GameView extends BorderPane {
             case COMBAT_RESOLVED:
                 CombatResolvedEvent cre = (CombatResolvedEvent) event;
                 if (cre.getResult() != null) {
-                    battleHistoryPanel.addBattle(cre.getResult());
+                    reportsPanel.add(
+                        ReportEntry.battle(cre.getResult(), game.getTurn(), game.getHumanPlayer())
+                    );
                 }
                 mapCanvas.refresh();
                 break;
@@ -237,6 +244,12 @@ public class GameView extends BorderPane {
                 break;
             case GAME_ABORTED:
                 handleGameAborted();
+                break;
+            case PATROL_REPORT:
+                reportsPanel.add(
+                    ReportEntry.patrol((com.developingstorm.games.sad.events.PatrolReportEvent) event)
+                );
+                mapCanvas.refresh();
                 break;
             case GAME_OVER:
                 handleGameOver(
