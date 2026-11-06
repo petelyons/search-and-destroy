@@ -495,7 +495,23 @@ public class GameStateSerializer {
 
         restoreFleets(game, root, unitMap);
 
-        // Restore unit orders (needs fleets in place for FLEET_MEMBER)
+        // Deserialize cities
+        // Note: Game constructor already initialized board with random cities
+        // We need to clear those and replace with saved cities
+        java.util.List<City> existingCities = game.getBoard().getCities();
+        existingCities.clear();
+
+        Object[] citiesArray = root.getArray("cities");
+        for (int i = 0; i < citiesArray.length; i++) {
+            JsonObj cityJson = (JsonObj) citiesArray[i];
+            City city = new City(game, cityJson);
+            existingCities.add(city);
+        }
+
+        // Rebuild the city location lookup HashMap so isCity() works correctly
+        game.getBoard().rebuildCityLookup();
+
+        // Restore unit orders (needs fleets for FLEET_MEMBER, and cities for air patrols)
         for (int i = 0; i < unitsArray.length; i++) {
             JsonObj unitJson = (JsonObj) unitsArray[i];
             UnitSerializer.UnitData unitData = UnitSerializer.deserializeUnit(
@@ -513,23 +529,18 @@ public class GameStateSerializer {
                     unit.assignOrder(order);
                 }
             }
+            if (unitData.suspendedPatrol != null) {
+                Order suspended = reconstructOrder(game, unit, "PATROL", unitData.suspendedPatrol);
+                if (suspended instanceof Patrol p) {
+                    Order current = unit.getOrder();
+                    unit.suspendPatrol(p);
+                    if (current != null) {
+                        unit.assignOrder(current); // only Skip turn can sit alongside a suspended patrol
+                    }
+                }
+            }
         }
 
-        // Deserialize cities
-        // Note: Game constructor already initialized board with random cities
-        // We need to clear those and replace with saved cities
-        java.util.List<City> existingCities = game.getBoard().getCities();
-        existingCities.clear();
-
-        Object[] citiesArray = root.getArray("cities");
-        for (int i = 0; i < citiesArray.length; i++) {
-            JsonObj cityJson = (JsonObj) citiesArray[i];
-            City city = new City(game, cityJson);
-            existingCities.add(city);
-        }
-
-        // Rebuild the city location lookup HashMap so isCity() works correctly
-        game.getBoard().rebuildCityLookup();
 
         // Restore continent names
         Object[] continentsArray = root.getArray("continents");

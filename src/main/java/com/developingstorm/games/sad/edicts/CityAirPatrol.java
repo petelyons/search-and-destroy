@@ -90,6 +90,10 @@ public class CityAirPatrol extends Edict {
             ) {
                 continue;
             }
+            // A lookout that stopped to report waits for the player
+            if (u.getSuspendedPatrol() != null) {
+                continue;
+            }
 
             // Create patrol order with city's waypoints
             Patrol patrol = new Patrol(game, u, waypoints, mode);

@@ -81,6 +81,9 @@ public class UnitSerializer {
                 json.put("orderData", orderData);
             }
         }
+        if (unit.getSuspendedPatrol() != null) {
+            json.put("suspendedPatrol", serializeOrderData(unit.getSuspendedPatrol()));
+        }
 
         return json;
     }
@@ -230,6 +233,8 @@ public class UnitSerializer {
             data.fleetId = fleetId;
         }
 
+        data.suspendedPatrol = json.getObj("suspendedPatrol");
+
         // Extract order type
         String orderType = json.getString("orderType");
         if (orderType != null) {
@@ -268,5 +273,6 @@ public class UnitSerializer {
         public Long fleetId;
         public String orderType;
         public JsonObj orderData;
+        public JsonObj suspendedPatrol;
     }
 }

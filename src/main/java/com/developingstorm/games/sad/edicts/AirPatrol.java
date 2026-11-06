@@ -32,6 +32,10 @@ public class AirPatrol extends Edict {
                 ) {
                     continue;
                 }
+                // A lookout that stopped to report waits for the player
+                if (u.getSuspendedPatrol() != null) {
+                    continue;
+                }
 
                 List<Location> locs = this.city.getLocation().getCircle(
                     u.life().turnAroundDist()

@@ -239,6 +239,12 @@ public class Patrol extends Order {
     /**
      * Gets the list of waypoints
      */
+    /** Restore progress along the route (loading a save). */
+    public void restoreState(int waypointIndex, boolean reverse) {
+        this.currentWaypointIndex = waypointIndex;
+        this.reverseDirection = reverse;
+    }
+
     public List<Location> getWaypoints() {
         return new ArrayList<>(this.waypoints);
     }

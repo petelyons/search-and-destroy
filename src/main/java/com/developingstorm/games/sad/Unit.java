@@ -45,6 +45,7 @@ public abstract class Unit {
     public volatile ArrayList<Unit> carries;
     public volatile Unit onboard;
     private volatile int createdTurn;
+    private volatile Patrol suspendedPatrol;
     public volatile int dist;
     private volatile Order order;
     private volatile Fleet fleet;
@@ -931,7 +932,34 @@ public abstract class Unit {
         assignOrder(newEscortOrder(unitToEscort));
     }
 
+    /**
+     * Park a patrol that stopped to report something; the unit waits for orders.
+     * Skip turn keeps it; any other new order discards it. {@link #resumePatrol()} restores it.
+     */
+    public void suspendPatrol(Patrol patrol) {
+        this.suspendedPatrol = patrol;
+        this.order = null;
+    }
+
+    public Patrol getSuspendedPatrol() {
+        return suspendedPatrol;
+    }
+
+    /** Put the suspended patrol back as the current order. Returns false if there is none. */
+    public boolean resumePatrol() {
+        Patrol p = this.suspendedPatrol;
+        if (p == null) {
+            return false;
+        }
+        assignOrder(p);
+        this.suspendedPatrol = null;
+        return true;
+    }
+
     public void assignOrder(Order order) {
+        if (order != this.suspendedPatrol && order.getType() != OrderType.SKIPTURN) {
+            this.suspendedPatrol = null;
+        }
         this.order = order;
         // Wake up sleeping units when a new order is assigned
         // (except for sentry orders which intentionally put units to sleep)
