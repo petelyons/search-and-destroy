@@ -245,11 +245,18 @@ public class GameView extends BorderPane {
             case GAME_ABORTED:
                 handleGameAborted();
                 break;
-            case PATROL_REPORT:
-                reportsPanel.add(
-                    ReportEntry.patrol((com.developingstorm.games.sad.events.PatrolReportEvent) event)
-                );
+            case PATROL_REPORT: {
+                var report = (com.developingstorm.games.sad.events.PatrolReportEvent) event;
+                reportsPanel.add(ReportEntry.patrol(report));
+                Unit lookout = report.getPatroller();
+                if (report.getKind() == com.developingstorm.games.sad.events.PatrolReportEvent.Kind.SIGHTING
+                        && lookout != null && !lookout.isDead()) {
+                    double[] c = mapCanvas.getHexCenter(lookout.getLocation());
+                    mapCanvas.addSprite(new com.developingstorm.games.sad.fx.sprites.FxPulseSprite(
+                        c[0], c[1], lookout.getType().getVisionDistance()));
+                }
                 mapCanvas.refresh();
+            }
                 break;
             case GAME_OVER:
                 handleGameOver(
