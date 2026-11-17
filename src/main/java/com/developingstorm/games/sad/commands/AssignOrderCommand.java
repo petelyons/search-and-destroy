@@ -26,6 +26,12 @@ public class AssignOrderCommand implements GameCommand {
             if (order.getType() == OrderType.SENTRY) {
                 unit.cancelUnloading();
             }
+            // Skipping a lookout that stopped to report means "noted, carry on"
+            if (order.getType() == OrderType.SKIPTURN && unit.getSuspendedPatrol() != null
+                    && !unit.getOwner().isRobot() && unit.resumePatrol()) {
+                unit.getOwner().pushPendingPlay(unit);
+                return;
+            }
             unit.assignOrder(order);
         }
     }

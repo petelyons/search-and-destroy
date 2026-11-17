@@ -43,6 +43,7 @@ public class GameView extends BorderPane {
     private Label turnLabel;
     private UnitInfoPanel unitInfoPanel;
     private ReportsPanel reportsPanel;
+    private final SightingPulses sightingPulses = new SightingPulses();
     private javafx.scene.control.ScrollPane scrollPane;
     private GameMenuBar menuBar;
 
@@ -194,11 +195,21 @@ public class GameView extends BorderPane {
     /**
      * Handle game events on the JavaFX Application Thread.
      */
+    /** Sonar pulse out to a lookout's vision the first time it has focus after a sighting. */
+    private void pulseIfSighted(Unit unit) {
+        if (sightingPulses.takeOnFocus(unit)) {
+            double[] c = mapCanvas.getHexCenter(unit.getLocation());
+            mapCanvas.addSprite(new com.developingstorm.games.sad.fx.sprites.FxPulseSprite(
+                c[0], c[1], unit.getType().getVisionDistance()));
+        }
+    }
+
     private void handleGameEvent(GameEvent event) {
         switch (event.getEventType()) {
             case UNIT_SELECTED:
                 UnitSelectedEvent use = (UnitSelectedEvent) event;
                 unitInfoPanel.setUnit(use.getUnit());
+                pulseIfSighted(use.getUnit());
                 reportsPanel.refresh(); // Resume buttons follow the units' current state
                 mapCanvas.refresh();
                 break;
@@ -249,11 +260,11 @@ public class GameView extends BorderPane {
                 var report = (com.developingstorm.games.sad.events.PatrolReportEvent) event;
                 reportsPanel.add(ReportEntry.patrol(report));
                 Unit lookout = report.getPatroller();
-                if (report.getKind() == com.developingstorm.games.sad.events.PatrolReportEvent.Kind.SIGHTING
-                        && lookout != null && !lookout.isDead()) {
-                    double[] c = mapCanvas.getHexCenter(lookout.getLocation());
-                    mapCanvas.addSprite(new com.developingstorm.games.sad.fx.sprites.FxPulseSprite(
-                        c[0], c[1], lookout.getType().getVisionDistance()));
+                if (report.getKind() == com.developingstorm.games.sad.events.PatrolReportEvent.Kind.SIGHTING) {
+                    sightingPulses.sighted(lookout);
+                    if (lookout == unitInfoPanel.getUnit()) {
+                        pulseIfSighted(lookout); // already has focus
+                    }
                 }
                 mapCanvas.refresh();
             }

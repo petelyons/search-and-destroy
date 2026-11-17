@@ -62,4 +62,18 @@ public class ResumePatrolCommandTest {
         assertDoesNotThrow(() -> new ResumePatrolCommand(fighter).execute(game));
         assertNull(fighter.getOrder());
     }
+
+    @Test
+    public void skipResumesSuspendedPatrol() {
+        fighter.suspendPatrol(patrol);
+        new AssignOrderCommand(fighter, fighter.newSkipTurn()).execute(game);
+        assertSame(patrol, fighter.getOrder());
+        assertNull(fighter.getSuspendedPatrol());
+    }
+
+    @Test
+    public void skipWithoutSuspendedPatrolStillSkips() {
+        new AssignOrderCommand(fighter, fighter.newSkipTurn()).execute(game);
+        assertEquals(com.developingstorm.games.sad.OrderType.SKIPTURN, fighter.getOrder().getType());
+    }
 }
