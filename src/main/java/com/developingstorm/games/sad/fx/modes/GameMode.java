@@ -21,7 +21,7 @@ import javafx.scene.input.MouseEvent;
 public class GameMode extends AbstractMapCanvasMode {
 
     // Mouse interaction state
-    private Location mouseDownLocation;
+    private final MouseGesture gesture = new MouseGesture();
     private FxArrowSprite dragArrow;
 
     public GameMode(
@@ -44,15 +44,7 @@ public class GameMode extends AbstractMapCanvasMode {
         if (!isPrimaryButton(event)) {
             return;
         }
-
-        // Check if this location has a draggable unit
-        Unit selectedUnit = query.getSelectedUnit();
-        if (
-            selectedUnit != null && selectedUnit.getLocation().equals(location)
-        ) {
-            // Can drag the selected unit
-            mouseDownLocation = location;
-        }
+        gesture.pressed(location);
     }
 
     @Override
@@ -64,18 +56,21 @@ public class GameMode extends AbstractMapCanvasMode {
         // Clear drag line
         showDragLine(null, null);
 
-        if (mouseDownLocation != null) {
-            if (!mouseDownLocation.equals(location)) {
-                // Dragged to a different location - move the unit
-                canvas.moveUnit(query.getSelectedUnit(), location);
-            } else {
-                // Clicked on same location - activate it
+        MouseGesture.Result r = gesture.released(location);
+        switch (r.kind()) {
+            case CLICK:
                 canvas.activate(location);
-            }
-            mouseDownLocation = null;
-        } else {
-            // No drag - just activate the clicked hex
-            canvas.activate(location);
+                break;
+            case DRAG:
+                Unit dragged = MouseGesture.draggedUnit(r, query.getSelectedUnit());
+                if (dragged != null) {
+                    canvas.moveUnit(dragged, location);
+                }
+                // A drag that didn't start on the selected unit does nothing (never deselects)
+                break;
+            default:
+                // The press went to another mode (attack, patrol, ...): not ours to act on
+                break;
         }
 
         canvas.refresh();
@@ -83,13 +78,15 @@ public class GameMode extends AbstractMapCanvasMode {
 
     @Override
     public void onMouseDragged(MouseEvent event, Location location) {
-        if (mouseDownLocation == null) {
+        Location from = gesture.origin();
+        Unit selected = query.getSelectedUnit();
+        if (from == null || selected == null || !selected.getLocation().equals(from)) {
             return;
         }
 
-        if (!location.equals(mouseDownLocation)) {
+        if (!location.equals(from)) {
             // Show line from mouse down location to current drag location
-            showDragLine(mouseDownLocation, location);
+            showDragLine(from, location);
             canvas.refresh();
         }
     }
@@ -121,15 +118,20 @@ public class GameMode extends AbstractMapCanvasMode {
     @Override
     public void draw(GraphicsContext gc) {
         // Draw drag arrow if active
-        if (dragArrow != null && mouseDownLocation != null) {
+        if (dragArrow != null && gesture.origin() != null) {
             dragArrow.draw(gc);
         }
     }
 
     @Override
+    public void enter() {
+        gesture.reset();
+    }
+
+    @Override
     public void exit() {
         // Clear any drag state when leaving mode
-        mouseDownLocation = null;
+        gesture.reset();
         showDragLine(null, null);
     }
 

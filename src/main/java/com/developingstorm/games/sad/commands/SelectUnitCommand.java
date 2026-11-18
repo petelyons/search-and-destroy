@@ -17,6 +17,8 @@ public class SelectUnitCommand implements GameCommand {
     @Override
     public void execute(Game game) {
         if (unit == null) {
+            // Logged so a blank unit panel can be traced back to the UI action that caused it
+            com.developingstorm.games.sad.util.Log.info(game, "Selection cleared by the UI");
             game.deselectUnit();
         } else {
             game.selectUnit(unit);
