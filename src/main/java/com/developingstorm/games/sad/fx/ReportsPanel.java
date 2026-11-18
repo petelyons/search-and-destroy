@@ -269,8 +269,7 @@ public class ReportsPanel extends VBox {
         return bar;
     }
 
-    private static String ownerColour(Player owner) {
-        int id = owner == null ? 0 : owner.getId();
-        return id == 1 ? "rgba(250,100,100,0.45)" : id == 2 ? "rgba(150,150,250,0.45)" : "rgba(100,250,100,0.45)";
+    static String ownerColour(Player owner) {
+        return PlayerColors.css(owner);
     }
 }

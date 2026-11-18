@@ -44,10 +44,10 @@ public final class ReportText {
                 return "blocked";
             default:
                 if (!e.attackerWon()) {
-                    return "beaten by";
+                    return "lost to";
                 }
                 Travel t = e.right().type().getTravel();
-                return t == Travel.SEA ? "sank" : t == Travel.AIR ? "shot down" : "destroyed";
+                return t == Travel.SEA ? "sank" : t == Travel.AIR ? "downed" : "beat";
         }
     }
 

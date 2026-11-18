@@ -151,14 +151,7 @@ public class UnitInfoPanel extends VBox {
      * Get player color (matches MapCanvas logic).
      */
     private Color getPlayerColor(Player player) {
-        int playerId = player.getId();
-        if (playerId == 1) {
-            return Color.rgb(250, 100, 100); // Red
-        } else if (playerId == 2) {
-            return Color.rgb(150, 150, 250); // Blue
-        } else {
-            return Color.rgb(100, 250, 100); // Green
-        }
+        return PlayerColors.of(player);
     }
 
     /**

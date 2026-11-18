@@ -9,6 +9,7 @@ import com.developingstorm.games.sad.Player;
 import com.developingstorm.games.sad.Type;
 import com.developingstorm.games.sad.Unit;
 import com.developingstorm.games.sad.events.PatrolReportEvent;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,10 +43,10 @@ public class ReportTextTest {
         assertEquals(ReportEntry.Kind.BATTLE_WON, land.kind());
         assertEquals("Turn 12 · You attacked", ReportText.header(land));
         assertEquals("VICTORY", ReportText.badge(land));
-        assertEquals("destroyed", ReportText.verb(land));
+        assertEquals("beat", ReportText.verb(land));
 
         assertEquals("sank", ReportText.verb(battle(unit(Type.BATTLESHIP, human, "Iowa"), unit(Type.TRANSPORT, enemy, "Gull"), true)));
-        assertEquals("shot down", ReportText.verb(battle(unit(Type.FIGHTER, human, "Hawk"), unit(Type.BOMBER, enemy, "Raven"), true)));
+        assertEquals("downed", ReportText.verb(battle(unit(Type.FIGHTER, human, "Hawk"), unit(Type.BOMBER, enemy, "Raven"), true)));
     }
 
     @Test
@@ -53,7 +54,7 @@ public class ReportTextTest {
         ReportEntry e = battle(unit(Type.INFANTRY, human, "1st Foot"), unit(Type.ARMOR, enemy, "Panzer"), false);
         assertEquals(ReportEntry.Kind.BATTLE_LOST, e.kind());
         assertEquals("LOST", ReportText.badge(e));
-        assertEquals("beaten by", ReportText.verb(e));
+        assertEquals("lost to", ReportText.verb(e));
     }
 
     @Test
@@ -93,5 +94,24 @@ public class ReportTextTest {
         assertEquals(Type.DESTROYER.getName(), ReportText.displayName("  ", Type.DESTROYER));
         assertEquals(Type.DESTROYER.getName(), ReportText.displayName("Unit #42", Type.DESTROYER));
         assertEquals("Valiant", ReportText.displayName("Valiant", Type.DESTROYER));
+    }
+
+    @Test
+    public void verbsAreShortEnoughForTheGapBetweenTheUnits() {
+        for (ReportEntry e : List.of(
+                battle(unit(Type.ARMOR, human, "a"), unit(Type.INFANTRY, enemy, "b"), true),
+                battle(unit(Type.FIGHTER, human, "a"), unit(Type.BOMBER, enemy, "b"), true),
+                battle(unit(Type.BATTLESHIP, human, "a"), unit(Type.TRANSPORT, enemy, "b"), true),
+                battle(unit(Type.INFANTRY, human, "a"), unit(Type.ARMOR, enemy, "b"), false))) {
+            assertTrue(ReportText.verb(e).length() <= 7, ReportText.verb(e));
+        }
+    }
+
+    @Test
+    public void ownerColoursMatchTheBoard() {
+        assertEquals(PlayerColors.css(human), ReportsPanel.ownerColour(human));
+        assertEquals(PlayerColors.css(enemy), ReportsPanel.ownerColour(enemy));
+        assertEquals("rgb(250,100,100)", PlayerColors.css(human));
+        assertEquals(javafx.scene.paint.Color.rgb(150, 150, 250), PlayerColors.of(enemy));
     }
 }

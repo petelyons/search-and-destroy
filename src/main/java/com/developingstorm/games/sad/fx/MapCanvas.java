@@ -613,14 +613,7 @@ public class MapCanvas extends StackPane {
         int size = 3;
 
         if (city.getOwner() != null) {
-            int playerId = city.getOwner().getId();
-            if (playerId == 1) {
-                cityColor = Color.rgb(250, 100, 100); // Red
-            } else if (playerId == 2) {
-                cityColor = Color.rgb(150, 150, 250); // Blue
-            } else {
-                cityColor = Color.rgb(100, 250, 100); // Green
-            }
+            cityColor = PlayerColors.of(city.getOwner());
             size = 5;
         }
 
@@ -658,9 +651,7 @@ public class MapCanvas extends StackPane {
     private static final double GHOST_OPACITY = 0.45;
 
     private Color colorForPlayerId(int playerId) {
-        if (playerId == 1) return Color.rgb(250, 100, 100);
-        if (playerId == 2) return Color.rgb(150, 150, 250);
-        return Color.rgb(100, 250, 100);
+        return PlayerColors.of(playerId);
     }
 
     private void drawStackBadge(Location loc, int count) {
@@ -815,15 +806,7 @@ public class MapCanvas extends StackPane {
         double[] center = getHexCenter(unit.getLocation());
 
         // Get player color for background
-        Color playerColor;
-        int playerId = unit.getOwner().getId();
-        if (playerId == 1) {
-            playerColor = Color.rgb(250, 100, 100); // Red
-        } else if (playerId == 2) {
-            playerColor = Color.rgb(150, 150, 250); // Blue
-        } else {
-            playerColor = Color.rgb(100, 250, 100); // Green
-        }
+        Color playerColor = PlayerColors.of(unit.getOwner());
 
         // Check if selected
         Unit selected = query.getSelectedUnit();
